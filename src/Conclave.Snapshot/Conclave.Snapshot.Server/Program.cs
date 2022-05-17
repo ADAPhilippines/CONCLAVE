@@ -13,11 +13,17 @@ builder.Services.AddConclaveCardano();
 
 var app = builder.Build();
 
-app.MapGet("/", async (IConclaveEpochsService conclaveEpochsService) =>
+// app.MapGet("/", async (IConclaveEpochsService conclaveEpochsService) =>
+// {
+//     var poolId = builder.Configuration.GetValue<string>("Blockfrost:AdaPhPoolID");
+//     // await service.GetPoolDelegatorsAsync(builder.Configuration.GetValue<string>("Blockfrost:AdaPhPoolID"));
+//     await conclaveEpochsService.GetCurrentEpoch(poolId);
+//     return "done";
+// });
+
+app.MapGet("/", async (IConclaveSnapshotService service) =>
 {
-    var poolId = builder.Configuration.GetValue<string>("Blockfrost:AdaPhPoolID");
-    // await service.GetPoolDelegatorsAsync(builder.Configuration.GetValue<string>("Blockfrost:AdaPhPoolID"));
-    await conclaveEpochsService.GetCurrentEpoch(poolId);
+    await service.SnapshotPoolsAsync();
     return "done";
 });
 
