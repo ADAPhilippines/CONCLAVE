@@ -1,4 +1,6 @@
-public enum EpochStatus {
+namespace Conclave.Snapshot.Server.Enums;
+public enum EpochStatus
+{
     Old,
     Current
 }
