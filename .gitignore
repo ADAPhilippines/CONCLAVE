@@ -1,0 +1,4 @@
+**/bin
+**/Migrations
+**/obj
+*.db

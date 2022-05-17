@@ -1,0 +1,12 @@
+version: latest
+services:
+    postgres:
+        image: postgres
+        environment:
+            - POSTGRES_USER=admin
+            - POSTGRES_PASSWORD=admin
+            - POSTGRES_DB=conclavedb
+        volumes:
+            - ./volumes/data/db:/var/lib/postgresql/data
+        ports:
+            - 5432:5432
