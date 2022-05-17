@@ -20,7 +20,6 @@ public static class ConclaveBlockfrostServicesExtension
              config.GetValue<string>("Blockfrost:ProjectId"))
                      .BuildServiceProvider();
         provider.GetRequiredService<IPoolsService>();
-        provider.GetRequiredService<IPoolsService>();
         provider.GetRequiredService<IEpochsService>();
 
         services.Configure<ConclaveCardanoOptions>(config.GetSection("Conclave"));
