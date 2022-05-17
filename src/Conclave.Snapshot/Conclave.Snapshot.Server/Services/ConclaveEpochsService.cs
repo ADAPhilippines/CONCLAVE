@@ -14,7 +14,7 @@ public class ConclaveEpochsService : IConclaveEpochsService
         _service = service;
     }
 
-    public async Task<Epoch> GetCurrentEpoch(string poolId)
+    public async Task<Epoch> GetCurrentEpochAsync(string poolId)
     {
         var currentEpoch = await _service.GetLatestAsync();
 
