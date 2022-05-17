@@ -10,6 +10,7 @@ public static class ConclaveCardanoServicesExtension
     {
         services.AddSingleton<IConclavePoolsService, ConclavePoolsService>();
         services.AddSingleton<IConclaveEpochsService, ConclaveEpochsService>();
+        services.AddScoped<IConclaveSnapshotService, ConclaveSnapshotService>();
         return services;
     }
 }
