@@ -1,26 +1,15 @@
-namespace Conclave.Snapshot.Server.Extensions;
-using Blockfrost.Api.Extensions;
-using Blockfrost.Api.Models.Extensions;
-using Blockfrost.Api.Services;
-using Blockfrost.Api.Services.Extensions;
-using CardanoSharp.Wallet;
 using Conclave.Snapshot.Server.Interfaces.Services;
-using Microsoft.Extensions.Options;
+using Conclave.Snapshot.Server.Services;
+
+namespace Conclave.Snapshot.Server.Extensions;
 
 public static class ConclaveCardanoServicesExtension
 {
 
-    public static IServiceCollection AddConclaveBlockfrost(this IServiceCollection services, IConfiguration config)
+    public static IServiceCollection AddConclaveCardano(this IServiceCollection services)
     {
-
-        var provider = services.AddBlockfrost(
-            config.GetValue<string>("Blockfrost:Network"),
-             config.GetValue<string>("Blockfrost:ProjectId"))
-                     .BuildServiceProvider();
-        provider.GetRequiredService<IPoolsService>();
-        provider.GetRequiredService<IPoolsService>();
-        provider.GetRequiredService<IEpochsService>();
-
+        services.AddSingleton<IConclavePoolsService, ConclavePoolsService>();
+        services.AddSingleton<IConclaveEpochsService, ConclaveEpochsService>();
         return services;
     }
 }
