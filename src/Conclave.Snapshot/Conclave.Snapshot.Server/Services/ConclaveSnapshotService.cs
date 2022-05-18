@@ -29,7 +29,7 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
     public async Task<List<ConclaveSnapshot>> SnapshotPoolsAsync()
     {
         var poolId = _options.Value.PoolIds.FirstOrDefault() ?? "cba1419077fd3a23e5036727a3994e6dd0c5dcd259bdb89df6863431";
-        var currentEpoch = await _epochsService.GetCurrentEpoch(poolId);
+        var currentEpoch = await _epochsService.GetCurrentEpochAsync(poolId);
         var currentDelegators = await _poolsService.GetPoolDelegatorsAsync(poolId);
         List<ConclaveSnapshot> snapshotList = new();
 

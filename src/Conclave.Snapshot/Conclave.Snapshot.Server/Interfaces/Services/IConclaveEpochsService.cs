@@ -5,5 +5,5 @@ namespace Conclave.Snapshot.Server.Interfaces.Services;
 
 public interface IConclaveEpochsService
 {
-    Task<Epoch> GetCurrentEpoch(string poolId);
+    Task<Epoch> GetCurrentEpochAsync(string poolId);
 }
