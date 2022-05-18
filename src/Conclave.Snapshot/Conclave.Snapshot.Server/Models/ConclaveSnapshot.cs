@@ -10,15 +10,4 @@ public class ConclaveSnapshot
     public long DelegatedAmount { get; set; }
     public SnapshotPeriod SnapshotPeriod { get; set; }
     public DateTime DateCreated { get; set; }
-
-    public ConclaveSnapshot(ConclaveEpoch conclaveEpoch, string stakingId,
-                            long delegatedAmount, SnapshotPeriod snapshotPeriod,
-                            DateTime dateCreated)
-    {
-        ConclaveEpoch = conclaveEpoch;
-        StakingId = stakingId;
-        DelegatedAmount = delegatedAmount;
-        SnapshotPeriod = snapshotPeriod;
-        DateCreated = dateCreated;
-    }
 }
