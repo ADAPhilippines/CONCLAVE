@@ -2,3 +2,5 @@
 **/Migrations
 **/obj
 *.db
+**/.DS_Store
+**/volumes
