@@ -29,66 +29,101 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         _context = context;
     }
 
-    public Task<ConclaveEpoch> PrepareNextSnapshotCycleAsync()
+    public async Task<ConclaveEpoch> PrepareNextSnapshotCycleAsync()
     {
-        throw new NotImplementedException();
+        var seedConclaveEpoch = _epochsService.GetConclaveEpochsByEpochStatus(EpochStatus.Seed).FirstOrDefault();
+
+        if (seedConclaveEpoch is null) throw new Exception("Conclave epoch seed not yet created!");
+
+        var newConclaveEpoch = _epochsService.GetConclaveEpochsByEpochStatus(EpochStatus.New).FirstOrDefault();
+
+        if (newConclaveEpoch is not null) throw new Exception("New conclave epoch already created!");
+
+        var currentConclaveEpoch = _epochsService.GetConclaveEpochsByEpochStatus(EpochStatus.Current).FirstOrDefault();
+        var prevConclaveEpoch = currentConclaveEpoch ?? seedConclaveEpoch;
+
+        newConclaveEpoch = new ConclaveEpoch
+        {
+            EpochNumber = prevConclaveEpoch.EpochNumber + 1,
+            EpochStatus = EpochStatus.New,
+            StartTime = null,
+            EndTime = null,
+            SnapshotStatus = SnapshotStatus.New,
+            RewardStatus = RewardStatus.New,
+            AirdropStatus = AirdropStatus.New
+        };
+
+        _context.Add(newConclaveEpoch);
+        await _context.SaveChangesAsync();
+
+        return newConclaveEpoch;
     }
 
     public async Task<List<ConclaveSnapshot>> SnapshotPoolsAsync()
     {
-        var poolId = _options.Value.PoolIds.FirstOrDefault() ?? "cba1419077fd3a23e5036727a3994e6dd0c5dcd259bdb89df6863431";
+
+        var newConclaveEpoch = _epochsService.GetConclaveEpochsByEpochStatus(EpochStatus.New).First();
+
+        if (newConclaveEpoch is null) throw new Exception("Next Conclave snapshot cycle not yet set!");
+
         var currentEpoch = await _epochsService.GetCurrentEpochAsync();
-        var currentDelegators = await _poolsService.GetPoolDelegatorsAsync(poolId);
-        List<ConclaveSnapshot> snapshotList = new();
 
-        // can be put in a helper function
-        DateTime currentTime = DateUtils.DateTimeToUtc(DateTime.Now);
-        SnapshotPeriod snapshotPeriod = currentTime < currentEpoch.EndTime ? SnapshotPeriod.Before : SnapshotPeriod.After;
+        if (newConclaveEpoch.SnapshotStatus == SnapshotStatus.InProgress && currentEpoch.Number < newConclaveEpoch.EpochNumber)
+            throw new Exception("New epoch not yet created!");
 
-        // create temporary epoch for testing but data should come from the database in the final implementation
-        // ConclaveEpoch conclaveEpoch = new(currentEpoch.Number,
-        //                                                 currentEpoch.StartTime,
-        //                                                 currentEpoch.EndTime, EpochStatus.Current);
+        var poolIds = _options.Value.PoolIds.ToList();
+        var currentDelegators = new List<Delegator>();
 
-
-
-        // Should be done in controller/action method
-        var conclaveEpoch = new ConclaveEpoch
+        foreach (var poolId in poolIds)
         {
-            EpochNumber = currentEpoch.Number,
-            StartTime = currentEpoch.StartTime,
-            EndTime = currentEpoch.EndTime,
-            EpochStatus = EpochStatus.New
+            var poolDelegators = await _poolsService.GetPoolDelegatorsAsync(poolId);
+            poolDelegators.ForEach(delegator => currentDelegators.Add(delegator));
+        }
 
-        };
+        List<ConclaveSnapshot> snapshotList = new();
+        SnapshotPeriod snapshotPeriod = newConclaveEpoch.SnapshotStatus == SnapshotStatus.New
+                            ? SnapshotPeriod.Before : SnapshotPeriod.After;
 
-        _context.Add(conclaveEpoch);
+        var beforeSnapshots = new List<ConclaveSnapshot>();
+        if (snapshotPeriod == SnapshotPeriod.After)
+        {
+            beforeSnapshots = _context.ConclaveSnapshots
+                .Where(s => s.ConclaveEpoch.EpochNumber == newConclaveEpoch.EpochNumber)
+                .Where(s => s.SnapshotPeriod == SnapshotPeriod.Before).ToList();
+        }
 
 
         foreach (var delegator in currentDelegators)
         {
-            // snapshotList.Add(new ConclaveSnapshot(conclaveEpoch,
-            //                                             delegator.StakeId,
-            //                                             delegator.LovelacesAmount,
-            //                                             snapshotPeriod,
-            //                                             new DateTime()));
-
             var snapshot = new ConclaveSnapshot
             {
-                ConclaveEpoch = conclaveEpoch,
+                ConclaveEpoch = newConclaveEpoch,
                 StakingId = delegator.StakeId,
                 DelegatedAmount = delegator.LovelacesAmount,
                 SnapshotPeriod = snapshotPeriod,
                 DateCreated = DateUtils.DateTimeToUtc(DateTime.Now)
             };
 
+            // filter duplicates
+            if (snapshotPeriod == SnapshotPeriod.After
+                && beforeSnapshots.Where(s => s.StakingId
+                    == snapshot.StakingId).FirstOrDefault() is not null)
+            {
+                continue;
+            }
+
+            snapshotList.Add(snapshot);
+
             _context.Add(snapshot);
         }
 
-        // await _context.SaveChangesAsync();
-        // Should be done in controller/action method
+        // Update ConclaveEpoch snapshot status
+        newConclaveEpoch.SnapshotStatus = newConclaveEpoch.SnapshotStatus == SnapshotStatus.New
+                    ? SnapshotStatus.InProgress : SnapshotStatus.Completed;
+        newConclaveEpoch.DateUpdated = DateUtils.DateTimeToUtc(DateTime.Now);
+
+        await _context.SaveChangesAsync();
 
         return snapshotList;
     }
-
 }
