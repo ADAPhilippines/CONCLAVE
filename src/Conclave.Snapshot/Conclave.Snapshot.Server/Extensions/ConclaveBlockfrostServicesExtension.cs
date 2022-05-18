@@ -15,13 +15,9 @@ public static class ConclaveBlockfrostServicesExtension
     public static IServiceCollection AddConclaveBlockfrost(this IServiceCollection services, IConfiguration config)
     {
 
-        var provider = services.AddBlockfrost(
+        services.AddBlockfrost(
             config.GetValue<string>("Blockfrost:Network"),
-             config.GetValue<string>("Blockfrost:ProjectId"))
-                     .BuildServiceProvider();
-        provider.GetRequiredService<IPoolsService>();
-        provider.GetRequiredService<IPoolsService>();
-        provider.GetRequiredService<IEpochsService>();
+            config.GetValue<string>("Blockfrost:ProjectId"));
 
         services.Configure<ConclaveCardanoOptions>(config.GetSection("Conclave"));
 
