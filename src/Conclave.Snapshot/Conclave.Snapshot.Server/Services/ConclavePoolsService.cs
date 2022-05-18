@@ -22,6 +22,7 @@ public class ConclavePoolsService : IConclavePoolsService
         // check for errors before mapping
 
         List<Delegator> delegators = new();
+
         foreach (var poolDelegator in poolDelegators)
         {
             delegators.Add(new Delegator(poolDelegator.Address, long.Parse(poolDelegator.LiveStake)));
