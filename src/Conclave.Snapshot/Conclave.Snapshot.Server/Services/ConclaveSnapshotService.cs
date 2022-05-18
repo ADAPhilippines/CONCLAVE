@@ -21,17 +21,23 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
     private readonly ApplicationDbContext _context;
 
     public ConclaveSnapshotService(IConclaveEpochsService epochsService, IConclavePoolsService poolsService,
-                                    IOptions<ConclaveCardanoOptions> options, ApplicationDbContext context)
+                                IOptions<ConclaveCardanoOptions> options, ApplicationDbContext context)
     {
         _epochsService = epochsService;
         _poolsService = poolsService;
         _options = options;
         _context = context;
     }
+
+    public Task<ConclaveEpoch> PrepareNextSnapshotCycleAsync()
+    {
+        throw new NotImplementedException();
+    }
+
     public async Task<List<ConclaveSnapshot>> SnapshotPoolsAsync()
     {
         var poolId = _options.Value.PoolIds.FirstOrDefault() ?? "cba1419077fd3a23e5036727a3994e6dd0c5dcd259bdb89df6863431";
-        var currentEpoch = await _epochsService.GetCurrentEpochAsync(poolId);
+        var currentEpoch = await _epochsService.GetCurrentEpochAsync();
         var currentDelegators = await _poolsService.GetPoolDelegatorsAsync(poolId);
         List<ConclaveSnapshot> snapshotList = new();
 
@@ -44,6 +50,9 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         //                                                 currentEpoch.StartTime,
         //                                                 currentEpoch.EndTime, EpochStatus.Current);
 
+
+
+        // Should be done in controller/action method
         var conclaveEpoch = new ConclaveEpoch
         {
             EpochNumber = currentEpoch.Number,
@@ -71,12 +80,13 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
                 DelegatedAmount = delegator.LovelacesAmount,
                 SnapshotPeriod = snapshotPeriod,
                 DateCreated = DateUtils.DateTimeToUtc(DateTime.Now)
-        };
+            };
 
             _context.Add(snapshot);
         }
 
-        await _context.SaveChangesAsync();
+        // await _context.SaveChangesAsync();
+        // Should be done in controller/action method
 
         return snapshotList;
     }
