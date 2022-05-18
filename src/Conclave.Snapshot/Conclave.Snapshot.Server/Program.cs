@@ -21,9 +21,16 @@ var app = builder.Build();
 //     return "done";
 // });
 
-app.MapGet("/", async (IConclaveSnapshotService service) =>
+// app.MapGet("/", async (IConclaveSnapshotService service) =>
+// {
+//     await service.SnapshotPoolsAsync();
+//     return "done";
+// });
+
+
+app.MapGet("/", async (IConclaveEpochsService service) =>
 {
-    await service.SnapshotPoolsAsync();
+    await service.CreateSeedEpochAsync();
     return "done";
 });
 
