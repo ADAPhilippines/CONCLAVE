@@ -21,10 +21,24 @@ var app = builder.Build();
 //     return "done";
 // });
 
+
 app.MapGet("/", async (IConclaveSnapshotService service) =>
 {
     await service.SnapshotPoolsAsync();
     return "done";
 });
+
+// app.MapGet("/", async (IConclaveSnapshotService service) =>
+// {
+//     await service.PrepareNextSnapshotCycleAsync();
+//     return "done";
+// });
+
+
+// app.MapGet("/", async (IConclaveEpochsService service) =>
+// {
+//     await service.CreateSeedEpochAsync();
+//     return "done";
+// });
 
 app.Run();

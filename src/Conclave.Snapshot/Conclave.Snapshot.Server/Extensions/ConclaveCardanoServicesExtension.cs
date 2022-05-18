@@ -8,8 +8,8 @@ public static class ConclaveCardanoServicesExtension
 
     public static IServiceCollection AddConclaveCardano(this IServiceCollection services)
     {
-        services.AddSingleton<IConclavePoolsService, ConclavePoolsService>();
-        services.AddSingleton<IConclaveEpochsService, ConclaveEpochsService>();
+        services.AddScoped<IConclavePoolsService, ConclavePoolsService>();
+        services.AddScoped<IConclaveEpochsService, ConclaveEpochsService>();
         services.AddScoped<IConclaveSnapshotService, ConclaveSnapshotService>();
         return services;
     }

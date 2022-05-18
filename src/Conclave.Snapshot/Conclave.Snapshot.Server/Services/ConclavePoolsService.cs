@@ -1,3 +1,4 @@
+using Blockfrost.Api.Models;
 using Blockfrost.Api.Services;
 using Conclave.Snapshot.Server.Interfaces.Services;
 using Conclave.Snapshot.Server.Models;
@@ -17,7 +18,7 @@ public class ConclavePoolsService : IConclavePoolsService
 
     public async Task<List<Delegator>> GetPoolDelegatorsAsync(string poolId)
     {
-        var poolDelegators = await _service.GetDelegatorsAsync(poolId);
+        PoolDelegatorsResponseCollection poolDelegators = await _service.GetDelegatorsAsync(poolId);
 
         // check for errors before mapping
 
