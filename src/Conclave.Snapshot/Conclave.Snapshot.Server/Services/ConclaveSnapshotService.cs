@@ -8,8 +8,10 @@ using Conclave.Snapshot.Server.Data;
 using Conclave.Snapshot.Server.Enums;
 using Conclave.Snapshot.Server.Interfaces.Services;
 using Conclave.Snapshot.Server.Models;
+using Conclave.Snapshot.Server.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Polly;
 
 public class ConclaveSnapshotService : IConclaveSnapshotService
 {
@@ -34,7 +36,7 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         List<ConclaveSnapshot> snapshotList = new();
 
         // can be put in a helper function
-        DateTime currentTime = new();
+        DateTime currentTime = DateUtils.DateTimeToUtc(DateTime.Now);
         SnapshotPeriod snapshotPeriod = currentTime < currentEpoch.EndTime ? SnapshotPeriod.Before : SnapshotPeriod.After;
 
         // create temporary epoch for testing but data should come from the database in the final implementation
@@ -68,8 +70,10 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
                 StakingId = delegator.StakeId,
                 DelegatedAmount = delegator.LovelacesAmount,
                 SnapshotPeriod = snapshotPeriod,
-                DateCreated = new DateTime()
-            };
+                DateCreated = DateUtils.DateTimeToUtc(DateTime.Now)
+        };
+
+            _context.Add(snapshot);
         }
 
         await _context.SaveChangesAsync();
