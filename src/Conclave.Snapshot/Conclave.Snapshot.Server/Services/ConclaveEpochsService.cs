@@ -48,6 +48,12 @@ public class ConclaveEpochsService : IConclaveEpochsService
         return seedEpoch;
     }
 
+    public List<ConclaveEpoch> GetConclaveEpochsByEpochStatus(EpochStatus status)
+    {
+        var epochs = _context.ConclaveEpochs.Where(e => e.EpochStatus == status).ToList();
+        return epochs;
+    }
+
     public async Task<Epoch> GetCurrentEpochAsync()
     {
         var currentEpoch = await _service.GetLatestAsync();
