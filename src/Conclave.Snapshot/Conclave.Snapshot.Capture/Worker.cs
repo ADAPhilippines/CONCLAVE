@@ -9,7 +9,7 @@ public class Worker : BackgroundService
     private readonly IServiceProvider _provider;
 
     public bool IsSeeded { get; set; }
-    public bool IsReadyForSnapsot { get; set; }
+    public bool IsReadyForSnapshot { get; set; }
 
     public Worker(ILogger<Worker> logger, IServiceProvider provider)
     {
@@ -26,16 +26,21 @@ public class Worker : BackgroundService
             IsSeeded = await IsConclaveEpochSeededAsync(scope);
             if (!IsSeeded) continue;
 
-            IsReadyForSnapsot = await IsConclaveSnapshotReadyForNextCycleAsync(scope);
-            if (!IsReadyForSnapsot) continue;
+            IsReadyForSnapshot = await IsConclaveSnapshotReadyForNextCycleAsync(scope);
+            if (!IsReadyForSnapshot)
+            {
+                // delay until next epoch creation
+                await Task.Delay(60000, stoppingToken);
+                continue;
+            };
 
+            _logger.LogError("Here");
             await AttemptSnapshotAsync(scope);
 
             _logger.LogInformation("Snapshot worker will re-execute in 60 seconds");
-            await Task.Delay(60000, stoppingToken);
+
         }
     }
-
 
     // Helper Methods
 
@@ -66,12 +71,17 @@ public class Worker : BackgroundService
 
     protected async Task<bool> IsConclaveSnapshotReadyForNextCycleAsync(IServiceScope scope)
     {
-        if (!IsReadyForSnapsot)
+        if (!IsReadyForSnapshot)
         {
             _logger.LogInformation("Preparing Next Snapshot Cycle...");
             try
             {
                 await scope.ServiceProvider.GetRequiredService<IConclaveSnapshotService>().PrepareNextSnapshotCycleAsync();
+                return true;
+            }
+            catch (NewConclaveEpochAlreadyCreatedException e)
+            {
+                _logger.LogError(e.Message);
                 return true;
             }
             catch (Exception e)
@@ -80,7 +90,7 @@ public class Worker : BackgroundService
                 return false;
             }
         }
-        return IsReadyForSnapsot;
+        return IsReadyForSnapshot;
     }
 
     protected async Task AttemptSnapshotAsync(IServiceScope scope)
