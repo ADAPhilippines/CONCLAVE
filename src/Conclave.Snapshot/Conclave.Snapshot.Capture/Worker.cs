@@ -1,5 +1,8 @@
+using System;
+using System.Threading.Tasks;
 using Conclave.Api.Exceptions;
 using Conclave.Api.Interfaces.Services;
+using Conclave.Common.Enums;
 
 namespace Conclave.Snapshot.Capture;
 
@@ -36,8 +39,8 @@ public class Worker : BackgroundService
 
             _logger.LogError("Here");
             await AttemptSnapshotAsync(scope);
-
-            _logger.LogInformation("Snapshot worker will re-execute in 60 seconds");
+            await Task.Delay(640000, stoppingToken);
+            _logger.LogInformation("Snapshot worker will re-execute in a few minutes");
 
         }
     }
@@ -105,4 +108,11 @@ public class Worker : BackgroundService
             _logger.LogError(e.Message);
         }
     }
+
+    protected async Task GetSnapshotDelay(SnapshotPeriod period)
+    {
+        
+    }
+
+
 }

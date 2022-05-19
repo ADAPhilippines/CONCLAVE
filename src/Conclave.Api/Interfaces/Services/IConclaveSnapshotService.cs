@@ -7,4 +7,5 @@ public interface IConclaveSnapshotService
 {
     Task<ConclaveEpoch> PrepareNextSnapshotCycleAsync();
     Task<List<ConclaveSnapshot>> SnapshotPoolsAsync();
+    HashSet<string?> GetSnapshottedStakingIdsForEpoch(long epochNumber);
 }
