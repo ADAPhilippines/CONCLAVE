@@ -89,7 +89,7 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         if (snapshotPeriod == SnapshotPeriod.After)
         {
             beforeSnapshots = _context.ConclaveSnapshots
-                .Where(s => s.ConclaveEpoch.EpochNumber == newConclaveEpoch.EpochNumber)
+                .Where(s => s.ConclaveEpoch!.EpochNumber == newConclaveEpoch.EpochNumber)
                 .Where(s => s.SnapshotPeriod == SnapshotPeriod.Before).ToList();
         }
 
