@@ -2,6 +2,7 @@ using Conclave.Snapshot.Server.Data;
 using Conclave.Snapshot.Server.Extensions;
 using Conclave.Snapshot.Server.Interfaces.Services;
 using Conclave.Snapshot.Server.Services;
+using Conclave.Snapshot.Server.Services.Workers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,7 @@ builder.Services.AddNpgsql<ApplicationDbContext>(builder.Configuration.GetValue<
 builder.Services.AddHttpClient();
 builder.Services.AddConclaveBlockfrost(builder.Configuration);
 builder.Services.AddConclaveCardano();
+builder.Services.AddHostedService<SnapshotWorker>();
 
 var app = builder.Build();
 
@@ -22,11 +24,11 @@ var app = builder.Build();
 // });
 
 
-app.MapGet("/", async (IConclaveSnapshotService service) =>
-{
-    await service.SnapshotPoolsAsync();
-    return "done";
-});
+// app.MapGet("/", async (IConclaveSnapshotService service) =>
+// {
+//     await service.SnapshotPoolsAsync();
+//     return "done";
+// });
 
 // app.MapGet("/", async (IConclaveSnapshotService service) =>
 // {
