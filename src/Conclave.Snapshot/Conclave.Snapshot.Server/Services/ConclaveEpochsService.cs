@@ -1,10 +1,10 @@
 using Blockfrost.Api.Services;
+using Conclave.Common.Enums;
+using Conclave.Common.Models;
+using Conclave.Common.Utils;
 using Conclave.Snapshot.Server.Data;
-using Conclave.Snapshot.Server.Enums;
 using Conclave.Snapshot.Server.Exceptions;
 using Conclave.Snapshot.Server.Interfaces.Services;
-using Conclave.Snapshot.Server.Models;
-using Conclave.Snapshot.Server.Utils;
 
 namespace Conclave.Snapshot.Server.Services;
 
@@ -23,7 +23,7 @@ public class ConclaveEpochsService : IConclaveEpochsService
     public async Task<ConclaveEpoch> CreateSeedEpochAsync()
     {
         var seedEpoch = _context.ConclaveEpochs
-                        .Where(e => e.EpochStatus == Enums.EpochStatus.Seed)
+                        .Where(e => e.EpochStatus == EpochStatus.Seed)
                         .FirstOrDefault();
 
         if (seedEpoch is not null) throw new SeedEpochAlreadyCreatedException();

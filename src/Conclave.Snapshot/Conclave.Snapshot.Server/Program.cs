@@ -1,8 +1,8 @@
+using Conclave.Common.Models.Snapshot.Server.Services;
+using Conclave.Common.Models.Snapshot.Server.Services.Workers;
 using Conclave.Snapshot.Server.Data;
 using Conclave.Snapshot.Server.Extensions;
 using Conclave.Snapshot.Server.Interfaces.Services;
-using Conclave.Snapshot.Server.Services;
-using Conclave.Snapshot.Server.Services.Workers;
 
 var builder = WebApplication.CreateBuilder(args);
 

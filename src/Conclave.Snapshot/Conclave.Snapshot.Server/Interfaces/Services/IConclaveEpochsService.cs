@@ -1,5 +1,5 @@
-using Conclave.Snapshot.Server.Enums;
-using Conclave.Snapshot.Server.Models;
+using Conclave.Common.Enums;
+using Conclave.Common.Models;
 
 namespace Conclave.Snapshot.Server.Interfaces.Services;
 

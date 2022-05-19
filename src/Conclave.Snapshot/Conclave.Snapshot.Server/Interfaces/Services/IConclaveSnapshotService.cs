@@ -1,5 +1,4 @@
-using Conclave.Snapshot.Server.Models;
-
+using Conclave.Common.Models;
 namespace Conclave.Snapshot.Server.Interfaces.Services;
 
 
