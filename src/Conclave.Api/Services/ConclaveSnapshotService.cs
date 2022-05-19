@@ -38,7 +38,7 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
 
         var newConclaveEpoch = _epochsService.GetConclaveEpochsByEpochStatus(EpochStatus.New).FirstOrDefault();
 
-        if (newConclaveEpoch is not null) throw new NewConclaveEpochNotYetCreatedException();
+        if (newConclaveEpoch is not null) throw new NewConclaveEpochAlreadyCreatedException();
 
         var currentConclaveEpoch = _epochsService.GetConclaveEpochsByEpochStatus(EpochStatus.Current).FirstOrDefault();
         var prevConclaveEpoch = currentConclaveEpoch ?? seedConclaveEpoch;
@@ -70,7 +70,7 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         var currentEpoch = await _epochsService.GetCurrentEpochAsync();
 
         if (newConclaveEpoch.SnapshotStatus == SnapshotStatus.InProgress && currentEpoch.Number < newConclaveEpoch.EpochNumber)
-            throw new NewEpochNotYetCreatedException();
+            throw new SnapshotTooEarlyException();
 
         var poolIds = _options.Value.PoolIds.ToList();
         var currentDelegators = new List<Delegator>();
