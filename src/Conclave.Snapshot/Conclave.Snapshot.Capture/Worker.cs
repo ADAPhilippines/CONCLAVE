@@ -3,15 +3,15 @@ using Conclave.Snapshot.Capture.Interfaces.Services;
 
 namespace Conclave.Snapshot.Capture.Services.Workers;
 
-public class SnapshotWorker : BackgroundService
+public class Worker : BackgroundService
 {
-    private readonly ILogger<SnapshotWorker> _logger;
+    private readonly ILogger<Worker> _logger;
     private readonly IServiceProvider _provider;
 
-    public Boolean IsSeeded { get; set; }
-    public Boolean IsReadyForSnapsot { get; set; }
+    public bool IsSeeded { get; set; }
+    public bool IsReadyForSnapsot { get; set; }
 
-    public SnapshotWorker(ILogger<SnapshotWorker> logger, IServiceProvider provider)
+    public Worker(ILogger<Worker> logger, IServiceProvider provider)
     {
         _logger = logger;
         _provider = provider;
