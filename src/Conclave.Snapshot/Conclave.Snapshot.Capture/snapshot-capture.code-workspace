@@ -11,6 +11,9 @@
 		},
 		{
 			"path": "../../Conclave.Server"
+		},
+		{
+			"path": "../Conclave.Snapshot.Verification"
 		}
 	],
 	"settings": {}
