@@ -1,4 +1,6 @@
-public enum RewardStatus {
+namespace Conclave.Snapshot.Server.Enums;
+public enum RewardStatus
+{
 
     Skip,
     New,

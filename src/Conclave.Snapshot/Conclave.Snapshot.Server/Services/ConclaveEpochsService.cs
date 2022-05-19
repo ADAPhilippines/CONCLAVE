@@ -1,6 +1,7 @@
 using Blockfrost.Api.Services;
 using Conclave.Snapshot.Server.Data;
 using Conclave.Snapshot.Server.Enums;
+using Conclave.Snapshot.Server.Exceptions;
 using Conclave.Snapshot.Server.Interfaces.Services;
 using Conclave.Snapshot.Server.Models;
 using Conclave.Snapshot.Server.Utils;
@@ -25,7 +26,7 @@ public class ConclaveEpochsService : IConclaveEpochsService
                         .Where(e => e.EpochStatus == Enums.EpochStatus.Seed)
                         .FirstOrDefault();
 
-        if (seedEpoch is not null) throw new Exception("Seed epoch already created!");
+        if (seedEpoch is not null) throw new SeedEpochAlreadyCreatedException();
 
         var currentEpoch = await GetCurrentEpochAsync();
 
