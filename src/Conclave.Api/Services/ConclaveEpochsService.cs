@@ -1,13 +1,12 @@
 using Blockfrost.Api.Services;
+using Conclave.Api.Exceptions;
+using Conclave.Api.Interfaces.Services;
 using Conclave.Common.Enums;
 using Conclave.Common.Models;
 using Conclave.Common.Utils;
 using Conclave.Server.Data;
-using Conclave.Snapshot.Capture.Exceptions;
-using Conclave.Snapshot.Capture.Interfaces.Services;
 
-namespace Conclave.Snapshot.Capture.Services;
-
+namespace Conclave.Api.Services;
 
 public class ConclaveEpochsService : IConclaveEpochsService
 {

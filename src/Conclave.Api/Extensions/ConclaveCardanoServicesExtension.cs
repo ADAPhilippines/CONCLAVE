@@ -1,12 +1,12 @@
-using Conclave.Snapshot.Capture.Interfaces.Services;
-using Conclave.Snapshot.Capture.Services;
+using Conclave.Api.Interfaces.Services;
+using Conclave.Api.Services;
 
-namespace Conclave.Snapshot.Capture.Extensions;
+namespace Conclave.Api.Extensions;
 
 public static class ConclaveCardanoServicesExtension
 {
 
-    public static IServiceCollection AddConclaveCardano(this IServiceCollection services)
+    public static IServiceCollection AddConclaveApi(this IServiceCollection services)
     {
         services.AddScoped<IConclavePoolsService, ConclavePoolsService>();
         services.AddScoped<IConclaveEpochsService, ConclaveEpochsService>();

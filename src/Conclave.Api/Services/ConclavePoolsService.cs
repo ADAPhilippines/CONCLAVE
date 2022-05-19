@@ -1,9 +1,9 @@
 using Blockfrost.Api.Models;
 using Blockfrost.Api.Services;
+using Conclave.Api.Interfaces.Services;
 using Conclave.Common.Models;
-using Conclave.Snapshot.Capture.Interfaces.Services;
 
-namespace Conclave.Snapshot.Capture.Services;
+namespace Conclave.Api.Services;
 
 
 public class ConclavePoolsService : IConclavePoolsService

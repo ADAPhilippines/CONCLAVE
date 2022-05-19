@@ -1,7 +1,7 @@
-using Conclave.Snapshot.Capture.Exceptions;
-using Conclave.Snapshot.Capture.Interfaces.Services;
+using Conclave.Api.Exceptions;
+using Conclave.Api.Interfaces.Services;
 
-namespace Conclave.Snapshot.Capture.Services.Workers;
+namespace Conclave.Snapshot.Capture;
 
 public class Worker : BackgroundService
 {

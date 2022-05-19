@@ -1,18 +1,18 @@
-namespace Conclave.Snapshot.Capture.Services;
-
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Blockfrost.Api.Services;
+using Conclave.Api.Exceptions;
+using Conclave.Api.Interfaces.Services;
+using Conclave.Api.Options;
 using Conclave.Common.Enums;
 using Conclave.Common.Models;
 using Conclave.Common.Utils;
 using Conclave.Server.Data;
-using Conclave.Snapshot.Capture.Exceptions;
-using Conclave.Snapshot.Capture.Interfaces.Services;
-using Conclave.Snapshot.Capture.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Polly;
+
+namespace Conclave.Api.Services;
 
 public class ConclaveSnapshotService : IConclaveSnapshotService
 {

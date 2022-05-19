@@ -1,5 +1,4 @@
-namespace Conclave.Snapshot.Capture.Exceptions;
-
+namespace Conclave.Api.Exceptions;
 
 public class SnapshotTooEarlyException : Exception
 {

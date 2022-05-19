@@ -4,15 +4,15 @@ using Blockfrost.Api.Options;
 using Blockfrost.Api.Services;
 using Blockfrost.Api.Services.Extensions;
 using CardanoSharp.Wallet;
-using Conclave.Snapshot.Capture.Interfaces.Services;
-using Conclave.Snapshot.Capture.Options;
+using Conclave.Api.Interfaces.Services;
+using Conclave.Api.Options;
 using Microsoft.Extensions.Options;
 
-namespace Conclave.Snapshot.Capture.Extensions;
+namespace Conclave.Api.Extensions;
 public static class ConclaveBlockfrostServicesExtension
 {
 
-    public static IServiceCollection AddConclaveBlockfrost(this IServiceCollection services, IConfiguration config)
+    public static IServiceCollection AddBlockfrostServices(this IServiceCollection services, IConfiguration config)
     {
 
         services.AddBlockfrost(

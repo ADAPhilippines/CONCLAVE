@@ -1,5 +1,6 @@
 using Conclave.Common.Models;
-namespace Conclave.Snapshot.Capture.Interfaces.Services;
+
+namespace Conclave.Api.Interfaces.Services;
 
 
 public interface IConclaveSnapshotService
