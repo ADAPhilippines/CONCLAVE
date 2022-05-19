@@ -18,16 +18,23 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
 {
     private readonly IConclaveEpochsService _epochsService;
     private readonly IConclavePoolsService _poolsService;
-    private readonly IOptions<ConclaveCardanoOptions> _options;
     private readonly ApplicationDbContext _context;
 
     public ConclaveSnapshotService(IConclaveEpochsService epochsService, IConclavePoolsService poolsService,
-                                IOptions<ConclaveCardanoOptions> options, ApplicationDbContext context)
+                                ApplicationDbContext context)
     {
         _epochsService = epochsService;
         _poolsService = poolsService;
-        _options = options;
         _context = context;
+    }
+
+    public HashSet<string?> GetSnapshottedStakingIdsForEpoch(long epochNumber)
+    {
+        return _context.ConclaveSnapshots
+            .Where(s => s.ConclaveEpoch!.EpochNumber == epochNumber)
+            .Where(s => s.SnapshotPeriod == SnapshotPeriod.Before)
+            .Select(s => s.StakingId)
+            .ToHashSet();
     }
 
     public async Task<ConclaveEpoch> PrepareNextSnapshotCycleAsync()
@@ -40,9 +47,11 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
 
         if (newConclaveEpoch is not null) throw new NewConclaveEpochAlreadyCreatedException();
 
+        // Get current/seed conclave epoch
         var currentConclaveEpoch = _epochsService.GetConclaveEpochsByEpochStatus(EpochStatus.Current).FirstOrDefault();
         var prevConclaveEpoch = currentConclaveEpoch ?? seedConclaveEpoch;
 
+        // Create a new conclave epoch based on the current/seed epoch
         newConclaveEpoch = new ConclaveEpoch
         {
             EpochNumber = prevConclaveEpoch.EpochNumber + 1,
@@ -54,6 +63,7 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
             AirdropStatus = AirdropStatus.New
         };
 
+        // Save changes
         _context.Add(newConclaveEpoch);
         await _context.SaveChangesAsync();
 
@@ -62,36 +72,26 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
 
     public async Task<List<ConclaveSnapshot>> SnapshotPoolsAsync()
     {
-
         var newConclaveEpoch = _epochsService.GetConclaveEpochsByEpochStatus(EpochStatus.New).First();
-
         if (newConclaveEpoch is null) throw new NextSnapshotCycleNotYetReadyException();
 
         var currentEpoch = await _epochsService.GetCurrentEpochAsync();
-
         if (newConclaveEpoch.SnapshotStatus == SnapshotStatus.InProgress && currentEpoch.Number < newConclaveEpoch.EpochNumber)
             throw new SnapshotTooEarlyException();
 
-        var poolIds = _options.Value.PoolIds.ToList();
-        var currentDelegators = new List<Delegator>();
-
-        foreach (var poolId in poolIds)
-        {
-            var poolDelegators = await _poolsService.GetPoolDelegatorsAsync(poolId);
-            poolDelegators.ForEach(delegator => currentDelegators.Add(delegator));
-        }
+        var currentDelegators = await _poolsService.GetAllUniquePoolDelegatorsAsync();
 
         List<ConclaveSnapshot> snapshotList = new();
+
         SnapshotPeriod snapshotPeriod = newConclaveEpoch.SnapshotStatus == SnapshotStatus.New
                             ? SnapshotPeriod.Before : SnapshotPeriod.After;
 
-        var beforeSnapshots = new List<ConclaveSnapshot>();
+        HashSet<string?> existingStakingIdsForNewEpoch = new();
         if (snapshotPeriod == SnapshotPeriod.After)
         {
-            beforeSnapshots = _context.ConclaveSnapshots
-                .Where(s => s.ConclaveEpoch!.EpochNumber == newConclaveEpoch.EpochNumber)
-                .Where(s => s.SnapshotPeriod == SnapshotPeriod.Before).ToList();
+            existingStakingIdsForNewEpoch = GetSnapshottedStakingIdsForEpoch(newConclaveEpoch.EpochNumber);
         }
+
 
         foreach (var delegator in currentDelegators)
         {
@@ -104,16 +104,13 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
                 DateCreated = DateUtils.DateTimeToUtc(DateTime.Now)
             };
 
-            // filter duplicates
-            if (snapshotPeriod == SnapshotPeriod.After
-                && beforeSnapshots.Where(s => s.StakingId
-                    == snapshot.StakingId).FirstOrDefault() is not null)
+            // skip duplicate entries
+            if (snapshotPeriod == SnapshotPeriod.After && existingStakingIdsForNewEpoch.Contains(snapshot.StakingId))
             {
                 continue;
             }
 
             snapshotList.Add(snapshot);
-
             _context.Add(snapshot);
         }
 
@@ -121,6 +118,8 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         newConclaveEpoch.SnapshotStatus = newConclaveEpoch.SnapshotStatus == SnapshotStatus.New
                     ? SnapshotStatus.InProgress : SnapshotStatus.Completed;
         newConclaveEpoch.DateUpdated = DateUtils.DateTimeToUtc(DateTime.Now);
+
+       // _context.Add(snapshotList);
 
         await _context.SaveChangesAsync();
 
