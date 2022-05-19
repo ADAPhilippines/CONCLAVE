@@ -6,7 +6,7 @@ using Blockfrost.Api.Services;
 using Conclave.Common.Enums;
 using Conclave.Common.Models;
 using Conclave.Common.Utils;
-using Conclave.Snapshot.Capture.Data;
+using Conclave.Server.Data;
 using Conclave.Snapshot.Capture.Exceptions;
 using Conclave.Snapshot.Capture.Interfaces.Services;
 using Conclave.Snapshot.Capture.Options;

@@ -1,4 +1,3 @@
-using Conclave.Snapshot.Capture.Data;
 using Conclave.Snapshot.Capture.Extensions;
 using Conclave.Snapshot.Capture.Interfaces.Services;
 using Conclave.Snapshot.Capture.Services;
@@ -6,8 +5,6 @@ using Conclave.Snapshot.Capture.Services.Workers;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-builder.Services.AddNpgsql<ApplicationDbContext>(builder.Configuration.GetValue<string>("DatabaseConfig:PostgresSQL"));
 builder.Services.AddHttpClient();
 builder.Services.AddConclaveBlockfrost(builder.Configuration);
 builder.Services.AddConclaveCardano();
