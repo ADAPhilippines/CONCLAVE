@@ -22,7 +22,7 @@
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development"
             },
-            "sourceFileMap": {
+            "sourceFileMap": {  
                 "/Views": "${workspaceFolder}/Views"
             }
         },

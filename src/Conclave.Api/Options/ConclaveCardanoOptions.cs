@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Options;
 
-namespace Conclave.Snapshot.Capture.Options;
+namespace Conclave.Api.Options;
 
 
 public class ConclaveCardanoOptions

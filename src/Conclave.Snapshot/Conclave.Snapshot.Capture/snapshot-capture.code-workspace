@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../Conclave.Api"
+		},
+		{
+			"path": "../../Conclave.Common"
+		},
+		{
+			"path": "../../Conclave.Server"
+		}
+	],
+	"settings": {}
+}

@@ -7,13 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Blockfrost.Api" Version="1.0.0" />
-    <PackageReference Include="Blockfrost.Extensions" Version="1.0.0" />
+    <ProjectReference Include="..\..\Conclave.Common\Conclave.Common.csproj" />
+    <ProjectReference Include="..\..\Conclave.Server\Conclave.Server.csproj" />
+    <ProjectReference Include="..\..\Conclave.Api\Conclave.Api.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Conclave.Common\Conclave.Common.csproj" />
-    <ProjectReference Include="..\..\Conclave.Server\Conclave.Server.csproj" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="6.0.4" />
   </ItemGroup>
 
 </Project>

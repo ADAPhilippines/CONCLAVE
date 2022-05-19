@@ -10,9 +10,9 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/src/Conclave.Snapshot/Conclave.Snapshot.Server/bin/Debug/net6.0/Conclave.Snapshot.Server.dll",
+            "program": "${workspaceFolder}/bin/Debug/net6.0/Conclave.Api.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/src/Conclave.Snapshot/Conclave.Snapshot.Server",
+            "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
             // Enable launching a web browser when ASP.NET Core starts. For more information: https://aka.ms/VSCode-CS-LaunchJson-WebBrowser
             "serverReadyAction": {
