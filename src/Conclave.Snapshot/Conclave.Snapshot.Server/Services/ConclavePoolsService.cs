@@ -1,7 +1,7 @@
 using Blockfrost.Api.Models;
 using Blockfrost.Api.Services;
 using Conclave.Snapshot.Server.Interfaces.Services;
-using Conclave.Snapshot.Server.Models;
+using Conclave.Common.Models;
 
 namespace Conclave.Snapshot.Server.Services;
 

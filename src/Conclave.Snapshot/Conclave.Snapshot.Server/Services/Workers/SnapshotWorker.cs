@@ -1,7 +1,7 @@
 using Conclave.Snapshot.Server.Exceptions;
 using Conclave.Snapshot.Server.Interfaces.Services;
 
-namespace Conclave.Snapshot.Server.Services.Workers;
+namespace Conclave.Common.Models.Snapshot.Server.Services.Workers;
 
 public class SnapshotWorker : BackgroundService
 {
@@ -21,21 +21,18 @@ public class SnapshotWorker : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            using (var scope = _provider.CreateScope())
-            {
-                IsSeeded = await IsConclaveEpochSeededAsync(scope);
+            using var scope = _provider.CreateScope();
 
-                if (!IsSeeded) continue;
+            IsSeeded = await IsConclaveEpochSeededAsync(scope);
+            if (!IsSeeded) continue;
 
-                IsReadyForSnapsot = await IsConclaveSnapshotReadyForNextCycleAsync(scope);
+            IsReadyForSnapsot = await IsConclaveSnapshotReadyForNextCycleAsync(scope);
+            if (!IsReadyForSnapsot) continue;
 
-                if (!IsReadyForSnapsot) continue;
+            await AttemptSnapshotAsync(scope);
 
-                await AttemptSnapshotAsync(scope);
-
-                _logger.LogInformation("Snapshot worker will re-execute in 60 seconds");
-                await Task.Delay(60000, stoppingToken);
-            }
+            _logger.LogInformation("Snapshot worker will re-execute in 60 seconds");
+            await Task.Delay(60000, stoppingToken);
         }
     }
 

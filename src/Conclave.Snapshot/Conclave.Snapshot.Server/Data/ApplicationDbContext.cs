@@ -1,4 +1,4 @@
-using Conclave.Snapshot.Server.Models;
+using Conclave.Common.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conclave.Snapshot.Server.Data;
@@ -15,4 +15,4 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<ConclaveEpoch> ConclaveEpochs => Set<ConclaveEpoch>();
     public DbSet<ConclaveSnapshot> ConclaveSnapshots => Set<ConclaveSnapshot>();
-} 
+}
