@@ -6,6 +6,7 @@ using Blockfrost.Api.Services;
 using Conclave.Server.Options;
 using Conclave.Snapshot.Server.Data;
 using Conclave.Snapshot.Server.Enums;
+using Conclave.Snapshot.Server.Exceptions;
 using Conclave.Snapshot.Server.Interfaces.Services;
 using Conclave.Snapshot.Server.Models;
 using Conclave.Snapshot.Server.Utils;
@@ -33,11 +34,11 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
     {
         var seedConclaveEpoch = _epochsService.GetConclaveEpochsByEpochStatus(EpochStatus.Seed).FirstOrDefault();
 
-        if (seedConclaveEpoch is null) throw new Exception("Conclave epoch seed not yet created!");
+        if (seedConclaveEpoch is null) throw new SeedEpochNotYetCreatedException();
 
         var newConclaveEpoch = _epochsService.GetConclaveEpochsByEpochStatus(EpochStatus.New).FirstOrDefault();
 
-        if (newConclaveEpoch is not null) throw new Exception("New conclave epoch already created!");
+        if (newConclaveEpoch is not null) throw new NewConclaveEpochNotYetCreatedException();
 
         var currentConclaveEpoch = _epochsService.GetConclaveEpochsByEpochStatus(EpochStatus.Current).FirstOrDefault();
         var prevConclaveEpoch = currentConclaveEpoch ?? seedConclaveEpoch;
@@ -64,12 +65,12 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
 
         var newConclaveEpoch = _epochsService.GetConclaveEpochsByEpochStatus(EpochStatus.New).First();
 
-        if (newConclaveEpoch is null) throw new Exception("Next Conclave snapshot cycle not yet set!");
+        if (newConclaveEpoch is null) throw new NextSnapshotCycleNotYetReadyException();
 
         var currentEpoch = await _epochsService.GetCurrentEpochAsync();
 
         if (newConclaveEpoch.SnapshotStatus == SnapshotStatus.InProgress && currentEpoch.Number < newConclaveEpoch.EpochNumber)
-            throw new Exception("New epoch not yet created!");
+            throw new NewEpochNotYetCreatedException();
 
         var poolIds = _options.Value.PoolIds.ToList();
         var currentDelegators = new List<Delegator>();
@@ -91,7 +92,6 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
                 .Where(s => s.ConclaveEpoch.EpochNumber == newConclaveEpoch.EpochNumber)
                 .Where(s => s.SnapshotPeriod == SnapshotPeriod.Before).ToList();
         }
-
 
         foreach (var delegator in currentDelegators)
         {
