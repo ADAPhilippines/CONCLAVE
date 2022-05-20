@@ -4,7 +4,7 @@ using Conclave.Api.Interfaces.Services;
 using Conclave.Common.Enums;
 using Conclave.Common.Models;
 using Conclave.Common.Utils;
-using Conclave.Server.Data;
+using Conclave.Data;
 
 namespace Conclave.Api.Services;
 

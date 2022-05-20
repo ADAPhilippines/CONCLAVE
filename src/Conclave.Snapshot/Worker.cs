@@ -3,8 +3,9 @@ using System.Threading.Tasks;
 using Conclave.Api.Exceptions;
 using Conclave.Api.Interfaces.Services;
 using Conclave.Common.Enums;
+using Conclave.Common.Models;
 
-namespace Conclave.Snapshot.Capture;
+namespace Conclave.Snapshot;
 
 public class Worker : BackgroundService
 {
@@ -13,6 +14,7 @@ public class Worker : BackgroundService
 
     public bool IsSeeded { get; set; }
     public bool IsReadyForSnapshot { get; set; }
+    public ConclaveEpoch? CurrentConclaveEpoch { get; set; }
 
     public Worker(ILogger<Worker> logger, IServiceProvider provider)
     {
@@ -25,20 +27,24 @@ public class Worker : BackgroundService
         while (!stoppingToken.IsCancellationRequested)
         {
             using var scope = _provider.CreateScope();
-
             IsSeeded = await IsConclaveEpochSeededAsync(scope);
-            if (!IsSeeded) continue;
 
-            IsReadyForSnapshot = await IsConclaveSnapshotReadyForNextCycleAsync(scope);
+            if (!IsSeeded) throw new SeedEpochNotYetCreatedException();
+
+            if (CurrentConclaveEpoch is null)
+                CurrentConclaveEpoch = GetCurrentConclaveEpoch(scope);
+
+            IsReadyForSnapshot = await IsConclaveSnapshotReadyForNextCycleAsync(scope); // 
+
             if (!IsReadyForSnapshot)
             {
-                // delay until next epoch creation
+                // delay until next conclave epoch creation
+                // 
                 await Task.Delay(60000, stoppingToken);
                 continue;
             };
 
-            _logger.LogError("Here");
-            await AttemptSnapshotAsync(scope);
+            await AttemptSnapshotAsync(scope); // 
             await Task.Delay(640000, stoppingToken);
             _logger.LogInformation("Snapshot worker will re-execute in a few minutes");
 
@@ -47,7 +53,7 @@ public class Worker : BackgroundService
 
     // Helper Methods
 
-    protected async Task<bool> IsConclaveEpochSeededAsync(IServiceScope scope)
+    private async Task<bool> IsConclaveEpochSeededAsync(IServiceScope scope)
     {
         _logger.LogInformation("Executing Snapshot Worker...");
         if (!IsSeeded)
@@ -55,6 +61,7 @@ public class Worker : BackgroundService
             _logger.LogInformation("Creating Seed Epoch...");
             try
             {
+                // extract this 
                 await scope.ServiceProvider.GetRequiredService<IConclaveEpochsService>().CreateSeedEpochAsync();
                 return true;
             }
@@ -72,7 +79,7 @@ public class Worker : BackgroundService
         return IsSeeded;
     }
 
-    protected async Task<bool> IsConclaveSnapshotReadyForNextCycleAsync(IServiceScope scope)
+    private async Task<bool> IsConclaveSnapshotReadyForNextCycleAsync(IServiceScope scope)
     {
         if (!IsReadyForSnapshot)
         {
@@ -96,7 +103,7 @@ public class Worker : BackgroundService
         return IsReadyForSnapshot;
     }
 
-    protected async Task AttemptSnapshotAsync(IServiceScope scope)
+    private async Task AttemptSnapshotAsync(IServiceScope scope)
     {
         _logger.LogInformation("Attempting to capture snapshot...");
         try
@@ -109,10 +116,19 @@ public class Worker : BackgroundService
         }
     }
 
-    protected async Task GetSnapshotDelay(SnapshotPeriod period)
+    private int GetSnapshotDelayInSeconds(SnapshotPeriod period, ConclaveEpoch currentEpoch)
     {
-        
+        throw new NotImplementedException();
     }
 
+    private ConclaveEpoch? GetCurrentConclaveEpoch(IServiceScope scope)
+    {
+        if (!IsSeeded) throw new SeedEpochNotYetCreatedException();
+        var service = scope.ServiceProvider.GetRequiredService<IConclaveEpochsService>();
+        var currentEpoch = service.GetConclaveEpochsByEpochStatus(EpochStatus.Current)
+                                                 .FirstOrDefault();
 
+        return currentEpoch ?? service.GetConclaveEpochsByEpochStatus(EpochStatus.Seed)
+                                              .FirstOrDefault();
+    }
 }

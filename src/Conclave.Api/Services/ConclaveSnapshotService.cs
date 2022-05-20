@@ -7,7 +7,7 @@ using Conclave.Api.Options;
 using Conclave.Common.Enums;
 using Conclave.Common.Models;
 using Conclave.Common.Utils;
-using Conclave.Server.Data;
+using Conclave.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Polly;
@@ -75,7 +75,7 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         var newConclaveEpoch = _epochsService.GetConclaveEpochsByEpochStatus(EpochStatus.New).First();
         if (newConclaveEpoch is null) throw new NextSnapshotCycleNotYetReadyException();
 
-        var currentEpoch = await _epochsService.GetCurrentEpochAsync();
+        var currentEpoch = await _epochsService.GetCurrentEpochAsync(); // current 
         if (newConclaveEpoch.SnapshotStatus == SnapshotStatus.InProgress && currentEpoch.Number < newConclaveEpoch.EpochNumber)
             throw new SnapshotTooEarlyException();
 
@@ -106,12 +106,11 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
 
             // skip duplicate entries
             if (snapshotPeriod == SnapshotPeriod.After && existingStakingIdsForNewEpoch.Contains(snapshot.StakingId))
-            {
                 continue;
-            }
+
+            existingStakingIdsForNewEpoch.Add(snapshot.StakingId);
 
             snapshotList.Add(snapshot);
-            _context.Add(snapshot);
         }
 
         // Update ConclaveEpoch snapshot status
@@ -119,8 +118,7 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
                     ? SnapshotStatus.InProgress : SnapshotStatus.Completed;
         newConclaveEpoch.DateUpdated = DateUtils.DateTimeToUtc(DateTime.Now);
 
-       // _context.Add(snapshotList);
-
+        _context.ConclaveSnapshots.AddRange(snapshotList);
         await _context.SaveChangesAsync();
 
         return snapshotList;

@@ -1,7 +1,7 @@
 using Conclave.Common.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace Conclave.Server.Data;
+namespace Conclave.Data;
 
 public class ApplicationDbContext : DbContext
 {

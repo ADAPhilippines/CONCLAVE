@@ -21,7 +21,7 @@ public class ConclavePoolsService : IConclavePoolsService
 
     public async Task<List<Delegator>> GetAllUniquePoolDelegatorsAsync()
     {
-        HashSet<string> uniquePoolDelegators = new();
+        HashSet<string> uniquePoolDelegators = new(); // stakeid 
         List<Delegator> allDelegators = new();
         var poolIds = _options.Value.PoolIds.ToList();
 
@@ -63,7 +63,7 @@ public class ConclavePoolsService : IConclavePoolsService
 
         foreach (var poolDelegator in poolDelegators)
         {
-            delegators.Add(new Delegator(poolDelegator.Address, long.Parse(poolDelegator.LiveStake)));
+            delegators.Add(new Delegator(poolDelegator.Address, ulong.Parse(poolDelegator.LiveStake)));
         }
 
         return delegators;
