@@ -10,12 +10,10 @@ namespace Conclave.Api.Services;
 
 public class ConclaveEpochsService : IConclaveEpochsService
 {
-    private readonly IEpochsService _service;
     private readonly ApplicationDbContext _context;
 
-    public ConclaveEpochsService(IEpochsService service, ApplicationDbContext context)
+    public ConclaveEpochsService(ApplicationDbContext context)
     {
-        _service = service;
         _context = context;
     }
 
@@ -84,8 +82,13 @@ public class ConclaveEpochsService : IConclaveEpochsService
     {
         throw new NotImplementedException();
     }
-    public Task<ConclaveEpoch?> Update(ConclaveEpoch conclaveEpoch)
+    public async Task<ConclaveEpoch?> Update(Guid id, ConclaveEpoch conclaveEpoch)
     {
-        throw new NotImplementedException();
+        if (id != conclaveEpoch.Id) throw new Exception("Ids do not match");
+
+        _context.Update(conclaveEpoch);
+        await _context.SaveChangesAsync();
+
+        return conclaveEpoch;
     }
 }
