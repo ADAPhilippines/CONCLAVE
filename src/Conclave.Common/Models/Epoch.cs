@@ -4,11 +4,11 @@ namespace Conclave.Common.Models;
 public class Epoch
 {
 
-    public long Number { get; set; }
+    public ulong Number { get; set; }
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
 
-    public Epoch(long number, DateTime startTime, DateTime endTime)
+    public Epoch(ulong number, DateTime startTime, DateTime endTime)
     {
         Number = number;
         StartTime = startTime;
