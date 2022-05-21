@@ -5,5 +5,6 @@ namespace Conclave.Api.Interfaces.Services;
 
 public interface IConclaveSnapshotSchedulerService
 {
-    Task<long> GetSnapshotDelay(ConclaveEpoch conclaveEpoch, long delayInMilliseconds);
+    long GetSnapshotDelayInMilliseconds(ConclaveEpoch conclaveEpoch, long delayInMilliseconds);
+    long GetNewEpochCreationDelayInMilliseconds(ConclaveEpoch conclaveEpoch, long delayInMilliseconds);
 }
