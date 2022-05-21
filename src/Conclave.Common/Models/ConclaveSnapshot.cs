@@ -8,6 +8,5 @@ public class ConclaveSnapshot
     public ConclaveEpoch? ConclaveEpoch { get; set; }
     public string? StakingId { get; set; }
     public ulong DelegatedAmount { get; set; }
-    public SnapshotPeriod SnapshotPeriod { get; set; }
     public DateTime DateCreated { get; set; }
 }
