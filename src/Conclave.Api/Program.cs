@@ -1,6 +1,4 @@
 using Conclave.Api.Extensions;
-using Conclave.Data;
-using Conclave.Api.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
