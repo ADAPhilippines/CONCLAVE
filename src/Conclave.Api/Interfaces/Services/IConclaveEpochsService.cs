@@ -21,7 +21,7 @@ public interface IConclaveEpochsService
     // WRITE
     Task<ConclaveEpoch?> CreateAsync(ConclaveEpoch conclaveEpoch);
     Task<IEnumerable<ConclaveEpoch?>> CreateAsync(IEnumerable<ConclaveEpoch?> conclaveEpochList);
-    Task<ConclaveEpoch?> Update(ConclaveEpoch conclaveEpoch);
+    Task<ConclaveEpoch?> Update(Guid id, ConclaveEpoch conclaveEpoch);
     Task<ConclaveEpoch?> DeleteByEpochNumber(ulong epochNumber);
     Task<ConclaveEpoch?> DeleteById(Guid id);
 
