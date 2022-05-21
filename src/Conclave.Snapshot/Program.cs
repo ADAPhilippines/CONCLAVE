@@ -7,7 +7,7 @@ IHost host = Host.CreateDefaultBuilder(args)
         services.AddConclaveDb(hostContext.Configuration);
         services.AddHostedService<Worker>();
         services.AddBlockfrostServices(hostContext.Configuration);
-        services.AddConclaveApi();
+        services.AddConclaveApi(hostContext.Configuration);
     })
     .Build();
 
