@@ -7,13 +7,13 @@ namespace Conclave.Api.Interfaces.Services;
 public interface IConclaveEpochsService
 {
     // READ
-    Task<ConclaveEpoch?> GetById(Guid id);
-    Task<ConclaveEpoch?> GetByEpochNumber(ulong epochNumber);
-    Task<IEnumerable<ConclaveEpoch?>> GetByEpochStatus(EpochStatus epochStatus);
-    Task<IEnumerable<ConclaveEpoch?>> GetBySnapshotStatus(SnapshotStatus snapshotStatus);
-    Task<IEnumerable<ConclaveEpoch?>> GetByRewardStatus(RewardStatus rewardStatus);
-    Task<IEnumerable<ConclaveEpoch?>> GetByAirdropStatus(AirdropStatus airdropStatus);
-    Task<IEnumerable<ConclaveEpoch?>> GetByAllStatus(EpochStatus epochStatus,
+    ConclaveEpoch? GetById(Guid id);
+    ConclaveEpoch? GetByEpochNumber(ulong epochNumber);
+    IEnumerable<ConclaveEpoch?> GetByEpochStatus(EpochStatus epochStatus);
+    IEnumerable<ConclaveEpoch?> GetBySnapshotStatus(SnapshotStatus snapshotStatus);
+    IEnumerable<ConclaveEpoch?> GetByRewardStatus(RewardStatus rewardStatus);
+    IEnumerable<ConclaveEpoch?> GetByAirdropStatus(AirdropStatus airdropStatus);
+    IEnumerable<ConclaveEpoch?> GetByAllStatus(EpochStatus epochStatus,
                                                      SnapshotStatus snapshotStatus,
                                                      RewardStatus rewardStatus,
                                                      AirdropStatus airdropStatus);
