@@ -81,13 +81,14 @@ public class Worker : BackgroundService
 
         if (delayInMilliseconds > 0)
         {
-            var delayInMinutes = ((double)delayInMilliseconds / 1000 / 60).ToString();
-            _logger.LogInformation($"Snapshot will execute after {delayInMinutes} minutes...");
+            var delayInDays = ((double)delayInMilliseconds / 1000 / 60 / 60 / 24).ToString();
+            var delayInHours = ((double)delayInMilliseconds / 1000 / 60 / 60).ToString();
+            _logger.LogInformation($"Snapshot will execute after {delayInDays} days...");
+            _logger.LogInformation($"Snapshot will execute after {delayInHours} hours...");
             await Task.Delay((int)delayInMilliseconds);
         }
         _logger.LogInformation($"Exiting {nameof(ExecuteSnapshotSchedulerAsync)}");
     }
-
     private async Task ExecuteNewEpochCheckerAsync(IServiceScope scope)
     {
         _logger.LogInformation($"{nameof(ExecuteNewEpochCheckerAsync)} running...");
