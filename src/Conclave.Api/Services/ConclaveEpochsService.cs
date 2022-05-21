@@ -19,6 +19,42 @@ public class ConclaveEpochsService : IConclaveEpochsService
         _context = context;
     }
 
+    public IEnumerable<ConclaveEpoch?> GetByAirdropStatus(AirdropStatus airdropStatus)
+    {
+        throw new NotImplementedException();
+    }
+
+    public IEnumerable<ConclaveEpoch?> GetByAllStatus(EpochStatus epochStatus, SnapshotStatus snapshotStatus, RewardStatus rewardStatus, AirdropStatus airdropStatus)
+    {
+        throw new NotImplementedException();
+    }
+
+    public ConclaveEpoch? GetByEpochNumber(ulong epochNumber)
+    {
+        throw new NotImplementedException();
+    }
+
+    public IEnumerable<ConclaveEpoch?> GetByEpochStatus(EpochStatus epochStatus)
+    {
+        var epochsByStatus = _context.ConclaveEpochs.Where(e => e.EpochStatus == epochStatus).ToList();
+        return epochsByStatus;
+    }
+
+    public ConclaveEpoch? GetById(Guid id)
+    {
+        throw new NotImplementedException();
+    }
+
+    public IEnumerable<ConclaveEpoch?> GetByRewardStatus(RewardStatus rewardStatus)
+    {
+        throw new NotImplementedException();
+    }
+
+    public IEnumerable<ConclaveEpoch?> GetBySnapshotStatus(SnapshotStatus snapshotStatus)
+    {
+        throw new NotImplementedException();
+    }
+
     public async Task<ConclaveEpoch?> CreateAsync(ConclaveEpoch conclaveEpoch)
     {
         _context.Add(conclaveEpoch);
@@ -48,42 +84,6 @@ public class ConclaveEpochsService : IConclaveEpochsService
     {
         throw new NotImplementedException();
     }
-
-    public Task<IEnumerable<ConclaveEpoch?>> GetByAirdropStatus(AirdropStatus airdropStatus)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<IEnumerable<ConclaveEpoch?>> GetByAllStatus(EpochStatus epochStatus, SnapshotStatus snapshotStatus, RewardStatus rewardStatus, AirdropStatus airdropStatus)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<ConclaveEpoch?> GetByEpochNumber(ulong epochNumber)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<IEnumerable<ConclaveEpoch?>> GetByEpochStatus(EpochStatus epochStatus)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<ConclaveEpoch?> GetById(Guid id)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<IEnumerable<ConclaveEpoch?>> GetByRewardStatus(RewardStatus rewardStatus)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<IEnumerable<ConclaveEpoch?>> GetBySnapshotStatus(SnapshotStatus snapshotStatus)
-    {
-        throw new NotImplementedException();
-    }
-
     public Task<ConclaveEpoch?> Update(ConclaveEpoch conclaveEpoch)
     {
         throw new NotImplementedException();
