@@ -6,6 +6,7 @@ using Conclave.Api.Options;
 using Conclave.Common.Enums;
 using Conclave.Common.Models;
 using Conclave.Common.Utils;
+using Microsoft.Extensions.Options;
 
 namespace Conclave.Snapshot;
 
@@ -77,7 +78,7 @@ public class Worker : BackgroundService
     {
         _logger.LogInformation($"{nameof(ExecuteSnapshotSchedulerAsync)} running...");
         var snapshotSchedulerService = scope.ServiceProvider.GetRequiredService<IConclaveSnapshotSchedulerService>();
-        var delayInMilliseconds = snapshotSchedulerService.GetSnapshotDelayInMilliseconds(CurrentConclaveEpoch!, 60 * 10 * 1000);
+        var delayInMilliseconds = snapshotSchedulerService.GetSnapshotDelayInMilliseconds(CurrentConclaveEpoch!, 60 * 5530 * 1000);
 
         if (delayInMilliseconds > 0)
         {
@@ -126,14 +127,19 @@ public class Worker : BackgroundService
             _logger.LogInformation("Taking snapshot now...");
             var epochService = scope.ServiceProvider.GetRequiredService<IConclaveEpochsService>();
             var snapshotService = scope.ServiceProvider.GetRequiredService<IConclaveSnapshotWorkerService>();
-            var snapshotSettings = scope.ServiceProvider.GetRequiredService<ConclaveCardanoOptions>();
+            var snapshotSettings = scope.ServiceProvider.GetRequiredService<IOptions<ConclaveCardanoOptions>>();
 
-            NewConclaveEpoch.SnapshotStatus = SnapshotStatus.InProgress;
-
-            await epochService.Update(NewConclaveEpoch.Id, NewConclaveEpoch);
-
-            var snapshotList = await snapshotService.SnapshotUniqueDelegatorsForPoolsAsync(snapshotSettings.PoolIds, NewConclaveEpoch);
-            await snapshotService.StoreSnapshotDataAsync(snapshotList);
+            var snapshotList = await snapshotService.SnapshotUniqueDelegatorsForPoolsAsync(snapshotSettings.Value.PoolIds, NewConclaveEpoch);
+            try
+            {
+                await snapshotService.StoreSnapshotDataAsync(snapshotList);
+                NewConclaveEpoch.SnapshotStatus = SnapshotStatus.InProgress;
+                await epochService.Update(NewConclaveEpoch.Id, NewConclaveEpoch);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e.Message);
+            }
             _logger.LogInformation("Snapshot done...");
         }
         _logger.LogInformation($"Exiting {nameof(ExecuteSnapshotAsync)}");
