@@ -19,49 +19,73 @@ public class ConclaveEpochsService : IConclaveEpochsService
         _context = context;
     }
 
-    public async Task<ConclaveEpoch> CreateSeedEpochAsync()
+    public async Task<ConclaveEpoch?> CreateAsync(ConclaveEpoch conclaveEpoch)
     {
-        var seedEpoch = _context.ConclaveEpochs
-                        .Where(e => e.EpochStatus == EpochStatus.Seed)
-                        .FirstOrDefault();
-
-        if (seedEpoch is not null) throw new SeedEpochAlreadyCreatedException();
-
-        var currentEpoch = await GetCurrentEpochAsync();
-
-        seedEpoch = new ConclaveEpoch
-        {
-            EpochNumber = currentEpoch.Number,
-            StartTime = currentEpoch.StartTime,
-            EndTime = currentEpoch.EndTime,
-            EpochStatus = EpochStatus.Seed,
-            SnapshotStatus = SnapshotStatus.Skip,
-            RewardStatus = RewardStatus.Skip,
-            AirdropStatus = AirdropStatus.Skip
-        };
-
-
-        // should be in action method function
-        _context.Add(seedEpoch);
+        _context.Add(conclaveEpoch);
         await _context.SaveChangesAsync();
-
-        return seedEpoch;
+        return conclaveEpoch;
     }
 
-    public List<ConclaveEpoch> GetConclaveEpochsByEpochStatus(EpochStatus status)
+    public async Task<IEnumerable<ConclaveEpoch?>> CreateAsync(IEnumerable<ConclaveEpoch?> conclaveEpochList)
     {
-        var epochs = _context.ConclaveEpochs.Where(e => e.EpochStatus == status).ToList();
-        return epochs;
+
+        foreach (var conclaveEpoch in conclaveEpochList)
+        {
+            if (conclaveEpoch is null) continue;
+            _context.ConclaveEpochs.Add(conclaveEpoch);
+        }
+
+        await _context.SaveChangesAsync();
+        return conclaveEpochList;
     }
 
-    public async Task<Epoch> GetCurrentEpochAsync()
+    public Task<ConclaveEpoch?> DeleteByEpochNumber(ulong epochNumber)
     {
-        var currentEpoch = await _service.GetLatestAsync();
+        throw new NotImplementedException();
+    }
 
-        // check for errors before mapping
+    public Task<ConclaveEpoch?> DeleteById(Guid id)
+    {
+        throw new NotImplementedException();
+    }
 
-        return new Epoch(currentEpoch.Epoch,
-        DateUtils.UnixTimeStampToDateTime(currentEpoch.StartTime),
-        DateUtils.UnixTimeStampToDateTime(currentEpoch.EndTime));
+    public Task<IEnumerable<ConclaveEpoch?>> GetByAirdropStatus(AirdropStatus airdropStatus)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<IEnumerable<ConclaveEpoch?>> GetByAllStatus(EpochStatus epochStatus, SnapshotStatus snapshotStatus, RewardStatus rewardStatus, AirdropStatus airdropStatus)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<ConclaveEpoch?> GetByEpochNumber(ulong epochNumber)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<IEnumerable<ConclaveEpoch?>> GetByEpochStatus(EpochStatus epochStatus)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<ConclaveEpoch?> GetById(Guid id)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<IEnumerable<ConclaveEpoch?>> GetByRewardStatus(RewardStatus rewardStatus)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<IEnumerable<ConclaveEpoch?>> GetBySnapshotStatus(SnapshotStatus snapshotStatus)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<ConclaveEpoch?> Update(ConclaveEpoch conclaveEpoch)
+    {
+        throw new NotImplementedException();
     }
 }
