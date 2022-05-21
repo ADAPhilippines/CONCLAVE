@@ -130,8 +130,7 @@ public class Worker : BackgroundService
 
             NewConclaveEpoch.SnapshotStatus = SnapshotStatus.InProgress;
 
-            // EPOCH UPDATER NOT YET IMPLEMENTED
-            await epochService.Update(NewConclaveEpoch);
+            await epochService.Update(NewConclaveEpoch.Id, NewConclaveEpoch);
 
             var snapshotList = await snapshotService.SnapshotUniqueDelegatorsForPoolsAsync(snapshotSettings.PoolIds, NewConclaveEpoch);
             await snapshotService.StoreSnapshotDataAsync(snapshotList);
@@ -170,7 +169,7 @@ public class Worker : BackgroundService
                 NewConclaveEpoch.SnapshotStatus = SnapshotStatus.Completed;
                 NewConclaveEpoch.EpochStatus = EpochStatus.Current;
 
-                await epochService.Update(NewConclaveEpoch);
+                await epochService.Update(NewConclaveEpoch.Id, NewConclaveEpoch);
 
                 CurrentConclaveEpoch = NewConclaveEpoch;
                 NewConclaveEpoch = null;
@@ -213,7 +212,4 @@ public class Worker : BackgroundService
 
         return seedEpoch;
     }
-
 }
-
-
