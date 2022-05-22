@@ -13,4 +13,5 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<ConclaveEpoch> ConclaveEpochs => Set<ConclaveEpoch>();
     public DbSet<ConclaveSnapshot> ConclaveSnapshots => Set<ConclaveSnapshot>();
+    public DbSet<ConclaveDelegator> ConclaveDelegators => Set<ConclaveDelegator>();
 }

@@ -39,6 +39,7 @@ public class ConclaveSnapshotWorkerService : IConclaveSnapshotWorkerService
             {
                 ConclaveEpoch = conclaveEpoch,
                 StakingId = delegator.StakeId,
+                PoolId = poolId,
                 DelegatedAmount = delegator.LovelacesAmount,
                 DateCreated = DateUtils.DateTimeToUtc(DateTime.Now)
             });

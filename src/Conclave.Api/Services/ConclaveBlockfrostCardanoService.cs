@@ -24,7 +24,13 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
     public async Task<IEnumerable<string?>> GetAssociatedWalletAddressAsync(string stakingId)
     {
         var addresses = await _accountsService.GetAddressesAsync(stakingId);
-        throw new NotImplementedException();
+        List<string> stringAddresses = new();
+        foreach (var address in addresses)
+        {
+            stringAddresses.Add(address.Address);
+        }
+
+        return stringAddresses;
     }
 
     public async Task<Epoch?> GetCurrentEpochAsync()
