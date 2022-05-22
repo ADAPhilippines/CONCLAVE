@@ -37,6 +37,7 @@ public class Worker : BackgroundService
             await ExecuteNewEpochCheckerAsync(scope);
             await ExecuteSnapshotAsync(scope);
             await ExecuteNewEpochCreationSchedulerAsync(scope);
+            await ExecuteConclaveDelegatorFetcherAsync(scope);
         }
     }
 
@@ -90,6 +91,7 @@ public class Worker : BackgroundService
         }
         _logger.LogInformation($"Exiting {nameof(ExecuteSnapshotSchedulerAsync)}");
     }
+
     private async Task ExecuteNewEpochCheckerAsync(IServiceScope scope)
     {
         _logger.LogInformation($"{nameof(ExecuteNewEpochCheckerAsync)} running...");
@@ -182,6 +184,27 @@ public class Worker : BackgroundService
             }
         }
         _logger.LogInformation($"Exiting {nameof(ExecuteNewEpochCreationSchedulerAsync)}");
+    }
+
+    private async Task ExecuteConclaveDelegatorFetcherAsync(IServiceScope scope)
+    {
+        if (NewConclaveEpoch is null && CurrentConclaveEpoch!.SnapshotStatus == SnapshotStatus.Completed)
+        {
+            var cardanoService = scope.ServiceProvider.GetRequiredService<IConclaveCardanoService>();
+            var snapshotService = scope.ServiceProvider.GetRequiredService<IConclaveSnapshotService>();
+            var conclaveDelegatorService = scope.ServiceProvider.GetRequiredService<IConclaveDelegatorService>();
+            var conclaveDelegatorWorkerService = scope.ServiceProvider.GetRequiredService<IConclaveDelegatorWorkerService>();
+
+            var currentConclaveDelegators = conclaveDelegatorService.GetAllByEpochNumber(CurrentConclaveEpoch.EpochNumber);
+
+            if (!currentConclaveDelegators.Any())
+            {
+                // FETCH
+                var snapshotList = snapshotService.GetByEpochNumber(CurrentConclaveEpoch.EpochNumber);
+                var conclaveDelegators = await conclaveDelegatorWorkerService.GetAllConclaveDelegatorsFromSnapshotListAsync(snapshotList);
+                await conclaveDelegatorWorkerService.StoreConclaveDelegatorsAsync(conclaveDelegators);
+            }
+        }
     }
 
     // Helper Methods
