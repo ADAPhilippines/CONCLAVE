@@ -7,7 +7,7 @@ public interface IConclaveSnapshotService
 {
 
     // READ
-    Task<IEnumerable<ConclaveSnapshot?>> GetByEpochNumber(ulong epochNumber);
+    IEnumerable<ConclaveSnapshot?> GetByEpochNumber(ulong epochNumber);
     Task<IEnumerable<ConclaveSnapshot?>> GetByStakingAddress(string stakingAddress);
     Task<ConclaveSnapshot?> GetById(Guid id);
 
