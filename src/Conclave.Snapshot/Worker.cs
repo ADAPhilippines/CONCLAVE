@@ -85,10 +85,13 @@ public class Worker : BackgroundService
 
         if (delayInMilliseconds > 0)
         {
-            var delayInDays = ((double)delayInMilliseconds / 1000 / 60 / 60 / 24).ToString();
-            var delayInHours = ((double)delayInMilliseconds / 1000 / 60 / 60).ToString();
-            _logger.LogInformation($"Snapshot will execute after {delayInDays} days...");
-            _logger.LogInformation($"Snapshot will execute after {delayInHours} hours...");
+            var delayInHours = (double)delayInMilliseconds / 1000 / 60 / 60;
+            var days = delayInHours / 24; // 
+            var hours = days % 1 * 24;
+            var minutes = hours % 1 * 60;
+            var seconds = minutes % 1 * 60;
+
+            _logger.LogInformation($"Snapshot will execute after {(int)days} days {(int)hours} hours {(int)minutes} minutes {(int)seconds} seconds");
             await Task.Delay((int)delayInMilliseconds);
         }
         _logger.LogInformation($"Exiting {nameof(ExecuteSnapshotSchedulerAsync)}");
