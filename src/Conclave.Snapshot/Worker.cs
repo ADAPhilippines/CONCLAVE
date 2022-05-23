@@ -81,7 +81,7 @@ public class Worker : BackgroundService
     {
         _logger.LogInformation($"{nameof(ExecuteSnapshotSchedulerAsync)} running...");
         var snapshotSchedulerService = scope.ServiceProvider.GetRequiredService<IConclaveSnapshotSchedulerService>();
-        var delayInMilliseconds = snapshotSchedulerService.GetSnapshotDelayInMilliseconds(CurrentConclaveEpoch!, 0);
+        var delayInMilliseconds = snapshotSchedulerService.GetSnapshotDelayInMilliseconds(CurrentConclaveEpoch!, 60 * 10 * 1000);
 
         if (delayInMilliseconds > 0)
         {
