@@ -1,3 +1,4 @@
+using System.Runtime;
 namespace Conclave.Common.Utils;
 
 
@@ -7,7 +8,8 @@ public static class DateUtils
     {
         // Unix timestamp is seconds past epoch
         DateTime dateTime = new(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-        dateTime = dateTime.AddSeconds(unixTimeStamp);
+        var dateoffset = DateTimeOffset.Now.Offset;
+        dateTime = dateTime.AddSeconds(unixTimeStamp + dateoffset.TotalSeconds);
         return dateTime;
     }
 
