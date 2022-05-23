@@ -4,30 +4,30 @@ using Conclave.Data;
 
 namespace Conclave.Api.Services;
 
-public class ConclaveDelegatorService : IConclaveDelegatorService
+public class ConclaveEpochDelegatorService : IConclaveEpochDelegatorService
 {
     private readonly ApplicationDbContext _context;
 
-    public ConclaveDelegatorService(ApplicationDbContext context)
+    public ConclaveEpochDelegatorService(ApplicationDbContext context)
     {
         _context = context;
     }
-    public Task<ConclaveDelegator?> CreateAsync(ConclaveDelegator conclaveDelegator)
+    public Task<ConclaveEpochDelegator?> CreateAsync(ConclaveEpochDelegator conclaveDelegator)
     {
         throw new NotImplementedException();
     }
 
-    public Task<IEnumerable<ConclaveDelegator?>> CreateAsync(IEnumerable<ConclaveDelegator> conclaveDelegators)
+    public Task<IEnumerable<ConclaveEpochDelegator?>> CreateAsync(IEnumerable<ConclaveEpochDelegator> conclaveDelegators)
     {
         throw new NotImplementedException();
     }
 
-    public Task<ConclaveDelegator?> DeleteAsync(Guid id)
+    public Task<ConclaveEpochDelegator?> DeleteAsync(Guid id)
     {
         throw new NotImplementedException();
     }
 
-    public IEnumerable<ConclaveDelegator?> GetAllByEpochNumber(ulong epochNumber)
+    public IEnumerable<ConclaveEpochDelegator?> GetAllByEpochNumber(ulong epochNumber)
     {
         var conclaveDelegators = _context.ConclaveDelegators
                                                 .Where(c => c.ConclaveSnapshot.ConclaveEpoch.EpochNumber == epochNumber)
@@ -36,22 +36,22 @@ public class ConclaveDelegatorService : IConclaveDelegatorService
         return conclaveDelegators;
     }
 
-    public ConclaveDelegator? GetById(Guid id)
+    public ConclaveEpochDelegator? GetById(Guid id)
     {
         throw new NotImplementedException();
     }
 
-    public ConclaveDelegator? GetByStakeAddress(string stakeAddress)
+    public ConclaveEpochDelegator? GetByStakeAddress(string stakeAddress)
     {
         throw new NotImplementedException();
     }
 
-    public ConclaveDelegator? GetByWalletAddress(string walletAddress)
+    public ConclaveEpochDelegator? GetByWalletAddress(string walletAddress)
     {
         throw new NotImplementedException();
     }
 
-    public Task<ConclaveDelegator?> UpdateAsync(Guid id, ConclaveDelegator conclaveDelegator)
+    public Task<ConclaveEpochDelegator?> UpdateAsync(Guid id, ConclaveEpochDelegator conclaveDelegator)
     {
         throw new NotImplementedException();
     }

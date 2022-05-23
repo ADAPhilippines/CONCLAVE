@@ -2,7 +2,7 @@ using Conclave.Common.Utils;
 
 namespace Conclave.Common.Models;
 
-public class ConclaveDelegator
+public class ConclaveEpochDelegator
 {
 
     public Guid Id { get; set; } = Guid.NewGuid();
