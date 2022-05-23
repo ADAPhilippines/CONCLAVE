@@ -1,6 +1,7 @@
 using Conclave.Api.Interfaces.Services;
 using Conclave.Common.Models;
 using Conclave.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Conclave.Api.Services;
 
@@ -31,6 +32,7 @@ public class ConclaveEpochDelegatorService : IConclaveEpochDelegatorService
     {
         var conclaveDelegators = _context.ConclaveDelegators
                                                 .Where(c => c.ConclaveSnapshot.ConclaveEpoch.EpochNumber == epochNumber)
+                                                .Include(x => x.ConclaveSnapshot)
                                                 .ToList();
 
         return conclaveDelegators;
