@@ -4,26 +4,26 @@ using Conclave.Data;
 
 namespace Conclave.Api.Services;
 
-public class ConclaveDelegatorWorkerService : IConclaveDelegatorWorkerService
+public class ConclaveEpochDelegatorWorkerService : IConclaveEpochDelegatorWorkerService
 {
     private readonly ApplicationDbContext _context;
     private readonly IConclaveCardanoService _service;
 
-    public ConclaveDelegatorWorkerService(ApplicationDbContext context, IConclaveCardanoService service)
+    public ConclaveEpochDelegatorWorkerService(ApplicationDbContext context, IConclaveCardanoService service)
     {
         _context = context;
         _service = service;
     }
 
-    public async Task<IEnumerable<ConclaveDelegator?>> GetAllConclaveDelegatorsFromSnapshotListAsync(IEnumerable<ConclaveSnapshot?> snapshots)
+    public async Task<IEnumerable<ConclaveEpochDelegator?>> GetAllConclaveDelegatorsFromSnapshotListAsync(IEnumerable<ConclaveSnapshot?> snapshots)
     {
-        List<ConclaveDelegator> conclaveDelegators = new();
+        List<ConclaveEpochDelegator> conclaveDelegators = new();
         foreach (var snapshot in snapshots)
         {
             var addresses = await _service.GetAssociatedWalletAddressAsync(snapshot!.StakingId);
             var address = addresses.FirstOrDefault();
 
-            var conclaveDelegator = new ConclaveDelegator
+            var conclaveDelegator = new ConclaveEpochDelegator
             {
                 ConclaveSnapshot = snapshot,
                 WalletAddress = address
@@ -35,7 +35,7 @@ public class ConclaveDelegatorWorkerService : IConclaveDelegatorWorkerService
         return conclaveDelegators;
     }
 
-    public async Task<IEnumerable<ConclaveDelegator?>> StoreConclaveDelegatorsAsync(IEnumerable<ConclaveDelegator> conclaveDelegators)
+    public async Task<IEnumerable<ConclaveEpochDelegator?>> StoreConclaveDelegatorsAsync(IEnumerable<ConclaveEpochDelegator> conclaveDelegators)
     {
         if (conclaveDelegators.Any())
         {
