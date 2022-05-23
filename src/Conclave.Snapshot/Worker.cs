@@ -15,6 +15,8 @@ public class Worker : BackgroundService
     private readonly ILogger<Worker> _logger;
     private readonly IServiceProvider _provider;
 
+    private readonly IServiceProvider _scope;
+
     private ConclaveEpoch? SeedEpoch { get; set; }
     private ConclaveEpoch? CurrentConclaveEpoch { get; set; }
     private ConclaveEpoch? NewConclaveEpoch { get; set; }
@@ -79,7 +81,7 @@ public class Worker : BackgroundService
     {
         _logger.LogInformation($"{nameof(ExecuteSnapshotSchedulerAsync)} running...");
         var snapshotSchedulerService = scope.ServiceProvider.GetRequiredService<IConclaveSnapshotSchedulerService>();
-        var delayInMilliseconds = snapshotSchedulerService.GetSnapshotDelayInMilliseconds(CurrentConclaveEpoch!, 60 * 5530 * 1000);
+        var delayInMilliseconds = snapshotSchedulerService.GetSnapshotDelayInMilliseconds(CurrentConclaveEpoch!, 0);
 
         if (delayInMilliseconds > 0)
         {
@@ -179,6 +181,14 @@ public class Worker : BackgroundService
 
                 await epochService.Update(NewConclaveEpoch.Id, NewConclaveEpoch);
 
+                if (CurrentConclaveEpoch.EpochStatus != EpochStatus.Seed)
+                {
+                    CurrentConclaveEpoch.EpochStatus = EpochStatus.Old;
+                }
+
+                await epochService.Update(CurrentConclaveEpoch.Id, CurrentConclaveEpoch);
+                await epochService.Update(NewConclaveEpoch.Id, NewConclaveEpoch);
+
                 CurrentConclaveEpoch = NewConclaveEpoch;
                 NewConclaveEpoch = null;
             }
@@ -188,23 +198,26 @@ public class Worker : BackgroundService
 
     private async Task ExecuteConclaveDelegatorFetcherAsync(IServiceScope scope)
     {
+        _logger.LogInformation($"{nameof(ExecuteConclaveDelegatorFetcherAsync)} running...");
         if (NewConclaveEpoch is null && CurrentConclaveEpoch!.SnapshotStatus == SnapshotStatus.Completed)
         {
             var cardanoService = scope.ServiceProvider.GetRequiredService<IConclaveCardanoService>();
             var snapshotService = scope.ServiceProvider.GetRequiredService<IConclaveSnapshotService>();
-            var conclaveDelegatorService = scope.ServiceProvider.GetRequiredService<IConclaveDelegatorService>();
-            var conclaveDelegatorWorkerService = scope.ServiceProvider.GetRequiredService<IConclaveDelegatorWorkerService>();
+            var conclaveDelegatorService = scope.ServiceProvider.GetRequiredService<IConclaveEpochDelegatorService>();
+            var conclaveDelegatorWorkerService = scope.ServiceProvider.GetRequiredService<IConclaveEpochDelegatorWorkerService>();
 
             var currentConclaveDelegators = conclaveDelegatorService.GetAllByEpochNumber(CurrentConclaveEpoch.EpochNumber);
 
             if (!currentConclaveDelegators.Any())
             {
+                _logger.LogInformation("Fetching wallet address and creating conclave delegator entries on the database...");
                 // FETCH
                 var snapshotList = snapshotService.GetByEpochNumber(CurrentConclaveEpoch.EpochNumber);
                 var conclaveDelegators = await conclaveDelegatorWorkerService.GetAllConclaveDelegatorsFromSnapshotListAsync(snapshotList);
                 await conclaveDelegatorWorkerService.StoreConclaveDelegatorsAsync(conclaveDelegators);
             }
         }
+        _logger.LogInformation($"Exiting {nameof(ExecuteConclaveDelegatorFetcherAsync)}");
     }
 
     // Helper Methods
