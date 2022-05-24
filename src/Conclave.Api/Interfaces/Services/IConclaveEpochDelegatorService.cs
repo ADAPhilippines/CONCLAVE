@@ -13,7 +13,6 @@ public interface IConclaveEpochDelegatorService
     ConclaveEpochDelegator? GetByWalletAddress(string walletAddress);
 
     // WRITE
-
     Task<ConclaveEpochDelegator?> CreateAsync(ConclaveEpochDelegator conclaveDelegator);
     Task<IEnumerable<ConclaveEpochDelegator?>> CreateAsync(IEnumerable<ConclaveEpochDelegator> conclaveDelegators);
     Task<ConclaveEpochDelegator?> UpdateAsync(Guid id, ConclaveEpochDelegator conclaveDelegator);
