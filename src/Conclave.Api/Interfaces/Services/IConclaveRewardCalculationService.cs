@@ -5,8 +5,10 @@ using Conclave.Common.Models;
 
 public interface IConclaveRewardCalculationService
 {
-    ConclaveEpochDelegatorReward? CalculateRewardSharePercentage(ulong totalDelegated, ConclaveEpochDelegator delegator);
-    Task<ConclaveEpochDelegatorReward?> CalculateConclaveTokenShare(int totalReward, ConclaveEpochDelegatorReward conclaveDelegatorReward);
-    Task<IEnumerable<ConclaveEpochDelegatorReward>?> CalculateAllRewardSharePercentageByEpochAsync(ConclaveEpoch conclaveEpoch);
-    Task<IEnumerable<ConclaveEpochDelegatorReward>?> CalculateAllConclaveTokenShareByEpoch(int totalReward, IEnumerable<ConclaveEpochDelegatorReward> conclaveDelegatorRewards);
+    double GetTotalPercentageSharesForEpoch(ulong epochNumber);
+    ConclaveEpochDelegatorReward? CalculateRewardSharePercentage(ulong totalDelegated, ConclaveEpochReward conclaveEpochReward, ConclaveEpochDelegator delegator);
+    ConclaveEpochDelegatorReward? CalculateConclaveTokenShare(double totalReward, ConclaveEpochDelegatorReward conclaveDelegatorReward);
+    Task<IEnumerable<ConclaveEpochDelegatorReward>?> CalculateAllRewardSharePercentageByEpochAsync(ulong epochNumber);
+    Task<IEnumerable<ConclaveEpochDelegatorReward>?> CalculateAllConclaveTokenShareByEpochAsync(ulong epochNumber);
+
 }

@@ -7,11 +7,12 @@ public interface IConclaveEpochRewardService
 
     // READ
 
-    ConclaveEpochReward GetById(Guid Id);
-    ConclaveEpochReward GetByEpochNumber(ulong epochNumber);
+    ConclaveEpochReward? GetById(Guid Id);
+    ConclaveEpochReward? GetByEpochNumber(ulong epochNumber);
 
     // WRITE
 
     Task<ConclaveEpochReward> CreateAsync(ConclaveEpochReward conclaveEpochReward);
-    Task<ConclaveEpochReward> UpdateAsync(ConclaveEpochReward conclaveEpochReward);
+    Task<ConclaveEpochReward> UpdateAsync(Guid id, ConclaveEpochReward conclaveEpochReward);
+    Task<ConclaveEpochReward> DeleteAsync(Guid id);
 }
