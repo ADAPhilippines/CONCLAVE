@@ -13,7 +13,7 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<ConclaveEpoch> ConclaveEpochs => Set<ConclaveEpoch>();
     public DbSet<ConclaveSnapshot> ConclaveSnapshots => Set<ConclaveSnapshot>();
-    public DbSet<ConclaveEpochDelegator> ConclaveDelegators => Set<ConclaveEpochDelegator>();
+    public DbSet<ConclaveEpochDelegator> ConclaveEpochDelegators => Set<ConclaveEpochDelegator>();
     public DbSet<ConclaveEpochReward> ConclaveEpochRewards => Set<ConclaveEpochReward>();
     public DbSet<ConclaveEpochDelegatorReward> ConclaveEpochDelegatorRewards => Set<ConclaveEpochDelegatorReward>();
 }
