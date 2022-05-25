@@ -9,7 +9,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/Conclave.Snapshot/bin/Debug/net6.0/Conclave.Snapshot.Server.dll",
+            "program": "${workspaceFolder}/Conclave.Snapshot/bin/Debug/net6.0/Conclave.Api.dll",
             "args": [],
             "cwd": "${workspaceFolder}/Conclave.Snapshot",
             "stopAtEntry": false,
