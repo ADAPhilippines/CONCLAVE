@@ -16,6 +16,9 @@ public static class ConclaveCardanoServicesExtension
         services.AddScoped<IConclaveSnapshotSchedulerService, ConclaveSnapshotSchedulerService>();
         services.AddScoped<IConclaveEpochDelegatorService, ConclaveEpochDelegatorService>();
         services.AddScoped<IConclaveEpochDelegatorWorkerService, ConclaveEpochDelegatorWorkerService>();
+        services.AddScoped<IConclaveEpochDelegatorRewardService, ConclaveEpochDelegatorRewardService>();
+        services.AddScoped<IConclaveRewardCalculationService, ConclaveRewardCalculationService>();
+        services.AddScoped<IConclaveEpochRewardService, ConclaveEpochRewardService>();
         services.Configure<ConclaveCardanoOptions>(config);
         return services;
     }
