@@ -29,7 +29,9 @@ public class ConclaveEpochsService : IConclaveEpochsService
 
     public ConclaveEpoch? GetByEpochNumber(ulong epochNumber)
     {
-        throw new NotImplementedException();
+        var conclaveEpoch = _context.ConclaveEpochs.Where(c => c.EpochNumber == epochNumber)
+                                                                  .FirstOrDefault();
+        return conclaveEpoch;
     }
 
     public IEnumerable<ConclaveEpoch?> GetByEpochStatus(EpochStatus epochStatus)

@@ -1,6 +1,7 @@
 using Conclave.Api.Interfaces.Services;
 using Conclave.Common.Models;
 using Conclave.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Conclave.Api.Services;
 
@@ -38,7 +39,11 @@ public class ConclaveEpochDelegatorRewardService : IConclaveEpochDelegatorReward
 
     public IEnumerable<ConclaveEpochDelegatorReward?> GetByEpochNumber(ulong epochNumber)
     {
-        throw new NotImplementedException();
+        var delegatorRewards = _context.ConclaveEpochDelegatorRewards
+                                                                                .Include(c => c.ConclaveEpochReward)
+                                                                                .Where(c => c.ConclaveEpochReward.EpochNumber == epochNumber)
+                                                                                .ToList();
+        return delegatorRewards;
     }
 
     public ConclaveEpochDelegatorReward? GetById(Guid id)

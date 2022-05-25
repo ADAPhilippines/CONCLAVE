@@ -30,7 +30,7 @@ public class ConclaveEpochDelegatorService : IConclaveEpochDelegatorService
 
     public IEnumerable<ConclaveEpochDelegator?> GetAllByEpochNumber(ulong epochNumber)
     {
-        var conclaveDelegators = _context.ConclaveDelegators
+        var conclaveDelegators = _context.ConclaveEpochDelegators
                                                 .Where(c => c.ConclaveSnapshot.ConclaveEpoch.EpochNumber == epochNumber)
                                                 .Include(x => x.ConclaveSnapshot)
                                                 .ToList();
