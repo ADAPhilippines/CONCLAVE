@@ -9,7 +9,7 @@ public static class ConclaveCardanoServicesExtension
 
     public static IServiceCollection AddConclaveApi(this IServiceCollection services, IConfiguration config)
     {
-        services.AddScoped<IConclaveCardanoService, ConclaveBlockfrostCardanoService>();
+        services.AddScoped<IConclaveCardanoService, ConclaveBlockfrostCardanoService>(); 
         services.AddScoped<IConclaveEpochsService, ConclaveEpochsService>();
         services.AddScoped<IConclaveSnapshotService, ConclaveSnapshotService>();
         services.AddScoped<IConclaveSnapshotWorkerService, ConclaveSnapshotWorkerService>();
