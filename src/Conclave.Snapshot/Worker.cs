@@ -15,11 +15,10 @@ public class Worker : BackgroundService
     private readonly ILogger<Worker> _logger;
     private readonly IServiceProvider _provider;
 
-    private readonly IServiceProvider _scope;
-
     private ConclaveEpoch? SeedEpoch { get; set; }
     private ConclaveEpoch? CurrentConclaveEpoch { get; set; }
     private ConclaveEpoch? NewConclaveEpoch { get; set; }
+    private IServiceProvider _scopedProvider;
 
     public Worker(ILogger<Worker> logger, IServiceProvider provider)
     {
@@ -31,38 +30,65 @@ public class Worker : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            using var scope = _provider.CreateScope();
+            try
+            {
+                using var scope = _provider.CreateScope();
+                _scopedProvider = scope.ServiceProvider;
 
-            await ExecuteSeederAsync(scope);
-            await ExecuteCurrentEpochSetterAsync(scope);
-            await ExecuteSnapshotSchedulerAsync(scope);
-            await ExecuteNewEpochCheckerAsync(scope);
-            await ExecuteSnapshotAsync(scope);
-            await ExecuteNewEpochCreationSchedulerAsync(scope);
-            await ExecuteConclaveDelegatorFetcherAsync(scope);
+                // await ExecuteWorkerServiceAsync();
+                await ExecuteTestWorkerServiceAsync();
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e.Message);
+                await Task.Delay(120000, stoppingToken);
+            }
         }
+    }
+
+    private async Task ExecuteWorkerServiceAsync()
+    {
+        await ExecuteSeederAsync();
+        await ExecuteCurrentEpochSetterAsync();
+        await ExecuteSnapshotSchedulerAsync();
+        await ExecuteNewEpochCheckerAsync();
+        await ExecuteDelegatorSnapshotAsync();
+        await ExecuteHolderSnapshotAsync();
+        await ExecuteNewEpochCreationSchedulerAsync();
+        await ExecuteConclaveDelegatorFetcherAsync();
+    }
+
+    private async Task ExecuteTestWorkerServiceAsync()
+    {
+        await ExecuteSeederAsync();
+        await ExecuteCurrentEpochSetterAsync();
+        await ExecuteNewEpochCheckerAsync();
+        await ExecuteDelegatorSnapshotAsync();
+        await ExecuteHolderSnapshotAsync();
+        await ExecuteTestNewEpochCreationSchedulerAsync();
+        await ExecuteConclaveDelegatorFetcherAsync();
     }
 
     // Wrapper Methods
 
-    private async Task ExecuteSeederAsync(IServiceScope scope)
+    private async Task ExecuteSeederAsync()
     {
         _logger.LogInformation($"{nameof(ExecuteSeederAsync)} running...");
         if (SeedEpoch is null)
         {
             _logger.LogInformation("SeedEpoch is null. Fetching seed epoch...");
-            SeedEpoch = GetSeedEpoch(scope);
+            SeedEpoch = GetSeedEpoch(_scopedProvider);
 
             if (SeedEpoch is null)
             {
                 _logger.LogInformation("SeedEpoch not yet created. Creating seed epoch...");
-                SeedEpoch = await CreateSeedEpoch(scope);
+                SeedEpoch = await CreateSeedEpoch(_scopedProvider);
             }
         }
         _logger.LogInformation($"Exiting {nameof(ExecuteSeederAsync)}");
     }
 
-    private async Task ExecuteCurrentEpochSetterAsync(IServiceScope scope)
+    private async Task ExecuteCurrentEpochSetterAsync()
     {
         _logger.LogInformation($"{nameof(ExecuteCurrentEpochSetterAsync)} running...");
         if (SeedEpoch is null) throw new Exception("No seed found!");
@@ -70,18 +96,18 @@ public class Worker : BackgroundService
         if (CurrentConclaveEpoch is null)
         {
             _logger.LogInformation("Current conclave epoch is null. Setting current conclave epoch...");
-            var epochService = scope.ServiceProvider.GetRequiredService<IConclaveEpochsService>();
+            var epochService = _scopedProvider.GetRequiredService<IConclaveEpochsService>();
             CurrentConclaveEpoch = epochService.GetByEpochStatus(EpochStatus.Current).FirstOrDefault() ?? SeedEpoch;
         }
         await Task.Delay(1);
         _logger.LogInformation($"Exiting {nameof(ExecuteCurrentEpochSetterAsync)}");
     }
 
-    private async Task ExecuteSnapshotSchedulerAsync(IServiceScope scope)
+    private async Task ExecuteSnapshotSchedulerAsync()
     {
         _logger.LogInformation($"{nameof(ExecuteSnapshotSchedulerAsync)} running...");
-        var snapshotSchedulerService = scope.ServiceProvider.GetRequiredService<IConclaveSnapshotSchedulerService>();
-        var delayInMilliseconds = snapshotSchedulerService.GetSnapshotDelayInMilliseconds(CurrentConclaveEpoch!, 60 * 10 * 1000);
+        var snapshotSchedulerService = _scopedProvider.GetRequiredService<IConclaveSnapshotSchedulerService>();
+        var delayInMilliseconds = snapshotSchedulerService.GetSnapshotDelayInMilliseconds(CurrentConclaveEpoch!, 60 * 60 * 1000);
 
         if (delayInMilliseconds > 0)
         {
@@ -97,13 +123,13 @@ public class Worker : BackgroundService
         _logger.LogInformation($"Exiting {nameof(ExecuteSnapshotSchedulerAsync)}");
     }
 
-    private async Task ExecuteNewEpochCheckerAsync(IServiceScope scope)
+    private async Task ExecuteNewEpochCheckerAsync()
     {
         _logger.LogInformation($"{nameof(ExecuteNewEpochCheckerAsync)} running...");
         if (NewConclaveEpoch is null)
         {
             _logger.LogInformation("New conclave epoch is null. Fetching data from database...");
-            var epochService = scope.ServiceProvider.GetRequiredService<IConclaveEpochsService>();
+            var epochService = _scopedProvider.GetRequiredService<IConclaveEpochsService>();
             NewConclaveEpoch = epochService.GetByEpochStatus(EpochStatus.New).FirstOrDefault();
 
             if (NewConclaveEpoch is null)
@@ -126,20 +152,20 @@ public class Worker : BackgroundService
         _logger.LogInformation($"Exiting {nameof(ExecuteNewEpochCheckerAsync)}");
     }
 
-    private async Task ExecuteSnapshotAsync(IServiceScope scope)
+    private async Task ExecuteDelegatorSnapshotAsync()
     {
-        _logger.LogInformation($"{nameof(ExecuteSnapshotAsync)} running...");
+        _logger.LogInformation($"{nameof(ExecuteDelegatorSnapshotAsync)} running...");
         if (NewConclaveEpoch!.SnapshotStatus == SnapshotStatus.New)
         {
-            _logger.LogInformation("Taking snapshot now...");
-            var epochService = scope.ServiceProvider.GetRequiredService<IConclaveEpochsService>();
-            var snapshotService = scope.ServiceProvider.GetRequiredService<IConclaveSnapshotWorkerService>();
-            var snapshotSettings = scope.ServiceProvider.GetRequiredService<IOptions<ConclaveCardanoOptions>>();
+            _logger.LogInformation("Taking delegator snapshot now...");
+            var epochService = _scopedProvider.GetRequiredService<IConclaveEpochsService>();
+            var snapshotService = _scopedProvider.GetRequiredService<IConclaveSnapshotWorkerService>();
+            var snapshotSettings = _scopedProvider.GetRequiredService<IOptions<ConclaveCardanoOptions>>();
 
             var snapshotList = await snapshotService.SnapshotUniqueDelegatorsForPoolsAsync(snapshotSettings.Value.PoolIds, NewConclaveEpoch);
             try
             {
-                await snapshotService.StoreSnapshotDataAsync(snapshotList);
+                await snapshotService.StoreDelegatorSnapshotDataAsync(snapshotList);
                 NewConclaveEpoch.SnapshotStatus = SnapshotStatus.InProgress;
                 await epochService.Update(NewConclaveEpoch.Id, NewConclaveEpoch);
             }
@@ -147,24 +173,47 @@ public class Worker : BackgroundService
             {
                 _logger.LogError(e.Message);
             }
-            _logger.LogInformation("Snapshot done...");
+            _logger.LogInformation("Delegator Snapshot done...");
         }
-        _logger.LogInformation($"Exiting {nameof(ExecuteSnapshotAsync)}");
+        _logger.LogInformation($"Exiting {nameof(ExecuteDelegatorSnapshotAsync)}");
     }
 
-    private async Task ExecuteNewEpochCreationSchedulerAsync(IServiceScope scope)
+    private async Task ExecuteHolderSnapshotAsync()
+    {
+        _logger.LogInformation($"{nameof(ExecuteDelegatorSnapshotAsync)} running...");
+        if (NewConclaveEpoch.SnapshotStatus == SnapshotStatus.InProgress)
+        {
+            _logger.LogInformation("Taking holder snapshot now...");
+            var epochService = _scopedProvider.GetRequiredService<IConclaveEpochsService>();
+            var snapshotService = _scopedProvider.GetRequiredService<IConclaveSnapshotWorkerService>();
+            var snapshotSettings = _scopedProvider.GetRequiredService<IOptions<ConclaveCardanoOptions>>();
+
+            var snapshotList = await snapshotService.SnapshotUniqueHoldersForAssetAsync(snapshotSettings.Value.ConclaveAddress, NewConclaveEpoch);
+            try
+            {
+                await snapshotService.StoreHolderSnapshotDataAsync(snapshotList);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e.Message);
+            }
+            _logger.LogInformation("Holder Snapshot done...");
+        }
+    }
+
+    private async Task ExecuteNewEpochCreationSchedulerAsync()
     {
         _logger.LogInformation($"{nameof(ExecuteNewEpochCreationSchedulerAsync)} running...");
-        var snapshotSchedulerService = scope.ServiceProvider.GetRequiredService<IConclaveSnapshotSchedulerService>();
-        var cardanoService = scope.ServiceProvider.GetRequiredService<IConclaveCardanoService>();
-        var epochService = scope.ServiceProvider.GetRequiredService<IConclaveEpochsService>();
+        var snapshotSchedulerService = _scopedProvider.GetRequiredService<IConclaveSnapshotSchedulerService>();
+        var cardanoService = _scopedProvider.GetRequiredService<IConclaveCardanoService>();
+        var epochService = _scopedProvider.GetRequiredService<IConclaveEpochsService>();
 
         while (NewConclaveEpoch is not null)
         {
             _logger.LogInformation("Fetching new epoch data...");
             if (NewConclaveEpoch.SnapshotStatus == SnapshotStatus.InProgress)
             {
-                var delayInMilliseconds = snapshotSchedulerService.GetNewEpochCreationDelayInMilliseconds(CurrentConclaveEpoch!, 60 * 10 * 1000);
+                var delayInMilliseconds = snapshotSchedulerService.GetNewEpochCreationDelayInMilliseconds(CurrentConclaveEpoch!, 60 * 61 * 1000);
 
                 if (delayInMilliseconds > 0)
                 {
@@ -195,19 +244,48 @@ public class Worker : BackgroundService
                 CurrentConclaveEpoch = NewConclaveEpoch;
                 NewConclaveEpoch = null;
             }
+            else
+            {
+                await Task.Delay(60 * 5 * 1000);
+            }
         }
         _logger.LogInformation($"Exiting {nameof(ExecuteNewEpochCreationSchedulerAsync)}");
     }
 
-    private async Task ExecuteConclaveDelegatorFetcherAsync(IServiceScope scope)
+    private async Task ExecuteTestNewEpochCreationSchedulerAsync()
+    {
+
+        _logger.LogInformation($"{nameof(ExecuteTestNewEpochCreationSchedulerAsync)} running...");
+        var snapshotSchedulerService = _scopedProvider.GetRequiredService<IConclaveSnapshotSchedulerService>();
+        var cardanoService = _scopedProvider.GetRequiredService<IConclaveCardanoService>();
+        var epochService = _scopedProvider.GetRequiredService<IConclaveEpochsService>();
+
+        _logger.LogInformation("New epoch created. Updating statuses...");
+        NewConclaveEpoch.SnapshotStatus = SnapshotStatus.Completed;
+        NewConclaveEpoch.EpochStatus = EpochStatus.Current;
+
+        await epochService.Update(NewConclaveEpoch.Id, NewConclaveEpoch);
+
+        if (CurrentConclaveEpoch.EpochStatus != EpochStatus.Seed)
+        {
+            CurrentConclaveEpoch.EpochStatus = EpochStatus.Old;
+        }
+
+        await epochService.Update(CurrentConclaveEpoch.Id, CurrentConclaveEpoch);
+        await epochService.Update(NewConclaveEpoch.Id, NewConclaveEpoch);
+
+        CurrentConclaveEpoch = NewConclaveEpoch;
+        NewConclaveEpoch = null;
+    }
+    private async Task ExecuteConclaveDelegatorFetcherAsync()
     {
         _logger.LogInformation($"{nameof(ExecuteConclaveDelegatorFetcherAsync)} running...");
         if (NewConclaveEpoch is null && CurrentConclaveEpoch!.SnapshotStatus == SnapshotStatus.Completed)
         {
-            var cardanoService = scope.ServiceProvider.GetRequiredService<IConclaveCardanoService>();
-            var snapshotService = scope.ServiceProvider.GetRequiredService<IConclaveSnapshotService>();
-            var conclaveDelegatorService = scope.ServiceProvider.GetRequiredService<IConclaveEpochDelegatorService>();
-            var conclaveDelegatorWorkerService = scope.ServiceProvider.GetRequiredService<IConclaveEpochDelegatorWorkerService>();
+            var cardanoService = _scopedProvider.GetRequiredService<IConclaveCardanoService>();
+            var snapshotService = _scopedProvider.GetRequiredService<IConclaveSnapshotService>();
+            var conclaveDelegatorService = _scopedProvider.GetRequiredService<IConclaveEpochDelegatorService>();
+            var conclaveDelegatorWorkerService = _scopedProvider.GetRequiredService<IConclaveEpochDelegatorWorkerService>();
 
             var currentConclaveDelegators = conclaveDelegatorService.GetAllByEpochNumber(CurrentConclaveEpoch.EpochNumber);
 
@@ -225,18 +303,18 @@ public class Worker : BackgroundService
 
     // Helper Methods
 
-    private static ConclaveEpoch? GetSeedEpoch(IServiceScope scope)
+    private static ConclaveEpoch? GetSeedEpoch(IServiceProvider provider)
     {
-        var epochService = scope.ServiceProvider.GetRequiredService<IConclaveEpochsService>();
+        var epochService = provider.GetRequiredService<IConclaveEpochsService>();
         var seedEpoch = epochService.GetByEpochStatus(EpochStatus.Seed).FirstOrDefault();
 
         return seedEpoch;
     }
 
-    private static async Task<ConclaveEpoch> CreateSeedEpoch(IServiceScope scope)
+    private static async Task<ConclaveEpoch> CreateSeedEpoch(IServiceProvider provider)
     {
-        var epochService = scope.ServiceProvider.GetRequiredService<IConclaveEpochsService>();
-        var cardanoService = scope.ServiceProvider.GetRequiredService<IConclaveCardanoService>();
+        var epochService = provider.GetRequiredService<IConclaveEpochsService>();
+        var cardanoService = provider.GetRequiredService<IConclaveCardanoService>();
 
         var currentEpoch = await cardanoService.GetCurrentEpochAsync();
 
