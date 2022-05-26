@@ -62,6 +62,36 @@ public class ConclaveSnapshotWorkerService : IConclaveSnapshotWorkerService
         return conclaveSnapshotList;
     }
 
+    public async Task<IEnumerable<ConclaveHolder>?> SnapshotHoldersForAssetAsync(string assetAddress, ConclaveEpoch conclaveEpoch)
+    {
+        var holders = new List<Holder>();
+
+        var page = 1;
+        while (true)
+        {
+            var partialHolders = await _service.GetAssetHolders(assetAddress, 100, page);
+            holders.AddRange(partialHolders!);
+
+            if (partialHolders.Count() < 100) break;
+            page++;
+        }
+
+        List<ConclaveHolder>? snapshotList = new();
+
+        foreach (var holder in holders)
+        {
+            snapshotList.Add(new ConclaveHolder
+            {
+                ConclaveEpoch = conclaveEpoch,
+                Address = holder.Address,
+                Quantity = holder.Quantity,
+                DateCreated = DateUtils.DateTimeToUtc(DateTime.Now)
+            });
+        }
+
+        return snapshotList;
+    }
+
     public async Task<IEnumerable<ConclaveSnapshot?>> SnapshotUniqueDelegatorsForPoolAsync(string poolId, ConclaveEpoch conclaveEpoch)
     {
         var uncheckedSnapshotList = await SnapshotDelegatorsForPoolAsync(poolId, conclaveEpoch);
@@ -93,10 +123,35 @@ public class ConclaveSnapshotWorkerService : IConclaveSnapshotWorkerService
         return conclaveSnapshotList;
     }
 
-    public async Task<IEnumerable<ConclaveSnapshot>> StoreSnapshotDataAsync(IEnumerable<ConclaveSnapshot?> snapshotList)
+    public async Task<IEnumerable<ConclaveHolder>?> SnapshotUniqueHoldersForAssetAsync(string assetAddress, ConclaveEpoch conclaveEpoch)
     {
-        if (!snapshotList.Any() || snapshotList is null) throw new Exception("Snapshot list must not be empty");
+        var uncheckedSnapshotList = await SnapshotHoldersForAssetAsync(assetAddress, conclaveEpoch);
+        var uniqueHolderWalletAddress = new HashSet<string>();
+        var snapshotList = new List<ConclaveHolder>();
+
+        foreach (var uncheckedSnapshot in uncheckedSnapshotList)
+        {
+            if (uniqueHolderWalletAddress.Contains(uncheckedSnapshot!.Address!)) continue;
+
+            snapshotList.Add(uncheckedSnapshot);
+            uniqueHolderWalletAddress.Add(uncheckedSnapshot.Address!);
+        }
+
+        return snapshotList;
+    }
+
+    public async Task<IEnumerable<ConclaveSnapshot>> StoreDelegatorSnapshotDataAsync(IEnumerable<ConclaveSnapshot?> snapshotList)
+    {
+        if (!snapshotList.Any() || snapshotList is null) throw new Exception("Delegator Snapshot list must not be empty");
         _context.ConclaveSnapshots.AddRange(snapshotList!);
+        await _context.SaveChangesAsync();
+        return snapshotList!;
+    }
+
+    public async Task<IEnumerable<ConclaveHolder>> StoreHolderSnapshotDataAsync(IEnumerable<ConclaveHolder?> snapshotList)
+    {
+        if (!snapshotList.Any() || snapshotList is null) throw new Exception("Holder Snapshot list must not be empty");
+        _context.ConclaveHolders.AddRange(snapshotList!);
         await _context.SaveChangesAsync();
         return snapshotList!;
     }
