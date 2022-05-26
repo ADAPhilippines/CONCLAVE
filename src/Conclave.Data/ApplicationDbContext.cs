@@ -16,4 +16,5 @@ public class ApplicationDbContext : DbContext
     public DbSet<ConclaveEpochDelegator> ConclaveEpochDelegators => Set<ConclaveEpochDelegator>();
     public DbSet<ConclaveEpochReward> ConclaveEpochRewards => Set<ConclaveEpochReward>();
     public DbSet<ConclaveEpochDelegatorReward> ConclaveEpochDelegatorRewards => Set<ConclaveEpochDelegatorReward>();
+    public DbSet<ConclaveHolder> ConclaveHolders => Set<ConclaveHolder>();
 }
