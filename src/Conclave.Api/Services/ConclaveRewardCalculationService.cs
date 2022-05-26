@@ -59,7 +59,7 @@ public class ConclaveRewardCalculationService : IConclaveRewardCalculationServic
 
         var conclaveEpoch = _conclaveEpochsService.GetByEpochNumber(epochNumber);
         if (conclaveEpoch is null)
-            throw new Exception("Epoch not yet created!");
+            throw new Exception("Epoch not yet created!"); 
 
         if (conclaveEpoch.SnapshotStatus != SnapshotStatus.Completed)
             throw new Exception("Snapshot not yet complete!");
