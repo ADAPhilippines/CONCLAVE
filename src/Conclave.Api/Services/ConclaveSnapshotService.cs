@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Blockfrost.Api.Services;
-using Conclave.Api.Exceptions;
 using Conclave.Api.Interfaces.Services;
 using Conclave.Api.Options;
 using Conclave.Common.Enums;
@@ -26,17 +25,17 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         _context = context;
     }
 
-    public Task<ConclaveSnapshot?> CreateAsync(ConclaveSnapshot conclaveSnapshot)
+    public Task<ConclaveSnapshot> CreateAsync(ConclaveSnapshot conclaveSnapshot)
     {
         throw new NotImplementedException();
     }
 
-    public Task<ConclaveSnapshot?> DeleteAsync(Guid id)
+    public Task<ConclaveSnapshot> DeleteAsync(Guid id)
     {
         throw new NotImplementedException();
     }
 
-    public IEnumerable<ConclaveSnapshot?> GetByEpochNumber(ulong epochNumber)
+    public IEnumerable<ConclaveSnapshot> GetByEpochNumber(ulong epochNumber)
     {
         var snapshotList = _context.ConclaveSnapshots
                             .Where(s => s.ConclaveEpoch.EpochNumber == epochNumber)
@@ -45,17 +44,17 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         return snapshotList;
     }
 
-    public Task<ConclaveSnapshot?> GetById(Guid id)
+    public Task<ConclaveSnapshot> GetById(Guid id)
     {
         throw new NotImplementedException();
     }
 
-    public Task<IEnumerable<ConclaveSnapshot?>> GetByStakingAddress(string stakingAddress)
+    public Task<IEnumerable<ConclaveSnapshot>> GetByStakingAddress(string stakingAddress)
     {
         throw new NotImplementedException();
     }
 
-    public Task<ConclaveSnapshot?> UpdateAsync(Guid id, ConclaveSnapshot conclaveSnapshot)
+    public Task<ConclaveSnapshot> UpdateAsync(Guid id, ConclaveSnapshot conclaveSnapshot)
     {
         throw new NotImplementedException();
     }
