@@ -9,15 +9,11 @@ public class ConclaveSnapshotSchedulerService : IConclaveSnapshotSchedulerServic
 {
     public long GetNewEpochCreationDelayInMilliseconds(ConclaveEpoch conclaveEpoch, long delayInMilliseconds)
     {
-        if (conclaveEpoch.EndTime is null) throw new Exception("End time not set!");
-        var millisecondDifference = (long)(conclaveEpoch.EndTime - DateUtils.DateTimeToUtc(DateTime.Now)).Value.TotalMilliseconds;
-        return millisecondDifference - delayInMilliseconds;
+        return DateUtils.GetTimeDifferenceFromNowInMilliseconds(conclaveEpoch.EndTime) + delayInMilliseconds;
     }
 
     public long GetSnapshotDelayInMilliseconds(ConclaveEpoch conclaveEpoch, long delayInMilliseconds)
     {
-        if (conclaveEpoch.EndTime is null) throw new Exception("End time not set!");
-        var millisecondDifference = (long)(conclaveEpoch.EndTime - DateUtils.DateTimeToUtc(DateTime.Now)).Value.TotalMilliseconds;
-        return millisecondDifference - delayInMilliseconds;
+        return DateUtils.GetTimeDifferenceFromNowInMilliseconds(conclaveEpoch.EndTime) - delayInMilliseconds;
     }
 }

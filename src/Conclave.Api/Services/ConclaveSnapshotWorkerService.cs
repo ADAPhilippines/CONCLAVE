@@ -17,21 +17,22 @@ public class ConclaveSnapshotWorkerService : IConclaveSnapshotWorkerService
         _context = context;
     }
 
-    public async Task<IEnumerable<ConclaveSnapshot?>> SnapshotDelegatorsForPoolAsync(string poolId, ConclaveEpoch conclaveEpoch)
+    public async Task<IEnumerable<ConclaveSnapshot>> SnapshotDelegatorsForPoolAsync(string poolId, ConclaveEpoch conclaveEpoch)
     {
         var delegators = new List<Delegator>();
-
         var page = 1;
+
         while (true)
         {
             var partialDelegators = await _service.GetPoolDelegatorsAsync(poolId, 100, page);
             delegators.AddRange(partialDelegators!);
 
             if (partialDelegators.Count() < 100) break;
+
             page++;
         }
 
-        List<ConclaveSnapshot?> snapshotList = new();
+        List<ConclaveSnapshot> snapshotList = new();
 
         foreach (var delegator in delegators)
         {
@@ -48,9 +49,9 @@ public class ConclaveSnapshotWorkerService : IConclaveSnapshotWorkerService
         return snapshotList;
     }
 
-    public async Task<IEnumerable<ConclaveSnapshot?>> SnapshotDelegatorsForPoolsAsync(IEnumerable<string> poolIds, ConclaveEpoch conclaveEpoch)
+    public async Task<IEnumerable<ConclaveSnapshot>> SnapshotDelegatorsForPoolsAsync(IEnumerable<string> poolIds, ConclaveEpoch conclaveEpoch)
     {
-        List<ConclaveSnapshot?> conclaveSnapshotList = new();
+        List<ConclaveSnapshot> conclaveSnapshotList = new();
 
         foreach (var poolId in poolIds)
         {
@@ -62,28 +63,29 @@ public class ConclaveSnapshotWorkerService : IConclaveSnapshotWorkerService
         return conclaveSnapshotList;
     }
 
-    public async Task<IEnumerable<ConclaveHolder>?> SnapshotHoldersForAssetAsync(string assetAddress, ConclaveEpoch conclaveEpoch)
+    public async Task<IEnumerable<ConclaveHolder>> SnapshotHoldersForAssetAsync(string assetAddress, ConclaveEpoch conclaveEpoch)
     {
         var holders = new List<Holder>();
-
         var page = 1;
+
         while (true)
         {
             var partialHolders = await _service.GetAssetHolders(assetAddress, 100, page);
             holders.AddRange(partialHolders!);
 
             if (partialHolders.Count() < 100) break;
+
             page++;
         }
 
-        List<ConclaveHolder>? snapshotList = new();
+        List<ConclaveHolder> snapshotList = new();
 
         foreach (var holder in holders)
         {
             snapshotList.Add(new ConclaveHolder
             {
                 ConclaveEpoch = conclaveEpoch,
-                Address = holder.Address,
+                Address = holder.Address ?? string.Empty,
                 Quantity = holder.Quantity,
                 DateCreated = DateUtils.DateTimeToUtc(DateTime.Now)
             });
@@ -92,7 +94,7 @@ public class ConclaveSnapshotWorkerService : IConclaveSnapshotWorkerService
         return snapshotList;
     }
 
-    public async Task<IEnumerable<ConclaveSnapshot?>> SnapshotUniqueDelegatorsForPoolAsync(string poolId, ConclaveEpoch conclaveEpoch)
+    public async Task<IEnumerable<ConclaveSnapshot>> SnapshotUniqueDelegatorsForPoolAsync(string poolId, ConclaveEpoch conclaveEpoch)
     {
         var uncheckedSnapshotList = await SnapshotDelegatorsForPoolAsync(poolId, conclaveEpoch);
         var uniqueDelegatorStakingId = new HashSet<string>();
@@ -109,21 +111,23 @@ public class ConclaveSnapshotWorkerService : IConclaveSnapshotWorkerService
         return snapshotList;
     }
 
-    public async Task<IEnumerable<ConclaveSnapshot?>> SnapshotUniqueDelegatorsForPoolsAsync(IEnumerable<string> poolIds, ConclaveEpoch conclaveEpoch)
+    public async Task<IEnumerable<ConclaveSnapshot>> SnapshotUniqueDelegatorsForPoolsAsync(IEnumerable<string> poolIds, ConclaveEpoch conclaveEpoch)
     {
-        List<ConclaveSnapshot?> conclaveSnapshotList = new();
+        List<ConclaveSnapshot> conclaveSnapshotList = new();
 
         foreach (var poolId in poolIds)
         {
             var partialSnapshotList = await SnapshotUniqueDelegatorsForPoolAsync(poolId, conclaveEpoch);
+
             if (!partialSnapshotList.Any()) continue;
+
             conclaveSnapshotList.AddRange(partialSnapshotList);
         }
 
         return conclaveSnapshotList;
     }
 
-    public async Task<IEnumerable<ConclaveHolder>?> SnapshotUniqueHoldersForAssetAsync(string assetAddress, ConclaveEpoch conclaveEpoch)
+    public async Task<IEnumerable<ConclaveHolder>> SnapshotUniqueHoldersForAssetAsync(string assetAddress, ConclaveEpoch conclaveEpoch)
     {
         var uncheckedSnapshotList = await SnapshotHoldersForAssetAsync(assetAddress, conclaveEpoch);
         var uniqueHolderWalletAddress = new HashSet<string>();
@@ -140,19 +144,23 @@ public class ConclaveSnapshotWorkerService : IConclaveSnapshotWorkerService
         return snapshotList;
     }
 
-    public async Task<IEnumerable<ConclaveSnapshot>> StoreDelegatorSnapshotDataAsync(IEnumerable<ConclaveSnapshot?> snapshotList)
+    public async Task<IEnumerable<ConclaveSnapshot>> StoreDelegatorSnapshotDataAsync(IEnumerable<ConclaveSnapshot> snapshotList)
     {
         if (!snapshotList.Any() || snapshotList is null) throw new Exception("Delegator Snapshot list must not be empty");
+
         _context.ConclaveSnapshots.AddRange(snapshotList!);
         await _context.SaveChangesAsync();
+
         return snapshotList!;
     }
 
     public async Task<IEnumerable<ConclaveHolder>> StoreHolderSnapshotDataAsync(IEnumerable<ConclaveHolder?> snapshotList)
     {
         if (!snapshotList.Any() || snapshotList is null) throw new Exception("Holder Snapshot list must not be empty");
+
         _context.ConclaveHolders.AddRange(snapshotList!);
         await _context.SaveChangesAsync();
+
         return snapshotList!;
     }
 }

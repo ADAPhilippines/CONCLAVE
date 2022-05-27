@@ -32,26 +32,26 @@ public class ConclaveEpochDelegatorRewardService : IConclaveEpochDelegatorReward
         throw new NotImplementedException();
     }
 
-    public IEnumerable<ConclaveEpochDelegatorReward?> GetByEpoch(ConclaveEpoch conclaveEpoch)
+    public IEnumerable<ConclaveEpochDelegatorReward> GetByEpoch(ConclaveEpoch conclaveEpoch)
     {
         throw new NotImplementedException();
     }
 
-    public IEnumerable<ConclaveEpochDelegatorReward?> GetByEpochNumber(ulong epochNumber)
+    public IEnumerable<ConclaveEpochDelegatorReward> GetByEpochNumber(ulong epochNumber)
     {
         var delegatorRewards = _context.ConclaveEpochDelegatorRewards
-                                                                                .Include(c => c.ConclaveEpochReward)
-                                                                                .Where(c => c.ConclaveEpochReward.EpochNumber == epochNumber)
-                                                                                .ToList();
+                                        .Include(c => c.ConclaveEpochReward)
+                                        .Where(c => c.ConclaveEpochReward.EpochNumber == epochNumber)
+                                        .ToList();
         return delegatorRewards;
     }
 
-    public ConclaveEpochDelegatorReward? GetById(Guid id)
+    public ConclaveEpochDelegatorReward GetById(Guid id)
     {
         throw new NotImplementedException();
     }
 
-    public IEnumerable<ConclaveEpochDelegatorReward?> GetByStakeAddress(string stakeAddress)
+    public IEnumerable<ConclaveEpochDelegatorReward> GetByStakeAddress(string stakeAddress)
     {
         throw new NotImplementedException();
     }

@@ -5,10 +5,11 @@ namespace Conclave.Api.Extensions;
 public static class ConclaveDatabaseExtension
 {
 
-    public static IServiceCollection AddConclaveDb(this IServiceCollection services, IConfiguration config)
+    public static IServiceCollection AddConclaveDb(this IServiceCollection services, string connectionString)
     {
-        services.AddNpgsql<ApplicationDbContext>(config.GetValue<string>("DatabaseConfig:PostgresSQL"));
-        services.AddDbContext<ApplicationDbContext>();
+        services.AddNpgsql<ApplicationDbContext>(connectionString)
+                .AddDbContext<ApplicationDbContext>();
+
         return services;
     }
 }

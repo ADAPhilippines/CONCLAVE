@@ -3,7 +3,7 @@ namespace Conclave.Common.Models;
 
 public class Delegator
 {
-    public string StakeId { get; set; }
+    public string? StakeId { get; set; }
     public ulong LovelacesAmount { get; set; }
 
     public Delegator(string stakeId, ulong loveLacesAmount)
