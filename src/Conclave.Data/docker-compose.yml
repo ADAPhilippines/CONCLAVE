@@ -1,4 +1,4 @@
-version: latest
+version: "3.0"
 services:
     postgres:
         image: postgres
