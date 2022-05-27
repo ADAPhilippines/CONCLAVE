@@ -7,10 +7,10 @@ public interface IConclaveEpochDelegatorRewardService
 
     //READ
 
-    ConclaveEpochDelegatorReward? GetById(Guid id);
-    IEnumerable<ConclaveEpochDelegatorReward?> GetByStakeAddress(string stakeAddress);
-    IEnumerable<ConclaveEpochDelegatorReward?> GetByEpoch(ConclaveEpoch conclaveEpoch);
-    IEnumerable<ConclaveEpochDelegatorReward?> GetByEpochNumber(ulong epochNumber);
+    ConclaveEpochDelegatorReward GetById(Guid id);
+    IEnumerable<ConclaveEpochDelegatorReward> GetByStakeAddress(string stakeAddress);
+    IEnumerable<ConclaveEpochDelegatorReward> GetByEpoch(ConclaveEpoch conclaveEpoch);
+    IEnumerable<ConclaveEpochDelegatorReward> GetByEpochNumber(ulong epochNumber);
     ulong GetTotalDelegatedLoveLaceByEpochNumber(ulong epochNumber);
 
     //WRITE
