@@ -7,9 +7,9 @@ namespace Conclave.Api.Extensions;
 public static class ConclaveCardanoServicesExtension
 {
 
-    public static IServiceCollection AddConclaveApi(this IServiceCollection services, IConfiguration config)
+    public static IServiceCollection AddConclaveApi(this IServiceCollection services, ConclaveOptions options)
     {
-        services.AddScoped<IConclaveCardanoService, ConclaveBlockfrostCardanoService>(); 
+        services.AddScoped<IConclaveCardanoService, ConclaveBlockfrostCardanoService>();
         services.AddScoped<IConclaveEpochsService, ConclaveEpochsService>();
         services.AddScoped<IConclaveSnapshotService, ConclaveSnapshotService>();
         services.AddScoped<IConclaveSnapshotWorkerService, ConclaveSnapshotWorkerService>();
@@ -19,7 +19,13 @@ public static class ConclaveCardanoServicesExtension
         services.AddScoped<IConclaveEpochDelegatorRewardService, ConclaveEpochDelegatorRewardService>();
         services.AddScoped<IConclaveRewardCalculationService, ConclaveRewardCalculationService>();
         services.AddScoped<IConclaveEpochRewardService, ConclaveEpochRewardService>();
-        services.Configure<ConclaveCardanoOptions>(config);
+
+        services.Configure<ConclaveOptions>(o =>
+        {
+            o.PoolIds = options.PoolIds;
+            o.ConclaveAddress = options.ConclaveAddress;
+        });
+
         return services;
     }
 }
