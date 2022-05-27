@@ -2,6 +2,7 @@ using Blockfrost.Api.Services;
 using Conclave.Api.Interfaces.Services;
 using Conclave.Common.Models;
 using Conclave.Common.Utils;
+using Microsoft.EntityFrameworkCore;
 
 namespace Conclave.Api.Services;
 
@@ -12,9 +13,10 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
     private readonly IPoolsService _poolsService;
     private readonly IAccountsService _accountsService;
 
-    public ConclaveBlockfrostCardanoService(IEpochsService epochsService,
-                                            IPoolsService poolsService,
-                                            IAccountsService accountsService)
+    public ConclaveBlockfrostCardanoService(
+        IEpochsService epochsService,
+        IPoolsService poolsService,
+        IAccountsService accountsService)
     {
         _epochsService = epochsService;
         _poolsService = poolsService;
@@ -38,11 +40,14 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
         var currentEpoch = await _epochsService.GetLatestAsync();
 
         return new Epoch((ulong)currentEpoch.Epoch,
-        DateUtils.UnixTimeStampToDateTime(currentEpoch.StartTime),
-        DateUtils.UnixTimeStampToDateTime(currentEpoch.EndTime));
+            DateUtils.UnixTimeStampToDateTime(currentEpoch.StartTime),
+            DateUtils.UnixTimeStampToDateTime(currentEpoch.EndTime));
     }
 
-    public async Task<IEnumerable<Delegator?>> GetPoolDelegatorsAsync(string poolId, int? count = 100, int? page = 1)
+    public async Task<IEnumerable<Delegator?>> GetPoolDelegatorsAsync(
+        string poolId, 
+        int? count = 100, 
+        int? page = 1)
     {
         if (count > 100) count = 100;
         if (count < 1) count = 100;
@@ -50,12 +55,14 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
 
         var poolDelegators = await _poolsService.GetDelegatorsAsync(poolId, count, page);
 
-        List<Delegator> delegators = new();
+        //new
+        List<Delegator> delegators = poolDelegators.Select(t => new Delegator(t.Address, ulong.Parse(t.LiveStake))).ToList();
 
-        foreach (var poolDelegator in poolDelegators)
-        {
-            delegators.Add(new Delegator(poolDelegator.Address, ulong.Parse(poolDelegator.LiveStake)));
-        }
+        //old
+        // foreach (var poolDelegator in poolDelegators)
+        // {
+        //     delegators.Add(new Delegator(poolDelegator.Address, ulong.Parse(poolDelegator.LiveStake)));
+        // }
 
         return delegators;
     }

@@ -35,7 +35,7 @@ public class Worker : BackgroundService
 
             await ExecuteSeederAsync(scope);
             await ExecuteCurrentEpochSetterAsync(scope);
-            await ExecuteSnapshotSchedulerAsync(scope);
+            //await ExecuteSnapshotSchedulerAsync(scope);
             await ExecuteNewEpochCheckerAsync(scope);
             await ExecuteSnapshotAsync(scope);
             await ExecuteNewEpochCreationSchedulerAsync(scope);

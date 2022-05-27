@@ -32,7 +32,6 @@ public class ConclaveEpochRewardService : IConclaveEpochRewardService
         var epochReward = _context.ConclaveEpochRewards.Where(c => c.EpochNumber == epochNumber)
                                                          .FirstOrDefault();
 
-
         return epochReward;
     }
 

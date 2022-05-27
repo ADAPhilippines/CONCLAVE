@@ -1,6 +1,7 @@
 using Conclave.Api.Interfaces.Services;
 using Conclave.Common.Models;
 using Conclave.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Conclave.Api.Services;
 

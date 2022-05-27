@@ -7,11 +7,11 @@ namespace Conclave.Api.Services;
 
 public class ConclaveEpochDelegatorRewardService : IConclaveEpochDelegatorRewardService
 {
-    private readonly ApplicationDbContext _context;
+    private readonly ApplicationDbContext _dbContext;
 
-    public ConclaveEpochDelegatorRewardService(ApplicationDbContext context)
+    public ConclaveEpochDelegatorRewardService(ApplicationDbContext dbContext)
     {
-        _context = context;
+        _dbContext = dbContext;
     }
 
     public Task<ConclaveEpochDelegatorReward> Create(ConclaveEpochDelegatorReward conclaveEpochDelegatorReward)
@@ -21,8 +21,8 @@ public class ConclaveEpochDelegatorRewardService : IConclaveEpochDelegatorReward
 
     public async Task<IEnumerable<ConclaveEpochDelegatorReward>> CreateAsync(IEnumerable<ConclaveEpochDelegatorReward> conclaveEpochDelegatorRewards)
     {
-        _context.AddRange(conclaveEpochDelegatorRewards);
-        await _context.SaveChangesAsync();
+        _dbContext.AddRange(conclaveEpochDelegatorRewards);
+        await _dbContext.SaveChangesAsync();
 
         return conclaveEpochDelegatorRewards;
     }
@@ -37,12 +37,13 @@ public class ConclaveEpochDelegatorRewardService : IConclaveEpochDelegatorReward
         throw new NotImplementedException();
     }
 
-    public IEnumerable<ConclaveEpochDelegatorReward?> GetByEpochNumber(ulong epochNumber)
+    public async Task<IEnumerable<ConclaveEpochDelegatorReward?>> GetByEpochNumberAsync(ulong epochNumber)
     {
-        var delegatorRewards = _context.ConclaveEpochDelegatorRewards
-                                                                                .Include(c => c.ConclaveEpochReward)
-                                                                                .Where(c => c.ConclaveEpochReward.EpochNumber == epochNumber)
-                                                                                .ToList();
+        var delegatorRewards = await _dbContext.ConclaveEpochDelegatorRewards
+                                .Include(c => c.ConclaveEpochReward)
+                                .Where(c => c.ConclaveEpochReward.EpochNumber == epochNumber)
+                                .ToListAsync();
+
         return delegatorRewards;
     }
 
@@ -58,7 +59,7 @@ public class ConclaveEpochDelegatorRewardService : IConclaveEpochDelegatorReward
 
     public ulong GetTotalDelegatedLoveLaceByEpochNumber(ulong epochNumber)
     {
-        var delegatedAmounts = _context.ConclaveSnapshots
+        var delegatedAmounts = _dbContext.ConclaveSnapshots
                             .Where(s => s.ConclaveEpoch.EpochNumber == epochNumber)
                             .Select(s => s.DelegatedAmount)
                             .ToList();

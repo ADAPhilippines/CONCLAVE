@@ -8,7 +8,7 @@ namespace Conclave.Api.Controllers;
 [Route("[controller]")]
 public class RewardCalculationController : ControllerBase
 {
-    private readonly IConclaveRewardCalculationService _service;
+    private readonly IConclaveRewardCalculationService _rewardCalculationservice;
     private readonly IConclaveEpochsService _epochService;
     private readonly IConclaveEpochRewardService _epochRewardService;
     private readonly IConclaveEpochDelegatorRewardService _epochDelegatorRewardService;
@@ -18,7 +18,7 @@ public class RewardCalculationController : ControllerBase
                                        IConclaveEpochRewardService epochRewardService,
                                        IConclaveEpochDelegatorRewardService epochDelegatorRewardService)
     {
-        _service = service;
+        _rewardCalculationservice = service;
         _epochService = epochService;
         _epochRewardService = epochRewardService;
         _epochDelegatorRewardService = epochDelegatorRewardService;
@@ -30,7 +30,7 @@ public class RewardCalculationController : ControllerBase
         try
         {
             var percentages =
-                await _service.CalculateAllRewardSharePercentageByEpochAsync(epochNumber);
+                await _rewardCalculationservice.CalculateAllRewardSharePercentageByEpochAsync(epochNumber);
 
             return Ok(percentages);
         }
@@ -46,7 +46,7 @@ public class RewardCalculationController : ControllerBase
         try
         {
             var conclaveDelegatorRewards =
-                await _service.CalculateAllConclaveTokenShareByEpochAsync(epochNumber);
+                await _rewardCalculationservice.CalculateAllConclaveTokenShareByEpochAsync(epochNumber);
             return Ok(conclaveDelegatorRewards);
         }
         catch (Exception e)

@@ -4,7 +4,6 @@ namespace Conclave.Common.Models;
 
 public class ConclaveEpochReward
 {
-
     public Guid Id { get; set; } = Guid.NewGuid();
     public ulong EpochNumber { get; set; }
     public double TotalConclaveReward { get; set; }
