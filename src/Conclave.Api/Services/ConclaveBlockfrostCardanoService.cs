@@ -1,5 +1,5 @@
 using Blockfrost.Api.Services;
-using Conclave.Api.Interfaces.Services;
+using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
 using Conclave.Common.Utils;
 
@@ -24,21 +24,26 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
         _assetsService = assetsService;
     }
 
-    public async Task<IEnumerable<Holder>> GetAssetHolders(string assetAddress, int? count = 100, int? page = 1)
+
+    public async Task<IEnumerable<AssetOwner>> GetAssetOwnersAsync(string assetAddress)
     {
-        if (count > 100) count = 100;
-        if (count < 1) count = 100;
-        if (page < 1) page = 1;
+        var page = 1;
+        var assetOwners = new List<AssetOwner>();
 
-        var assetHolders = await _assetsService.GetAddressesAsync(assetAddress, count, page);
-        List<Holder> holders = new();
-
-        foreach (var assetHolder in assetHolders)
+        while (true)
         {
-            holders.Add(new Holder(assetHolder.Address, ulong.Parse(assetHolder.Quantity)));
+            var holders = await _assetsService.GetAddressesAsync(assetAddress, 100, page);
+
+            foreach (var holder in holders)
+            {
+                assetOwners.Add(new AssetOwner(assetAddress, holder.Address, ulong.Parse(holder.Quantity)));
+            }
+
+            if (holders.Count < 100) break;
+            page++;
         }
 
-        return holders;
+        return assetOwners;
     }
 
     public async Task<IEnumerable<string>> GetAssociatedWalletAddressAsync(string stakingId)
@@ -72,5 +77,13 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
         foreach (var poolDelegator in poolDelegators) delegators.Add(new Delegator(poolDelegator.Address, ulong.Parse(poolDelegator.LiveStake)));
 
         return delegators;
+    }
+
+    public async Task<Operator> GetPoolOwnerAsync(string poolId)
+    {
+        var details = await _poolsService.GetPoolsAsync(poolId);
+        var stakeAddress = details.Owners.First();
+        var pledge = ulong.Parse(details.LivePledge);
+        return new Operator(stakeAddress, pledge);
     }
 }
