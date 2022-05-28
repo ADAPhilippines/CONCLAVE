@@ -4,6 +4,10 @@ namespace Conclave.Common.Utils;
 
 public static class DateUtils
 {
+    const int SECONDS_IN_A_MINUTE = 60;
+    const int MINUTES_IN_AN_HOUR = 60;
+    const int HOURS_IN_A_DAY = 24;
+
     public static DateTime UnixTimeStampToDateTime(long unixTimeStamp)
     {
         // Unix timestamp is seconds past epoch
@@ -23,8 +27,20 @@ public static class DateUtils
     {
         if (dateTime is null) return 0;
 
-        var utcNow = DateTime.UtcNow;
+        var utcNow = DateTimeToUtc(DateTime.Now);
         var difference = dateTime - utcNow;
         return (long)difference.Value.TotalMilliseconds;
+    }
+
+    public static string GetReadableTimeFromMilliseconds(int milliseconds)
+    {
+        var delayInHours = milliseconds / 1000.0 / SECONDS_IN_A_MINUTE / MINUTES_IN_AN_HOUR;
+        var days = delayInHours / HOURS_IN_A_DAY;
+        var hours = days % 1 * HOURS_IN_A_DAY;
+        var minutes = hours % 1 * MINUTES_IN_AN_HOUR;
+        var seconds = minutes % 1 * SECONDS_IN_A_MINUTE;
+
+        return $"{(int)days} days {(int)hours} hours {(int)minutes} minutes {(int)seconds} seconds";
+
     }
 }
