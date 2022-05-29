@@ -11,13 +11,28 @@ public static class ConclaveCardanoServicesExtension
     public static IServiceCollection AddConclaveApi(this IServiceCollection services, ConclaveOptions options)
     {
 
+        // General
         services.AddScoped<IConclaveCardanoService, ConclaveBlockfrostCardanoService>();
         services.AddScoped<IConclaveEpochsService, ConclaveEpochsService>();
+        services.AddScoped<INFTGroupService, NFTGroupService>();
+        services.AddScoped<INFTProjectService, NFTProjectService>();
+
+        // Snapshot
         services.AddScoped<IConclaveSnapshotService, ConclaveSnapshotService>();
         services.AddScoped<IDelegatorSnapshotService, DelegatorSnapshotService>();
         services.AddScoped<IOperatorSnapshotService, OperatorSnapshotService>();
+        services.AddScoped<INFTSnapshotService, NFTSnapshotService>();
         services.AddScoped<IConclaveOwnerSnapshotService, ConclaveOwnerSnapshotService>();
         services.AddScoped<IConclaveSnapshotSchedulerService, ConclaveSnapshotSchedulerService>();
+
+        // Reward
+        services.AddScoped<IConclaveRewardService, ConclaveRewardService>();
+        services.AddScoped<IDelegatorRewardService, DelegatorRewardService>();
+        services.AddScoped<IOperatorRewardService, OperatorRewardService>();
+        services.AddScoped<INFTRewardService, NFTRewardService>();
+        services.AddScoped<IConclaveOwnerRewardService, ConclaveOwnerRewardService>();
+
+
 
         services.Configure<ConclaveOptions>(o =>
         {
