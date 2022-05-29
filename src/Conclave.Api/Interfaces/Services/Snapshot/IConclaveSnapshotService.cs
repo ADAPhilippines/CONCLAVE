@@ -7,10 +7,10 @@ public interface IConclaveSnapshotService
 {
     Task<IEnumerable<DelegatorSnapshot>> SnapshotDelegatorsAsync(string poolId, ConclaveEpoch epoch);
     Task<IEnumerable<DelegatorSnapshot>> SnapshotDelegatorsAsync(IEnumerable<string> poolIds, ConclaveEpoch epoch);
-    Task<IEnumerable<NFTSnapshot>> SnapshotNFTsAsync(NFTProject nftProject, DelegatorSnapshot delegatorSnapshot, ConclaveEpoch epoch);
-    Task<IEnumerable<NFTSnapshot>> SnapshotNFTsAsync(IEnumerable<NFTProject> nftProjects, IEnumerable<DelegatorSnapshot> delegatorSnapshots, ConclaveEpoch epoch);
+    Task<NFTSnapshot?> SnapshotNFTsForStakeAddressAsync(NFTProject nftProject, DelegatorSnapshot delegatorSnapshot, ConclaveEpoch epoch);
+    Task<IEnumerable<NFTSnapshot>> SnapshotNFTsForStakeAddressesAsync(IEnumerable<NFTProject> nftProjects, IEnumerable<DelegatorSnapshot> delegatorSnapshots, ConclaveEpoch epoch);
     Task<OperatorSnapshot> SnapshotOperatorAsync(string poolId, ConclaveEpoch epoch);
     Task<IEnumerable<OperatorSnapshot>> SnapshotOperatorsAsync(IEnumerable<string> poolIds, ConclaveEpoch epoch);
-    Task<IEnumerable<ConclaveOwnerSnapshot>> SnapshotConclaveOwnersAsync(string assetAddress, IEnumerable<DelegatorSnapshot> delegatorSnapshots, ConclaveEpoch epoch);
-    ConclaveOwnerSnapshot? SnapshotConclaveOwner(DelegatorSnapshot delegatorSnapshot, ConclaveEpoch epoch, IEnumerable<AssetOwner> assetOwners);
+    Task<IEnumerable<ConclaveOwnerSnapshot>> SnapshotConclaveOwnersAsync(string policyId, IEnumerable<DelegatorSnapshot> delegatorSnapshots, ConclaveEpoch epoch);
+    Task<ConclaveOwnerSnapshot?> SnapshotConclaveOwner(DelegatorSnapshot delegatorSnapshot, string policyId, ConclaveEpoch epoch);
 }

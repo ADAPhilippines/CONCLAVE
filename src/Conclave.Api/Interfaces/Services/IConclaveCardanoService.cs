@@ -10,4 +10,6 @@ public interface IConclaveCardanoService
     Task<IEnumerable<string>> GetAssociatedWalletAddressAsync(string stakingId);
     Task<Operator> GetPoolOwnerAsync(string poolId);
     Task<IEnumerable<AssetOwner>> GetAssetOwnersAsync(string assetAddress);
+    Task<StakeAddressAssets> GetStakeAddressAssetsAsync(string stakeAddress);
+    Task<IEnumerable<Asset>?> GetAssetDetailsForStakeAddress(string stakeAddress, string policyId);
 }
