@@ -24,6 +24,19 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
         _assetsService = assetsService;
     }
 
+    public async Task<IEnumerable<Asset>?> GetAssetDetailsForStakeAddress(string stakeAddress, string policyId)
+    {
+        var assets = await GetStakeAddressAssetsAsync(stakeAddress);
+
+        if (stakeAddress == "stake1uyjpkz0n2dn4un8n4dz7nfq8e670756mrndkkfmv4jdz0ys46e0z7")
+        {
+            System.Console.WriteLine("Here");
+        }
+
+        if (assets.Assets.Count < 1) return null;
+
+        return assets.Assets.FindAll(a => a.Unit.Contains(policyId)).ToList();
+    }
 
     public async Task<IEnumerable<AssetOwner>> GetAssetOwnersAsync(string assetAddress)
     {
@@ -85,5 +98,26 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
         var stakeAddress = details.Owners.First();
         var pledge = ulong.Parse(details.LivePledge);
         return new Operator(stakeAddress, pledge);
+    }
+
+    public async Task<StakeAddressAssets> GetStakeAddressAssetsAsync(string stakeAddress)
+    {
+        var page = 1;
+        var stakeAddressAssets = new StakeAddressAssets(stakeAddress, new List<Asset>());
+
+        while (true)
+        {
+            var assets = await _accountsService.GetAddressesAssetsAsync(stakeAddress, 100, page);
+
+            foreach (var asset in assets)
+            {
+                stakeAddressAssets.Assets.Add(new Asset(asset.Unit, ulong.Parse(asset.Quantity)));
+            }
+
+            if (assets.Count < 100) break;
+            page++;
+        }
+
+        return stakeAddressAssets;
     }
 }
