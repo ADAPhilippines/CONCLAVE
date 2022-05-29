@@ -1,14 +1,13 @@
 using Conclave.Common.Enums;
 using Conclave.Common.Models;
 
-namespace Conclave.Api.Interfaces.Services;
+namespace Conclave.Api.Interfaces;
 
 
-public interface IConclaveEpochsService
+public interface IConclaveEpochsService : IRepository<ConclaveEpoch, Guid>
 {
     // READ
-    ConclaveEpoch GetById(Guid id);
-    ConclaveEpoch GetByEpochNumber(ulong epochNumber);
+    ConclaveEpoch? GetByEpochNumber(ulong epochNumber);
     IEnumerable<ConclaveEpoch> GetByEpochStatus(EpochStatus epochStatus);
     IEnumerable<ConclaveEpoch> GetBySnapshotStatus(SnapshotStatus snapshotStatus);
     IEnumerable<ConclaveEpoch> GetByRewardStatus(RewardStatus rewardStatus);
@@ -17,10 +16,6 @@ public interface IConclaveEpochsService
                                                RewardStatus rewardStatus, AirdropStatus airdropStatus);
 
     // WRITE
-    Task<ConclaveEpoch> CreateAsync(ConclaveEpoch conclaveEpoch);
-    Task<IEnumerable<ConclaveEpoch>> CreateAsync(IEnumerable<ConclaveEpoch> conclaveEpochList);
-    Task<ConclaveEpoch> Update(Guid id, ConclaveEpoch conclaveEpoch);
     Task<ConclaveEpoch> DeleteByEpochNumber(ulong epochNumber);
-    Task<ConclaveEpoch> DeleteById(Guid id);
 
 }

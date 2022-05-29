@@ -1,5 +1,5 @@
 using Blockfrost.Api.Services;
-using Conclave.Api.Interfaces.Services;
+using Conclave.Api.Interfaces;
 using Conclave.Common.Enums;
 using Conclave.Common.Models;
 using Conclave.Common.Utils;
@@ -26,11 +26,9 @@ public class ConclaveEpochsService : IConclaveEpochsService
         throw new NotImplementedException();
     }
 
-    public ConclaveEpoch GetByEpochNumber(ulong epochNumber)
+    public ConclaveEpoch? GetByEpochNumber(ulong epochNumber)
     {
-        var conclaveEpoch = _context.ConclaveEpochs.Where(c => c.EpochNumber == epochNumber)
-                                                                  .FirstOrDefault();
-        return conclaveEpoch;
+        return _context.ConclaveEpochs.Where(c => c.EpochNumber == epochNumber).FirstOrDefault(); ;
     }
 
     public IEnumerable<ConclaveEpoch> GetByEpochStatus(EpochStatus epochStatus)
@@ -61,35 +59,28 @@ public class ConclaveEpochsService : IConclaveEpochsService
         return conclaveEpoch;
     }
 
-    public async Task<IEnumerable<ConclaveEpoch>> CreateAsync(IEnumerable<ConclaveEpoch> conclaveEpochList)
-    {
-
-        foreach (var conclaveEpoch in conclaveEpochList)
-        {
-            if (conclaveEpoch is null) continue;
-            _context.ConclaveEpochs.Add(conclaveEpoch);
-        }
-
-        await _context.SaveChangesAsync();
-        return conclaveEpochList;
-    }
-
     public Task<ConclaveEpoch> DeleteByEpochNumber(ulong epochNumber)
     {
         throw new NotImplementedException();
     }
 
-    public Task<ConclaveEpoch> DeleteById(Guid id)
+    public IEnumerable<ConclaveEpoch>? GetAll()
     {
         throw new NotImplementedException();
     }
-    public async Task<ConclaveEpoch> Update(Guid id, ConclaveEpoch conclaveEpoch)
-    {
-        if (id != conclaveEpoch.Id) throw new Exception("Ids do not match");
 
-        _context.Update(conclaveEpoch);
+    public async Task<ConclaveEpoch?> UpdateAsync(Guid id, ConclaveEpoch entity)
+    {
+        if (id != entity.Id) throw new Exception("Ids do not match");
+
+        _context.Update(entity);
         await _context.SaveChangesAsync();
 
-        return conclaveEpoch;
+        return entity;
+    }
+
+    public Task<ConclaveEpoch?> DeleteAsync(Guid id)
+    {
+        throw new NotImplementedException();
     }
 }
