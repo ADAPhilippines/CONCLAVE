@@ -64,7 +64,6 @@ public class ConclaveEpochsService : IConclaveEpochsService
 
     public async Task<IEnumerable<ConclaveEpoch?>> CreateAsync(IEnumerable<ConclaveEpoch?> conclaveEpochList)
     {
-
         foreach (var conclaveEpoch in conclaveEpochList)
         {
             if (conclaveEpoch is null) continue;

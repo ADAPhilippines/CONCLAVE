@@ -14,10 +14,11 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
     private readonly IAccountsService _accountsService;
     private readonly IAssetsService _assetsService;
 
-    public ConclaveBlockfrostCardanoService(IEpochsService epochsService,
-                                            IPoolsService poolsService,
-                                            IAccountsService accountsService,
-                                            IAssetsService assetsService)
+    public ConclaveBlockfrostCardanoService(
+        IEpochsService epochsService,
+        IPoolsService poolsService,
+        IAccountsService accountsService,
+        IAssetsService assetsService)
     {
         _epochsService = epochsService;
         _poolsService = poolsService;
@@ -75,14 +76,7 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
 
         var poolDelegators = await _poolsService.GetDelegatorsAsync(poolId, count, page);
 
-        //new
         List<Delegator> delegators = poolDelegators.Select(t => new Delegator(t.Address, ulong.Parse(t.LiveStake))).ToList();
-
-        //old
-        // foreach (var poolDelegator in poolDelegators)
-        // {
-        //     delegators.Add(new Delegator(poolDelegator.Address, ulong.Parse(poolDelegator.LiveStake)));
-        // }
 
         return delegators;
     }

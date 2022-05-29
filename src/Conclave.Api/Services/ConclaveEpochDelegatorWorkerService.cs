@@ -19,6 +19,7 @@ public class ConclaveEpochDelegatorWorkerService : IConclaveEpochDelegatorWorker
     public async Task<IEnumerable<ConclaveEpochDelegator?>> GetAllConclaveDelegatorsFromSnapshotListAsync(IEnumerable<ConclaveSnapshot?> snapshots)
     {
         List<ConclaveEpochDelegator> conclaveDelegators = new();
+
         foreach (var snapshot in snapshots)
         {
             var addresses = await _service.GetAssociatedWalletAddressAsync(snapshot!.StakingId);

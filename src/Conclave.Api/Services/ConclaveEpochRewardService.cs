@@ -29,8 +29,9 @@ public class ConclaveEpochRewardService : IConclaveEpochRewardService
 
     public ConclaveEpochReward? GetByEpochNumber(ulong epochNumber)
     {
-        var epochReward = _context.ConclaveEpochRewards.Where(c => c.EpochNumber == epochNumber)
-                                                         .FirstOrDefault();
+        var epochReward = _context.ConclaveEpochRewards
+                        .Where(c => c.EpochNumber == epochNumber)
+                        .FirstOrDefault();
 
         return epochReward;
     }

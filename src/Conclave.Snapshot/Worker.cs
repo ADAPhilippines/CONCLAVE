@@ -25,9 +25,9 @@ public class Worker : BackgroundService
         _logger = logger;
         _provider = provider;
     }
+    
     protected async override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-
         while (!stoppingToken.IsCancellationRequested)
         {
             try

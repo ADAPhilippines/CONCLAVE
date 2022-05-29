@@ -19,8 +19,9 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
     private readonly IConclaveEpochsService _epochsService;
     private readonly ApplicationDbContext _context;
 
-    public ConclaveSnapshotService(IConclaveEpochsService epochsService,
-                                ApplicationDbContext context)
+    public ConclaveSnapshotService(
+        IConclaveEpochsService epochsService,
+        ApplicationDbContext context)
     {
         _epochsService = epochsService;
         _context = context;
