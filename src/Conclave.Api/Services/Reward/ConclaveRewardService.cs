@@ -56,13 +56,13 @@ public class ConclaveRewardService : IConclaveRewardService
 
     public IEnumerable<NFTReward> CalculateNFTRewardsAsync(IEnumerable<NFTSnapshot> nftSnapshots, double totalReward)
     {
-        var totalQuantity = nftSnapshots.Count();
+        var totalQuantity = nftSnapshots.Aggregate(0.0, (acc, cur) => acc + cur.Quantity);
         var nftRewards = new List<NFTReward>();
 
         foreach (var nftSnapshot in nftSnapshots)
         {
 
-            var rewardPercentage = CalculatorUtils.GetPercentage(totalQuantity, 1);
+            var rewardPercentage = CalculatorUtils.GetPercentage(totalQuantity, nftSnapshot.Quantity);
             var rewardAmount = totalReward * (rewardPercentage / 100);
 
             var reward = new NFTReward
