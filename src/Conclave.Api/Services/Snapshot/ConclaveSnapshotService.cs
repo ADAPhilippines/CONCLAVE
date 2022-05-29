@@ -22,34 +22,36 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         _service = service;
     }
 
-    public ConclaveOwnerSnapshot? SnapshotConclaveOwner(DelegatorSnapshot delegatorSnapshot,
-                                                        ConclaveEpoch epoch,
-                                                        IEnumerable<AssetOwner> assetOwners)
+    public async Task<ConclaveOwnerSnapshot?> SnapshotConclaveOwner(DelegatorSnapshot delegatorSnapshot,
+                                                                    string policyId,
+                                                                    ConclaveEpoch epoch)
     {
-        var conclaveOwner = assetOwners.FirstOrDefault(o => o.WalletAddress == delegatorSnapshot.WalletAddress);
+        var assets = await _service.GetAssetDetailsForStakeAddress(delegatorSnapshot.StakeAddress, policyId);
+
+        if (assets is null) return null;
+
+        var conclaveOwner = assets.FirstOrDefault();
 
         if (conclaveOwner is null) return null;
-
+        if (conclaveOwner.Quantity == 0) return null;
 
         return new ConclaveOwnerSnapshot
         {
             ConclaveEpoch = epoch,
             DelegatorSnapshot = delegatorSnapshot,
-            Quantity = conclaveOwner.Quantity
+            Quantity = (ulong)conclaveOwner.Quantity
         };
-
     }
 
-    public async Task<IEnumerable<ConclaveOwnerSnapshot>> SnapshotConclaveOwnersAsync(string assetAddress,
+    public async Task<IEnumerable<ConclaveOwnerSnapshot>> SnapshotConclaveOwnersAsync(string policyId,
                                                                                       IEnumerable<DelegatorSnapshot> delegatorSnapshots,
                                                                                       ConclaveEpoch epoch)
     {
         var conclaveOwners = new List<ConclaveOwnerSnapshot>();
-        var assetOwners = await _service.GetAssetOwnersAsync(assetAddress);
 
         foreach (var delegatorSnapshot in delegatorSnapshots)
         {
-            var conclaveOwner = SnapshotConclaveOwner(delegatorSnapshot, epoch, assetOwners);
+            var conclaveOwner = await SnapshotConclaveOwner(delegatorSnapshot, policyId, epoch);
 
             if (conclaveOwner is null) continue;
 
@@ -101,22 +103,52 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         foreach (var poolId in poolIds)
         {
             var partialSnapshots = await SnapshotDelegatorsAsync(poolId, epoch);
-            if (partialSnapshots.Any()) delegatorSnapshots.AddRange(partialSnapshots);
+            if (partialSnapshots.Any()) delegatorSnapshots.AddRange(partialSnapshots.Where(d => d.Quantity > 0));
         }
 
         return delegatorSnapshots;
     }
 
-    public Task<IEnumerable<NFTSnapshot>> SnapshotNFTsAsync(NFTProject nfTProject, DelegatorSnapshot delegatorSnapshot, ConclaveEpoch epoch)
+    public async Task<NFTSnapshot?> SnapshotNFTsForStakeAddressAsync(NFTProject nftProject, DelegatorSnapshot delegatorSnapshot, ConclaveEpoch epoch)
     {
-        throw new NotImplementedException();
+        var assets = await _service.GetAssetDetailsForStakeAddress(delegatorSnapshot.StakeAddress, nftProject.PolicyId);
+
+        if (assets is null) return null;
+
+        var conclaveNFTAssetCount = assets.Aggregate(0, (current, asset) => current + (int)asset.Quantity);
+
+        if (conclaveNFTAssetCount == 0) return null;
+
+        var nftSnapshot = new NFTSnapshot
+        {
+            ConclaveEpoch = epoch,
+            DelegatorSnapshot = delegatorSnapshot,
+            NFTProject = nftProject,
+            Quantity = conclaveNFTAssetCount
+        };
+
+        return nftSnapshot;
     }
 
-    public Task<IEnumerable<NFTSnapshot>> SnapshotNFTsAsync(IEnumerable<NFTProject> nftProjects,
-                                                            IEnumerable<DelegatorSnapshot> delegatorSnapshots,
-                                                            ConclaveEpoch epoch)
+    public async Task<IEnumerable<NFTSnapshot>> SnapshotNFTsForStakeAddressesAsync(IEnumerable<NFTProject> nftProjects,
+                                                                                   IEnumerable<DelegatorSnapshot> delegatorSnapshots,
+                                                                                   ConclaveEpoch epoch)
     {
-        throw new NotImplementedException();
+        var nftSnapshots = new List<NFTSnapshot>();
+
+        foreach (var nftProject in nftProjects)
+        {
+            foreach (var delegatorSnapshot in delegatorSnapshots)
+            {
+                var nftSnapshot = await SnapshotNFTsForStakeAddressAsync(nftProject, delegatorSnapshot, epoch);
+
+                if (nftSnapshot is null) continue;
+
+                nftSnapshots.Add(nftSnapshot);
+            }
+        }
+
+        return nftSnapshots;
     }
 
     public async Task<OperatorSnapshot> SnapshotOperatorAsync(string poolId, ConclaveEpoch epoch)

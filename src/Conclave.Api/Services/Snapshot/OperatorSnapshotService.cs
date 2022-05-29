@@ -1,6 +1,7 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
 using Conclave.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Conclave.Api.Services;
 
@@ -36,6 +37,16 @@ public class OperatorSnapshotService : IOperatorSnapshotService
     {
         return _context.OperatorSnapshots.ToList();
     }
+
+    public IEnumerable<OperatorSnapshot>? GetAllByEpochNumber(ulong epochNumber)
+    {
+        var operators = _context.OperatorSnapshots.Include(o => o.ConclaveEpoch)
+                                                  .Where(o => o.ConclaveEpoch.EpochNumber == epochNumber)
+                                                  .ToList();
+
+        return operators;
+    }
+
 
     public OperatorSnapshot? GetById(Guid id)
     {

@@ -1,6 +1,7 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
 using Conclave.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Conclave.Api.Services;
 
@@ -35,6 +36,16 @@ public class NFTSnapshotService : INFTSnapshotService
     public IEnumerable<NFTSnapshot>? GetAll()
     {
         return _context.NFTSnapshots.ToList();
+    }
+
+    public IEnumerable<NFTSnapshot>? GetAllByEpochNumber(ulong epochNumber)
+    {
+        var nftStakers = _context.NFTSnapshots.Include(n => n.ConclaveEpoch)
+                                              .Include(n => n.DelegatorSnapshot)
+                                              .Where(n => n.ConclaveEpoch.EpochNumber == epochNumber)
+                                              .ToList();
+
+        return nftStakers;
     }
 
     public NFTSnapshot? GetById(Guid id)
