@@ -26,14 +26,13 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
         _assetsService = assetsService;
     }
 
-    public async Task<IEnumerable<Holder>?> GetAssetHolders(string assetAddress, int? count = 100, int? page = 1)
+    public async Task<IEnumerable<Holder>> GetAssetHolders(string assetAddress, int? count = 100, int? page = 1)
     {
         if (count > 100) count = 100;
         if (count < 1) count = 100;
         if (page < 1) page = 1;
 
         var assetHolders = await _assetsService.GetAddressesAsync(assetAddress, count, page);
-
         List<Holder> holders = new();
 
         foreach (var assetHolder in assetHolders)
@@ -44,19 +43,17 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
         return holders;
     }
 
-    public async Task<IEnumerable<string?>> GetAssociatedWalletAddressAsync(string stakingId)
+    public async Task<IEnumerable<string>> GetAssociatedWalletAddressAsync(string stakingId)
     {
         var addresses = await _accountsService.GetAddressesAsync(stakingId);
         List<string> stringAddresses = new();
-        foreach (var address in addresses)
-        {
-            stringAddresses.Add(address.Address);
-        }
+
+        foreach (var address in addresses) stringAddresses.Add(address.Address);
 
         return stringAddresses;
     }
 
-    public async Task<Epoch?> GetCurrentEpochAsync()
+    public async Task<Epoch> GetCurrentEpochAsync()
     {
         var currentEpoch = await _epochsService.GetLatestAsync();
 

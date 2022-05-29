@@ -19,7 +19,8 @@ public class ConclaveEpochDelegatorRewardService : IConclaveEpochDelegatorReward
         throw new NotImplementedException();
     }
 
-    public async Task<IEnumerable<ConclaveEpochDelegatorReward>> CreateAsync(IEnumerable<ConclaveEpochDelegatorReward> conclaveEpochDelegatorRewards)
+    public async Task<IEnumerable<ConclaveEpochDelegatorReward>> CreateAsync(
+        IEnumerable<ConclaveEpochDelegatorReward> conclaveEpochDelegatorRewards)
     {
         _dbContext.AddRange(conclaveEpochDelegatorRewards);
         await _dbContext.SaveChangesAsync();
@@ -32,27 +33,27 @@ public class ConclaveEpochDelegatorRewardService : IConclaveEpochDelegatorReward
         throw new NotImplementedException();
     }
 
-    public IEnumerable<ConclaveEpochDelegatorReward?> GetByEpoch(ConclaveEpoch conclaveEpoch)
+    public IEnumerable<ConclaveEpochDelegatorReward> GetByEpoch(ConclaveEpoch conclaveEpoch)
     {
         throw new NotImplementedException();
     }
 
-    public async Task<IEnumerable<ConclaveEpochDelegatorReward?>> GetByEpochNumberAsync(ulong epochNumber)
+    public IEnumerable<ConclaveEpochDelegatorReward?> GetByEpochNumber(ulong epochNumber)
     {
-        var delegatorRewards = await _dbContext.ConclaveEpochDelegatorRewards
+        var delegatorRewards = _dbContext.ConclaveEpochDelegatorRewards
                                 .Include(c => c.ConclaveEpochReward)
                                 .Where(c => c.ConclaveEpochReward.EpochNumber == epochNumber)
-                                .ToListAsync();
+                                .ToList();
 
         return delegatorRewards;
     }
 
-    public ConclaveEpochDelegatorReward? GetById(Guid id)
+    public ConclaveEpochDelegatorReward GetById(Guid id)
     {
         throw new NotImplementedException();
     }
 
-    public IEnumerable<ConclaveEpochDelegatorReward?> GetByStakeAddress(string stakeAddress)
+    public IEnumerable<ConclaveEpochDelegatorReward> GetByStakeAddress(string stakeAddress)
     {
         throw new NotImplementedException();
     }

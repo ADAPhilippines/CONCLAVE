@@ -1,5 +1,4 @@
 using Blockfrost.Api.Services;
-using Conclave.Api.Exceptions;
 using Conclave.Api.Interfaces.Services;
 using Conclave.Common.Enums;
 using Conclave.Common.Models;
@@ -17,52 +16,52 @@ public class ConclaveEpochsService : IConclaveEpochsService
         _context = context;
     }
 
-    public IEnumerable<ConclaveEpoch?> GetByAirdropStatus(AirdropStatus airdropStatus)
+    public IEnumerable<ConclaveEpoch> GetByAirdropStatus(AirdropStatus airdropStatus)
     {
         throw new NotImplementedException();
     }
 
-    public IEnumerable<ConclaveEpoch?> GetByAllStatus(EpochStatus epochStatus, SnapshotStatus snapshotStatus, RewardStatus rewardStatus, AirdropStatus airdropStatus)
+    public IEnumerable<ConclaveEpoch> GetByAllStatus(EpochStatus epochStatus, SnapshotStatus snapshotStatus, RewardStatus rewardStatus, AirdropStatus airdropStatus)
     {
         throw new NotImplementedException();
     }
 
-    public ConclaveEpoch? GetByEpochNumber(ulong epochNumber)
+    public ConclaveEpoch GetByEpochNumber(ulong epochNumber)
     {
         var conclaveEpoch = _context.ConclaveEpochs.Where(c => c.EpochNumber == epochNumber)
                                                                   .FirstOrDefault();
         return conclaveEpoch;
     }
 
-    public IEnumerable<ConclaveEpoch?> GetByEpochStatus(EpochStatus epochStatus)
+    public IEnumerable<ConclaveEpoch> GetByEpochStatus(EpochStatus epochStatus)
     {
         var epochsByStatus = _context.ConclaveEpochs.Where(e => e.EpochStatus == epochStatus).ToList();
         return epochsByStatus;
     }
 
-    public ConclaveEpoch? GetById(Guid id)
+    public ConclaveEpoch GetById(Guid id)
     {
         throw new NotImplementedException();
     }
 
-    public IEnumerable<ConclaveEpoch?> GetByRewardStatus(RewardStatus rewardStatus)
+    public IEnumerable<ConclaveEpoch> GetByRewardStatus(RewardStatus rewardStatus)
     {
         throw new NotImplementedException();
     }
 
-    public IEnumerable<ConclaveEpoch?> GetBySnapshotStatus(SnapshotStatus snapshotStatus)
+    public IEnumerable<ConclaveEpoch> GetBySnapshotStatus(SnapshotStatus snapshotStatus)
     {
         throw new NotImplementedException();
     }
 
-    public async Task<ConclaveEpoch?> CreateAsync(ConclaveEpoch conclaveEpoch)
+    public async Task<ConclaveEpoch> CreateAsync(ConclaveEpoch conclaveEpoch)
     {
         _context.Add(conclaveEpoch);
         await _context.SaveChangesAsync();
         return conclaveEpoch;
     }
 
-    public async Task<IEnumerable<ConclaveEpoch?>> CreateAsync(IEnumerable<ConclaveEpoch?> conclaveEpochList)
+    public async Task<IEnumerable<ConclaveEpoch>> CreateAsync(IEnumerable<ConclaveEpoch> conclaveEpochList)
     {
         foreach (var conclaveEpoch in conclaveEpochList)
         {
@@ -74,16 +73,16 @@ public class ConclaveEpochsService : IConclaveEpochsService
         return conclaveEpochList;
     }
 
-    public Task<ConclaveEpoch?> DeleteByEpochNumber(ulong epochNumber)
+    public Task<ConclaveEpoch> DeleteByEpochNumber(ulong epochNumber)
     {
         throw new NotImplementedException();
     }
 
-    public Task<ConclaveEpoch?> DeleteById(Guid id)
+    public Task<ConclaveEpoch> DeleteById(Guid id)
     {
         throw new NotImplementedException();
     }
-    public async Task<ConclaveEpoch?> Update(Guid id, ConclaveEpoch conclaveEpoch)
+    public async Task<ConclaveEpoch> Update(Guid id, ConclaveEpoch conclaveEpoch)
     {
         if (id != conclaveEpoch.Id) throw new Exception("Ids do not match");
 

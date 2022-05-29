@@ -16,7 +16,7 @@ public class ConclaveEpochDelegatorWorkerService : IConclaveEpochDelegatorWorker
         _service = service;
     }
 
-    public async Task<IEnumerable<ConclaveEpochDelegator?>> GetAllConclaveDelegatorsFromSnapshotListAsync(IEnumerable<ConclaveSnapshot?> snapshots)
+    public async Task<IEnumerable<ConclaveEpochDelegator>> GetAllConclaveDelegatorsFromSnapshotListAsync(IEnumerable<ConclaveSnapshot> snapshots)
     {
         List<ConclaveEpochDelegator> conclaveDelegators = new();
 
@@ -37,7 +37,7 @@ public class ConclaveEpochDelegatorWorkerService : IConclaveEpochDelegatorWorker
         return conclaveDelegators;
     }
 
-    public async Task<IEnumerable<ConclaveEpochDelegator?>> StoreConclaveDelegatorsAsync(IEnumerable<ConclaveEpochDelegator> conclaveDelegators)
+    public async Task<IEnumerable<ConclaveEpochDelegator>> StoreConclaveDelegatorsAsync(IEnumerable<ConclaveEpochDelegator> conclaveDelegators)
     {
         if (conclaveDelegators.Any())
         {

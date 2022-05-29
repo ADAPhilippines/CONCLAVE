@@ -30,8 +30,7 @@ public class ConclaveRewardCalculationService : IConclaveRewardCalculationServic
         _conclaveEpochRewardService = conclaveEpochRewardService;
         _context = context;
     }
-
-    public async Task<IEnumerable<ConclaveEpochDelegatorReward>?> CalculateAllConclaveTokenShareByEpochAsync(ulong epochNumber)
+    public async Task<IEnumerable<ConclaveEpochDelegatorReward>> CalculateAllConclaveTokenShareByEpochAsync(ulong epochNumber)
     {
         var conclaveEpochReward = _context.ConclaveEpochRewards
                                 .Where(c => c.EpochNumber == epochNumber)
@@ -56,7 +55,7 @@ public class ConclaveRewardCalculationService : IConclaveRewardCalculationServic
         return conclaveDelegatorRewards;
     }
 
-    public async Task<IEnumerable<ConclaveEpochDelegatorReward>?> CalculateAllRewardSharePercentageByEpochAsync(ulong epochNumber)
+    public async Task<IEnumerable<ConclaveEpochDelegatorReward>> CalculateAllRewardSharePercentageByEpochAsync(ulong epochNumber)
     {
         var conclaveEpoch = _conclaveEpochsService.GetByEpochNumber(epochNumber);
         if (conclaveEpoch is null)
@@ -69,7 +68,7 @@ public class ConclaveRewardCalculationService : IConclaveRewardCalculationServic
         if (conclaveEpochReward is null)
             throw new Exception("Epoch Reward not yet created!");
 
-        var totalShare = await GetTotalPercentageSharesForEpochAsync(epochNumber);
+        var totalShare = GetTotalPercentageSharesForEpoch(epochNumber);
         if (totalShare > 0)
             throw new Exception("Reward percentage already calculated!");
 
@@ -112,11 +111,11 @@ public class ConclaveRewardCalculationService : IConclaveRewardCalculationServic
         return conclaveEpochDelegatorReward;
     }
 
-    public async Task<double> GetTotalPercentageSharesForEpochAsync(ulong epochNumber)
+    public double GetTotalPercentageSharesForEpoch(ulong epochNumber)
     {
-        var conclaveEpochDelegatorRewards = await _epochDelegatorRewardService.GetByEpochNumberAsync(epochNumber);
-
+        var conclaveEpochDelegatorRewards = _epochDelegatorRewardService.GetByEpochNumber(epochNumber);
         var total = 0.0;
+
         foreach (var conclaveEpochDelegatorReward in conclaveEpochDelegatorRewards)
         {
             total += conclaveEpochDelegatorReward.PercentageShare;

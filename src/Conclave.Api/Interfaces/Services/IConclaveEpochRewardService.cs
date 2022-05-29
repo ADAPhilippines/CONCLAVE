@@ -7,7 +7,7 @@ public interface IConclaveEpochRewardService
 
     // READ
     
-    ConclaveEpochReward? GetById(Guid Id);
+    ConclaveEpochReward GetById(Guid Id);
     ConclaveEpochReward? GetByEpochNumber(ulong epochNumber);
 
     // WRITE
