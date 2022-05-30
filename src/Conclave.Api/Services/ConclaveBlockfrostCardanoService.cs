@@ -109,7 +109,7 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
 
     public async Task<StakeAddressReward?> GetStakeAddressReward(
         string stakeAddress, 
-        int epochNumber)
+        long epochNumber)
     {
         var result = await _accountsService.GetRewardsAsync(stakeAddress);
 
