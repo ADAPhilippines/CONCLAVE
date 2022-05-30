@@ -17,10 +17,10 @@ public class ConclaveOwnerRewardHandler
     private readonly IOptions<RewardOptions> _options;
 
     public ConclaveOwnerRewardHandler(IConclaveRewardService rewardService,
-                                  IConclaveEpochsService epochsService,
-                                  IConclaveOwnerRewardService conclaveOwnerRewardService,
-                                  IConclaveOwnerSnapshotService conclaveOwnerSnapshotService,
-                                  IOptions<RewardOptions> options)
+                                      IConclaveEpochsService epochsService,
+                                      IConclaveOwnerRewardService conclaveOwnerRewardService,
+                                      IConclaveOwnerSnapshotService conclaveOwnerSnapshotService,
+                                      IOptions<RewardOptions> options)
     {
         _rewardService = rewardService;
         _epochService = epochsService;
