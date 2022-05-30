@@ -14,7 +14,7 @@ public class Worker : BackgroundService
     public Worker(ILogger<Worker> logger, IServiceProvider provider)
     {
         _logger = logger;
-        var scopedProvider = _provider.CreateScope().ServiceProvider;
+        var scopedProvider = provider.CreateScope().ServiceProvider;
 
         EpochsService = scopedProvider.GetService<IConclaveEpochsService>();
     }
@@ -24,7 +24,7 @@ public class Worker : BackgroundService
         while (!stoppingToken.IsCancellationRequested)
         {
 
-            await Task.Delay(9000000000);
+            await Task.Delay(90000000);
         }
     }
 
