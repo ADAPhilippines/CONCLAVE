@@ -20,7 +20,7 @@ public class Worker : BackgroundService
 
     private IConclaveEpochsService EpochsService { get; set; }
     private IConclaveCardanoService CardanoService { get; set; }
-    private IConclaveSnapshotSchedulerService SnapshotSchedulerService { get; set; }
+    private IConclaveSchedulerService SnapshotSchedulerService { get; set; }
 
     // Snapshot Handlers
     private DelegatorSnapshotHandler DelegatorSnapshotHandler { get; }
@@ -58,7 +58,7 @@ public class Worker : BackgroundService
         // services
         EpochsService = scopedProvider.GetService<IConclaveEpochsService>()!;
         CardanoService = scopedProvider.GetService<IConclaveCardanoService>()!;
-        SnapshotSchedulerService = scopedProvider.GetService<IConclaveSnapshotSchedulerService>()!;
+        SnapshotSchedulerService = scopedProvider.GetService<IConclaveSchedulerService>()!;
 
         //options
         SnapshotOptions = scopedProvider.GetService<IOptions<SnapshotOptions>>()!;
@@ -90,7 +90,7 @@ public class Worker : BackgroundService
                     await DelegatorRewardHandler.HandleAsync(NewConclaveEpoch);
                     await OperatorRewardHandler.HandleAsync(NewConclaveEpoch);
                     await NftRewardHandler.HandleAsync(NewConclaveEpoch);
-                    // await ConcalveOwnerRewardHandler.HandleAsync(NewConclaveEpoch);
+                    await ConcalveOwnerRewardHandler.HandleAsync(NewConclaveEpoch, CurrentConclaveEpoch);
                 }
 
                 // reward calculation

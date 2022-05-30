@@ -10,5 +10,4 @@ public class Asset
         Unit = unit;
         Quantity = quantity;
     }
-
 }

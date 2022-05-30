@@ -6,7 +6,9 @@ namespace Conclave.Api.Services;
 
 public class ConclaveRewardService : IConclaveRewardService
 {
-    public IEnumerable<ConclaveOwnerReward> CalculateConclaveOwnerRewardsAsync(IEnumerable<ConclaveOwnerSnapshot> conclaveOwnerSnapshots, double totalReward)
+    public IEnumerable<ConclaveOwnerReward> CalculateConclaveOwnerRewardsAsync(
+        IEnumerable<ConclaveOwnerSnapshot> conclaveOwnerSnapshots, 
+        double totalReward)
     {
         var totalQuantity = conclaveOwnerSnapshots.Aggregate(0.0, (acc, cur) => acc + cur.Quantity);
         var conclaveOwnerRewards = new List<ConclaveOwnerReward>();

@@ -107,6 +107,19 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
         return new Operator(stakeAddress, pledge);
     }
 
+    public async Task<StakeAddressReward?> GetStakeAddressReward(
+        string stakeAddress, 
+        int epochNumber)
+    {
+        var result = await _accountsService.GetRewardsAsync(stakeAddress);
+
+        var stakeReward = result
+                        .Where(t => t.Epoch == epochNumber)
+                        .FirstOrDefault();
+        
+        return new StakeAddressReward(stakeAddress, ulong.Parse(stakeReward!.Amount), (ulong)stakeReward.Epoch);
+    }
+
     public async Task<StakeAddressAssets> GetStakeAddressAssetsAsync(string stakeAddress)
     {
         var page = 1;
