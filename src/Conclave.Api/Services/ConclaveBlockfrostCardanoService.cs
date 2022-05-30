@@ -1,5 +1,5 @@
 using Blockfrost.Api.Services;
-using Conclave.Api.Interfaces.Services;
+using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
 using Conclave.Common.Utils;
 using Microsoft.EntityFrameworkCore;
@@ -26,21 +26,39 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
         _assetsService = assetsService;
     }
 
-    public async Task<IEnumerable<Holder>> GetAssetHolders(string assetAddress, int? count = 100, int? page = 1)
+    public async Task<IEnumerable<Asset>?> GetAssetDetailsForStakeAddress(string stakeAddress, string policyId)
     {
-        if (count > 100) count = 100;
-        if (count < 1) count = 100;
-        if (page < 1) page = 1;
+        var assets = await GetStakeAddressAssetsAsync(stakeAddress);
 
-        var assetHolders = await _assetsService.GetAddressesAsync(assetAddress, count, page);
-        List<Holder> holders = new();
-
-        foreach (var assetHolder in assetHolders)
+        if (stakeAddress == "stake1uyjpkz0n2dn4un8n4dz7nfq8e670756mrndkkfmv4jdz0ys46e0z7")
         {
-            holders.Add(new Holder(assetHolder.Address, ulong.Parse(assetHolder.Quantity)));
+            System.Console.WriteLine("Here");
         }
 
-        return holders;
+        if (assets.Assets.Count < 1) return null;
+
+        return assets.Assets.FindAll(a => a.Unit.Contains(policyId)).ToList();
+    }
+
+    public async Task<IEnumerable<AssetOwner>> GetAssetOwnersAsync(string assetAddress)
+    {
+        var page = 1;
+        var assetOwners = new List<AssetOwner>();
+
+        while (true)
+        {
+            var holders = await _assetsService.GetAddressesAsync(assetAddress, 100, page);
+
+            foreach (var holder in holders)
+            {
+                assetOwners.Add(new AssetOwner(assetAddress, holder.Address, ulong.Parse(holder.Quantity)));
+            }
+
+            if (holders.Count < 100) break;
+            page++;
+        }
+
+        return assetOwners;
     }
 
     public async Task<IEnumerable<string>> GetAssociatedWalletAddressAsync(string stakingId)
@@ -79,5 +97,34 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
                                     .ToList();
 
         return delegators;
+    }
+
+    public async Task<Operator> GetPoolOwnerAsync(string poolId)
+    {
+        var details = await _poolsService.GetPoolsAsync(poolId);
+        var stakeAddress = details.Owners.First();
+        var pledge = ulong.Parse(details.LivePledge);
+        return new Operator(stakeAddress, pledge);
+    }
+
+    public async Task<StakeAddressAssets> GetStakeAddressAssetsAsync(string stakeAddress)
+    {
+        var page = 1;
+        var stakeAddressAssets = new StakeAddressAssets(stakeAddress, new List<Asset>());
+
+        while (true)
+        {
+            var assets = await _accountsService.GetAddressesAssetsAsync(stakeAddress, 100, page);
+
+            foreach (var asset in assets)
+            {
+                stakeAddressAssets.Assets.Add(new Asset(asset.Unit, ulong.Parse(asset.Quantity)));
+            }
+
+            if (assets.Count < 100) break;
+            page++;
+        }
+
+        return stakeAddressAssets;
     }
 }

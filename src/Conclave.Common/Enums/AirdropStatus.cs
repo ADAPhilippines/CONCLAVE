@@ -4,5 +4,6 @@ public enum AirdropStatus
     Skip,
     New,
     InProgress,
+    Failed,
     Completed
 }

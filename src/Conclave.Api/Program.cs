@@ -26,6 +26,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// app.UseExceptionHandler(); // 500 - Internal Server Error
+
 app.UseHttpsRedirection();
 
 app.UseAuthorization();

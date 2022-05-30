@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Blockfrost.Api.Services;
+using Conclave.Api.Interfaces;
 using Conclave.Api.Interfaces.Services;
 using Conclave.Api.Options;
 using Conclave.Common.Enums;
