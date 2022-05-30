@@ -1,10 +1,10 @@
 namespace Conclave.Airdrop;
 
-public class Worker : BackgroundService
+public class DelegatorAirdropWorker : BackgroundService
 {
-    private readonly ILogger<Worker> _logger;
+    private readonly ILogger<DelegatorAirdropWorker> _logger;
 
-    public Worker(ILogger<Worker> logger)
+    public DelegatorAirdropWorker(ILogger<Worker> logger)
     {
         _logger = logger;
     }
