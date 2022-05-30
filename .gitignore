@@ -3,4 +3,5 @@
 **/obj
 *.db
 **/.DS_Store
+**/.vscode
 **/volumes
