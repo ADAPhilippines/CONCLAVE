@@ -1,6 +1,6 @@
 ﻿{
   "profiles": {
-    "Conclave.Reward": {
+    "Conclave.Airdrop": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "environmentVariables": {

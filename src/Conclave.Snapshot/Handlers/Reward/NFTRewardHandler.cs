@@ -16,10 +16,10 @@ public class NFTRewardHandler
     private readonly IOptions<RewardOptions> _options;
 
     public NFTRewardHandler(IConclaveRewardService rewardService,
-                                  IConclaveEpochsService epochsService,
-                                  INFTRewardService nftRewardService,
-                                  INFTSnapshotService nftSnapshotService,
-                                  IOptions<RewardOptions> options)
+                            IConclaveEpochsService epochsService,
+                            INFTRewardService nftRewardService,
+                            INFTSnapshotService nftSnapshotService,
+                            IOptions<RewardOptions> options)
     {
         _rewardService = rewardService;
         _epochService = epochsService;

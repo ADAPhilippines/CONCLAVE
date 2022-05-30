@@ -15,10 +15,10 @@ public class ConclaveOwnerSnapshotHandler
     private readonly IOptions<ConclaveOptions> _options;
 
     public ConclaveOwnerSnapshotHandler(IConclaveSnapshotService snapshotService,
-                                    IConclaveOwnerSnapshotService conclaveOwnerSnapshotService,
-                                    IDelegatorSnapshotService delegatorSnapshotService,
-                                    IConclaveEpochsService epochsService,
-                                    IOptions<ConclaveOptions> options)
+                                        IConclaveOwnerSnapshotService conclaveOwnerSnapshotService,
+                                        IDelegatorSnapshotService delegatorSnapshotService,
+                                        IConclaveEpochsService epochsService,
+                                        IOptions<ConclaveOptions> options)
     {
         _snapshotService = snapshotService;
         _conclaveOwnerSnapshotService = conclaveOwnerSnapshotService;

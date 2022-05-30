@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": "../../Conclave.Snapshot"
+		},
+		{
+			"path": "../../Conclave.Data"
+		},
+		{
+			"path": "../../Conclave.Common"
+		},
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../Conclave.Reward"
+		}
+	],
+	"settings": {}
+}

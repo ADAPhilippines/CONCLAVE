@@ -14,9 +14,9 @@ public class OperatorSnapshotHandler
     private readonly IOptions<ConclaveOptions> _options;
 
     public OperatorSnapshotHandler(IConclaveSnapshotService snapshotService,
-                                    IOperatorSnapshotService operatorSnapshotService,
-                                    IConclaveEpochsService epochsService,
-                                    IOptions<ConclaveOptions> options)
+                                   IOperatorSnapshotService operatorSnapshotService,
+                                   IConclaveEpochsService epochsService,
+                                   IOptions<ConclaveOptions> options)
     {
         _snapshotService = snapshotService;
         _operatorSnapshotService = operatorSnapshotService;
