@@ -73,7 +73,10 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
 
         var poolDelegators = await _poolsService.GetDelegatorsAsync(poolId, count, page);
 
-        List<Delegator> delegators = poolDelegators.Select(t => new Delegator(t.Address, ulong.Parse(t.LiveStake))).ToList();
+        List<Delegator> delegators = poolDelegators
+                                    .Select(t => 
+                                        new Delegator(t.Address, ulong.Parse(t.LiveStake)))
+                                    .ToList();
 
         return delegators;
     }

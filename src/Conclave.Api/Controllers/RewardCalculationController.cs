@@ -13,10 +13,11 @@ public class RewardCalculationController : ControllerBase
     private readonly IConclaveEpochRewardService _epochRewardService;
     private readonly IConclaveEpochDelegatorRewardService _epochDelegatorRewardService;
 
-    public RewardCalculationController(IConclaveRewardCalculationService service,
-                                       IConclaveEpochsService epochService,
-                                       IConclaveEpochRewardService epochRewardService,
-                                       IConclaveEpochDelegatorRewardService epochDelegatorRewardService)
+    public RewardCalculationController(
+        IConclaveRewardCalculationService service,
+        IConclaveEpochsService epochService,
+        IConclaveEpochRewardService epochRewardService,
+        IConclaveEpochDelegatorRewardService epochDelegatorRewardService)
     {
         _rewardCalculationservice = service;
         _epochService = epochService;
@@ -53,5 +54,11 @@ public class RewardCalculationController : ControllerBase
         {
             return BadRequest(e.Message);
         }
+    }
+
+    [HttpGet("delegator/adaReward/{epochNumber}")]
+    public async Task<IActionResult> GetAdaRewardsPerEpoch(ulong epochNumber)
+    {
+        return BadRequest("Not Implemented");
     }
 }

@@ -163,12 +163,4 @@ public class ConclaveSnapshotWorkerService : IConclaveSnapshotWorkerService
 
         return snapshotList!;
     }
-
-    public async Task<IEnumerable<ConclaveHolder>> StoreHolderSnapshotDataAsync(IEnumerable<ConclaveHolder?> snapshotList)
-    {
-        if (!snapshotList.Any() || snapshotList is null) throw new Exception("Holder Snapshot list must not be empty");
-        _context.ConclaveHolders.AddRange(snapshotList!);
-        await _context.SaveChangesAsync();
-        return snapshotList!;
-    }
 }

@@ -55,7 +55,6 @@ public class Worker : BackgroundService
         //options
         ConclaveOptions = scopedProvider.GetService<IOptions<ConclaveOptions>>();
         SnapshotOptions = scopedProvider.GetService<IOptions<SnapshotOptions>>();
-
     }
     
     protected async override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -313,7 +312,6 @@ public class Worker : BackgroundService
 
     private async Task ExecuteTestNewEpochCreationSchedulerAsync()
     {
-
         _logger.LogInformation($"{nameof(ExecuteTestNewEpochCreationSchedulerAsync)} running...");
         _logger.LogInformation("New epoch created. Updating statuses...");
 
@@ -340,7 +338,6 @@ public class Worker : BackgroundService
 
         if (NewConclaveEpoch is null && CurrentConclaveEpoch.SnapshotStatus == SnapshotStatus.Completed)
         {
-
             if (EpochDelegatorService is null) throw new Exception("EpochDelegatorService is null");
 
             var currentConclaveDelegators = EpochDelegatorService.GetAllByEpochNumber(CurrentConclaveEpoch.EpochNumber)
@@ -372,8 +369,9 @@ public class Worker : BackgroundService
         return service.GetByEpochStatus(EpochStatus.Seed).FirstOrDefault();
     }
 
-    private static async Task<ConclaveEpoch> CreateSeedEpoch(IConclaveCardanoService conclaveCardanoService,
-                                                             IConclaveEpochsService conclaveEpochsService)
+    private static async Task<ConclaveEpoch> CreateSeedEpoch(
+        IConclaveCardanoService conclaveCardanoService,
+        IConclaveEpochsService conclaveEpochsService)
     {
         var currentEpoch = await conclaveCardanoService.GetCurrentEpochAsync();
 

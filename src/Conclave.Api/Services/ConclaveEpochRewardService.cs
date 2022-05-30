@@ -43,8 +43,6 @@ public class ConclaveEpochRewardService : IConclaveEpochRewardService
 
     public async Task<ConclaveEpochReward> UpdateAsync(Guid id, ConclaveEpochReward conclaveEpochReward)
     {
-        if (id == conclaveEpochReward.Id) throw new Exception("Ids do not match");
-
         _context.Update(conclaveEpochReward);
         await _context.SaveChangesAsync();
 
