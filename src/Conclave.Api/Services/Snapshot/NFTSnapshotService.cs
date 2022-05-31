@@ -13,6 +13,7 @@ public class NFTSnapshotService : INFTSnapshotService
     {
         _context = context;
     }
+
     public async Task<NFTSnapshot> CreateAsync(NFTSnapshot entity)
     {
         _context.Add(entity);
@@ -33,10 +34,7 @@ public class NFTSnapshotService : INFTSnapshotService
         return entity;
     }
 
-    public IEnumerable<NFTSnapshot>? GetAll()
-    {
-        return _context.NFTSnapshots.ToList();
-    }
+    public IEnumerable<NFTSnapshot> GetAll() => _context.NFTSnapshots.ToList() ?? new List<NFTSnapshot>();
 
     public IEnumerable<NFTSnapshot>? GetAllByEpochNumber(ulong epochNumber)
     {
@@ -48,10 +46,8 @@ public class NFTSnapshotService : INFTSnapshotService
         return nftStakers;
     }
 
-    public NFTSnapshot? GetById(Guid id)
-    {
-        return _context.NFTSnapshots.Find(id);
-    }
+    public NFTSnapshot? GetById(Guid id) => _context.NFTSnapshots.Find(id);
+    
 
     public async Task<NFTSnapshot?> UpdateAsync(Guid id, NFTSnapshot entity)
     {

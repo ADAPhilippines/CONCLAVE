@@ -13,6 +13,7 @@ public class DelegatorSnapshotService : IDelegatorSnapshotService
     {
         _context = context;
     }
+
     public async Task<DelegatorSnapshot> CreateAsync(DelegatorSnapshot entity)
     {
         _context.Add(entity);
@@ -33,25 +34,19 @@ public class DelegatorSnapshotService : IDelegatorSnapshotService
         return entity;
     }
 
-    public IEnumerable<DelegatorSnapshot> GetAll()
-    {
-        return _context.DelegatorSnapshots.ToList();
-    }
-
-    public IEnumerable<DelegatorSnapshot>? GetAllByEpochNumber(ulong epochNumber)
+    public IEnumerable<DelegatorSnapshot> GetAll() => _context.DelegatorSnapshots.ToList();
+    
+    public IEnumerable<DelegatorSnapshot> GetAllByEpochNumber(ulong epochNumber)
     {
         var delegators = _context.DelegatorSnapshots.Include(d => d.ConclaveEpoch)
                                                     .Where(d => d.ConclaveEpoch.EpochNumber == epochNumber)
                                                     .ToList();
 
-        return delegators;
+        return delegators ?? new List<DelegatorSnapshot>();
     }
 
-    public DelegatorSnapshot? GetById(Guid id)
-    {
-        return _context.DelegatorSnapshots.Find(id);
-    }
-
+    public DelegatorSnapshot? GetById(Guid id) => _context.DelegatorSnapshots.Find(id);
+    
     public async Task<DelegatorSnapshot?> UpdateAsync(Guid id, DelegatorSnapshot entity)
     {
         var existing = _context.DelegatorSnapshots.Find(id);

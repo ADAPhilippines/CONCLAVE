@@ -12,6 +12,7 @@ public class OperatorRewardService : IOperatorRewardService
     {
         _context = context;
     }
+
     public async Task<OperatorReward> CreateAsync(OperatorReward entity)
     {
         _context.Add(entity);
@@ -32,16 +33,10 @@ public class OperatorRewardService : IOperatorRewardService
         return entity;
     }
 
-    public IEnumerable<OperatorReward>? GetAll()
-    {
-        return _context.OperatorRewards.ToList();
-    }
-
-    public OperatorReward? GetById(Guid id)
-    {
-        return _context.OperatorRewards.Find(id);
-    }
-
+    public IEnumerable<OperatorReward> GetAll() => _context.OperatorRewards.ToList() ?? new List<OperatorReward>();
+    
+    public OperatorReward? GetById(Guid id) => _context.OperatorRewards.Find(id);
+    
     public async Task<OperatorReward?> UpdateAsync(Guid id, OperatorReward entity)
     {
         var existing = _context.OperatorRewards.Find(id);

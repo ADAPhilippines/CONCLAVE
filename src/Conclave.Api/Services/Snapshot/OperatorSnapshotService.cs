@@ -13,6 +13,7 @@ public class OperatorSnapshotService : IOperatorSnapshotService
     {
         _context = context;
     }
+
     public async Task<OperatorSnapshot> CreateAsync(OperatorSnapshot entity)
     {
         _context.Add(entity);
@@ -33,26 +34,20 @@ public class OperatorSnapshotService : IOperatorSnapshotService
         return entity;
     }
 
-    public IEnumerable<OperatorSnapshot>? GetAll()
-    {
-        return _context.OperatorSnapshots.ToList();
-    }
+    public IEnumerable<OperatorSnapshot> GetAll() => _context.OperatorSnapshots.ToList() ?? new List<OperatorSnapshot>();
 
-    public IEnumerable<OperatorSnapshot>? GetAllByEpochNumber(ulong epochNumber)
+    public IEnumerable<OperatorSnapshot> GetAllByEpochNumber(ulong epochNumber)
     {
         var operators = _context.OperatorSnapshots.Include(o => o.ConclaveEpoch)
                                                   .Where(o => o.ConclaveEpoch.EpochNumber == epochNumber)
                                                   .ToList();
 
-        return operators;
+        return operators ?? new List<OperatorSnapshot>();
     }
 
 
-    public OperatorSnapshot? GetById(Guid id)
-    {
-        return _context.OperatorSnapshots.Find(id);
-    }
-
+    public OperatorSnapshot? GetById(Guid id) => _context.OperatorSnapshots.Find(id);
+    
     public async Task<OperatorSnapshot?> UpdateAsync(Guid id, OperatorSnapshot entity)
     {
         var existing = _context.OperatorSnapshots.Find(id);

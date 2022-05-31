@@ -19,6 +19,6 @@ public class ConclaveSchedulerService : IConclaveSchedulerService
     
     public long GetPoolOwnerRewardDelayInMilliseconds(ConclaveEpoch conclaveEpoch, long delayInMilliseconds)
     {
-        return DateUtils.GetTimeDifferenceFromNowInMilliseconds(conclaveEpoch.EndTime) + 432000000 + delayInMilliseconds;
+        return DateUtils.GetTimeDifferenceFromNowInMilliseconds(conclaveEpoch.EndTime) + 864000000 + delayInMilliseconds;
     }
 }

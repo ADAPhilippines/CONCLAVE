@@ -78,8 +78,9 @@ public class ConclaveOwnerRewardHandler
     {
         _logger.LogInformation("Executing ConclaveRewardCyclerAsync");
 
-        var delayInMilliseconds = _conclaveShchedulerService.GetPoolOwnerRewardDelayInMilliseconds(epoch,
-                                  _poolOwnerRewardOptions.Value.PoolOwnerRewardCompleteAfterMilliseconds);
+        var delayInMilliseconds = _conclaveShchedulerService.GetPoolOwnerRewardDelayInMilliseconds(
+                                    epoch,
+                                    _poolOwnerRewardOptions.Value.PoolOwnerRewardCompleteAfterMilliseconds);
 
         _logger.LogInformation($"Conclave Rewards will be available after {DateUtils.GetReadableTimeFromMilliseconds((int)delayInMilliseconds)}");
 
@@ -99,7 +100,7 @@ public class ConclaveOwnerRewardHandler
                 result?.Result?.RewardAmount == null ||
                 result.Result.RewardAmount < 0)
             {
-                _logger.LogInformation("No rewards yet. Wait for 5 mins");
+                _logger.LogInformation("No rewards yet. Wait for 5 more mins");
                 await Task.Delay(300000); // 5 mins
 
                 result = _conclaveCardanoService.GetStakeAddressReward(stakeAddress, (long)newEpoch.EpochNumber);

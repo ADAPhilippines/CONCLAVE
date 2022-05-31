@@ -17,14 +17,12 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
 {
     private readonly IConclaveCardanoService _service;
 
-    public ConclaveSnapshotService(IConclaveCardanoService service)
-    {
-        _service = service;
-    }
+    public ConclaveSnapshotService(IConclaveCardanoService service) { _service = service; }
 
-    public async Task<ConclaveOwnerSnapshot?> SnapshotConclaveOwner(DelegatorSnapshot delegatorSnapshot,
-                                                                    string policyId,
-                                                                    ConclaveEpoch epoch)
+    public async Task<ConclaveOwnerSnapshot?> SnapshotConclaveOwner(
+        DelegatorSnapshot delegatorSnapshot,                                                         
+        string policyId,
+        ConclaveEpoch epoch)
     {
         var assets = await _service.GetAssetDetailsForStakeAddress(delegatorSnapshot.StakeAddress, policyId);
 
@@ -43,9 +41,10 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         };
     }
 
-    public async Task<IEnumerable<ConclaveOwnerSnapshot>> SnapshotConclaveOwnersAsync(string policyId,
-                                                                                      IEnumerable<DelegatorSnapshot> delegatorSnapshots,
-                                                                                      ConclaveEpoch epoch)
+    public async Task<IEnumerable<ConclaveOwnerSnapshot>> SnapshotConclaveOwnersAsync(
+        string policyId,
+        IEnumerable<DelegatorSnapshot> delegatorSnapshots,
+        ConclaveEpoch epoch)
     {
         var conclaveOwners = new List<ConclaveOwnerSnapshot>();
 
@@ -130,9 +129,10 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         return nftSnapshot;
     }
 
-    public async Task<IEnumerable<NFTSnapshot>> SnapshotNFTsForStakeAddressesAsync(IEnumerable<NFTProject> nftProjects,
-                                                                                   IEnumerable<DelegatorSnapshot> delegatorSnapshots,
-                                                                                   ConclaveEpoch epoch)
+    public async Task<IEnumerable<NFTSnapshot>> SnapshotNFTsForStakeAddressesAsync(
+        IEnumerable<NFTProject> nftProjects,
+        IEnumerable<DelegatorSnapshot> delegatorSnapshots,
+        ConclaveEpoch epoch)
     {
         var nftSnapshots = new List<NFTSnapshot>();
 
@@ -168,7 +168,9 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         return operatorSnapshot;
     }
 
-    public async Task<IEnumerable<OperatorSnapshot>> SnapshotOperatorsAsync(IEnumerable<string> poolIds, ConclaveEpoch epoch)
+    public async Task<IEnumerable<OperatorSnapshot>> SnapshotOperatorsAsync(
+        IEnumerable<string> poolIds, 
+        ConclaveEpoch epoch)
     {
         var operatosSnapshots = new List<OperatorSnapshot>();
 

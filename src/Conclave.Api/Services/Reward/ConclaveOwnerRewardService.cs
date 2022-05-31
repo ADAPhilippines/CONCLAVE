@@ -32,16 +32,10 @@ public class ConclaveOwnerRewardService : IConclaveOwnerRewardService
         return entity;
     }
 
-    public IEnumerable<ConclaveOwnerReward>? GetAll()
-    {
-        return _context.ConclaveOwnerRewards.ToList();
-    }
-
-    public ConclaveOwnerReward? GetById(Guid id)
-    {
-        return _context.ConclaveOwnerRewards.Find(id);
-    }
-
+    public IEnumerable<ConclaveOwnerReward> GetAll() => _context.ConclaveOwnerRewards.ToList() ?? new List<ConclaveOwnerReward>();
+    
+    public ConclaveOwnerReward? GetById(Guid id) => _context.ConclaveOwnerRewards.Find(id);
+    
     public async Task<ConclaveOwnerReward?> UpdateAsync(Guid id, ConclaveOwnerReward entity)
     {
         var existing = _context.ConclaveOwnerRewards.Find(id);

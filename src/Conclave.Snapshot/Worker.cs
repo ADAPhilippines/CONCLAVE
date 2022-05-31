@@ -63,7 +63,7 @@ public class Worker : BackgroundService
         //options
         SnapshotOptions = scopedProvider.GetService<IOptions<SnapshotOptions>>()!;
     }
-    
+
     protected async override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)

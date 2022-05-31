@@ -12,6 +12,7 @@ public class DelegatorRewardService : IDelegatorRewardService
     {
         _context = context;
     }
+
     public async Task<DelegatorReward> CreateAsync(DelegatorReward entity)
     {
         _context.Add(entity);
@@ -32,16 +33,10 @@ public class DelegatorRewardService : IDelegatorRewardService
         return entity;
     }
 
-    public IEnumerable<DelegatorReward> GetAll()
-    {
-        return _context.DelegatorRewards.ToList();
-    }
-
-    public DelegatorReward? GetById(Guid id)
-    {
-        return _context.DelegatorRewards.Find(id);
-    }
-
+    public IEnumerable<DelegatorReward> GetAll() => _context.DelegatorRewards.ToList() ?? new List<DelegatorReward>();
+    
+    public DelegatorReward? GetById(Guid id) => _context.DelegatorRewards.Find(id);
+    
     public async Task<DelegatorReward?> UpdateAsync(Guid id, DelegatorReward entity)
     {
         var existing = _context.DelegatorRewards.Find(id);

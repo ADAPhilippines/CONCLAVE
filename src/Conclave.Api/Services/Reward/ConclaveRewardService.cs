@@ -80,7 +80,9 @@ public class ConclaveRewardService : IConclaveRewardService
         return nftRewards;
     }
 
-    public IEnumerable<OperatorReward> CalculateOperatorRewardsAsync(IEnumerable<OperatorSnapshot> operatorSnapshots, double totalReward)
+    public IEnumerable<OperatorReward> CalculateOperatorRewardsAsync(
+        IEnumerable<OperatorSnapshot> operatorSnapshots, 
+        double totalReward)
     {
         var totalQuantity = operatorSnapshots.Aggregate(0.0, (acc, cur) => acc + cur.Pledge);
         var operatorRewards = new List<OperatorReward>();

@@ -32,16 +32,10 @@ public class NFTRewardService : INFTRewardService
         return entity;
     }
 
-    public IEnumerable<NFTReward>? GetAll()
-    {
-        return _context.NFTRewards.ToList();
-    }
-
-    public NFTReward? GetById(Guid id)
-    {
-        return _context.NFTRewards.Find(id);
-    }
-
+    public IEnumerable<NFTReward> GetAll() => _context.NFTRewards.ToList() ?? new List<NFTReward>();
+    
+    public NFTReward? GetById(Guid id) => _context.NFTRewards.Find(id);
+    
     public async Task<NFTReward?> UpdateAsync(Guid id, NFTReward entity)
     {
         var existing = _context.NFTRewards.Find(id);
