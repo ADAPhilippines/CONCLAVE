@@ -48,16 +48,15 @@ public class ConclaveOwnerRewardHandler
 
     public async Task HandleAsync(ConclaveEpoch epoch)
     {
+        _logger.LogInformation("Executing ConclaveOwnerCalculationsAsync");
         if (epoch.ConclaveOwnerSnapshotStatus != SnapshotStatus.Completed) return;
         if (epoch.ConclaveOwnerRewardStatus == RewardStatus.Completed) return;
 
         // TODO: Need to set schedule here
         await ExecuteConclaveOwnerRewardSchedulerAsync(epoch); // 
 
-        //uncomment in actual
         var conclaveOwnerSnapshots = _conclaveOwnerSnapshotService.GetAllByEpochNumber(epoch.EpochNumber);
 
-        // Update reward status
         epoch.ConclaveOwnerRewardStatus = RewardStatus.InProgress;
         await _epochService.UpdateAsync(epoch.Id, epoch);
 
@@ -86,7 +85,7 @@ public class ConclaveOwnerRewardHandler
 
         await Task.Delay(3); // TODO: Change this delay
 
-        _logger.LogInformation("Exiting SnapshotCycleWrapperAsync");
+        _logger.LogInformation("Exiting ConclaveRewardCyclerAsync");
     }
 
     public async Task<ulong> CalculateTotalPoolOwnerReward(IEnumerable<string> stakeAddresses, ConclaveEpoch newEpoch)

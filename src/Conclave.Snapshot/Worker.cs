@@ -88,15 +88,13 @@ public class Worker : BackgroundService
                     await DelegatorRewardHandler.HandleAsync(NewConclaveEpoch);
                     await OperatorRewardHandler.HandleAsync(NewConclaveEpoch);
                     await NftRewardHandler.HandleAsync(NewConclaveEpoch);
-                    await ConcalveOwnerRewardHandler.HandleAsync(CurrentConclaveEpoch!);
                 }
 
                 // reward calculation
-
+                await ConcalveOwnerRewardHandler.HandleAsync(CurrentConclaveEpoch!);
 
                 // end epoch cycle
                 await ExecuteSnapshotEndSchedulerAsync();
-
             }
             catch (Exception e)
             {
