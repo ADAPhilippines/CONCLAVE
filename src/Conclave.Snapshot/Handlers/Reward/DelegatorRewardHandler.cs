@@ -35,7 +35,7 @@ public class DelegatorRewardHandler
         if (epoch.DelegatorRewardStatus == RewardStatus.Completed) return;
 
         // Fetch all snapshots
-        var delegatorSnapshots = _delegatorSnapshotService.GetAllByEpochNumber(epoch.EpochNumber);
+        var delegatorSnapshots = _delegatorSnapshotService.GetAllByEpochNumber(epoch.EpochNumber) ?? new List<DelegatorSnapshot>();
 
         // Update reward status
         epoch.DelegatorRewardStatus = RewardStatus.InProgress;
@@ -53,10 +53,5 @@ public class DelegatorRewardHandler
         // Update reward status
         epoch.DelegatorRewardStatus = RewardStatus.Completed;
         await _epochService.UpdateAsync(epoch.Id, epoch);
-    }
-
-    private async Task PrepareAirdrop()
-    {
-
     }
 }

@@ -56,9 +56,4 @@ public class NFTRewardHandler
         epoch.NFTRewardStatus = RewardStatus.Completed;
         await _epochService.UpdateAsync(epoch.Id, epoch);
     }
-
-    private async Task PrepareAirdrop()
-    {
-
-    }
 }
