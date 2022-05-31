@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
 using Conclave.Common.Enums;
 using Conclave.Common.Utils;

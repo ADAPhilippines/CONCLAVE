@@ -56,8 +56,4 @@ public class OperatorRewardHandler
         await _epochService.UpdateAsync(epoch.Id, epoch);
     }
 
-    private async Task PrepareAirdrop()
-    {
-
-    }
 }

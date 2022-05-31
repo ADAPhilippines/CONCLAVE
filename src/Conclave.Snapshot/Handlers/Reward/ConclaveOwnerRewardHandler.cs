@@ -45,9 +45,4 @@ public class ConclaveOwnerRewardHandler
 
         // TODO: calculate reward here
     }
-
-    private async Task PrepareAirdrop()
-    {
-
-    }
 }
