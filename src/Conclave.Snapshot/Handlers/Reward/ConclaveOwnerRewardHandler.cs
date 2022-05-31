@@ -89,40 +89,26 @@ public class ConclaveOwnerRewardHandler
         _logger.LogInformation("Exiting SnapshotCycleWrapperAsync");
     }
 
-    private IEnumerable<string>? GetStakeAddressByEpoch(ulong epochNumber)
-    {
-        var operatorRewards = _operatorSnapshotService.GetAll()?.ToList();
-
-        var result = operatorRewards?
-                    .Where(t => t.ConclaveEpoch.EpochNumber == epochNumber)
-                    .Select(t => t.StakeAddress)
-                    .ToList();
-
-        return result;
-    }
-
-
     public async Task<ulong> CalculateTotalPoolOwnerReward(IEnumerable<string> stakeAddresses, ConclaveEpoch newEpoch)
     {
         ulong totalReward = 0;
-        while (totalReward == 0)
-        {
-            foreach (var stakeAddress in stakeAddresses)
+        
+        foreach (var stakeAddress in stakeAddresses)
+        {   
+            var result = _conclaveCardanoService.GetStakeAddressReward(stakeAddress, (long)newEpoch.EpochNumber); // dsadsa
+            while (
+                result?.Result?.RewardAmount == null ||
+                result.Result.RewardAmount < 0)
             {
-                while (true)
-                {
-                    var result = _conclaveCardanoService.GetStakeAddressReward(stakeAddress, (long)newEpoch.EpochNumber); // dsadsa
-                    totalReward += (ulong)result.Result.RewardAmount;
+                _logger.LogInformation("No rewards yet. Wait for 5 mins");
+                await Task.Delay(300000); // 5 mins
 
-                    if (totalReward >= 0) break;
-
-                    _logger.LogInformation("No rewards yet. Wait for 5 mins");
-                    await Task.Delay(300000); // 5 mins
-
-                }
-
+                result = _conclaveCardanoService.GetStakeAddressReward(stakeAddress, (long)newEpoch.EpochNumber);
             }
+
+            totalReward += (ulong)result.Result.RewardAmount;
         }
+        
         return totalReward;
     }
 }
