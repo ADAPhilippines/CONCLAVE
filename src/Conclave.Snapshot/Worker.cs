@@ -75,25 +75,31 @@ public class Worker : BackgroundService
                 await ExecuteSnapshotSchedulerAsync();
                 await ExecuteNewEpochGetterOrSetterAsync();
 
-                if (NewConclaveEpoch is not null)
+                if (NewConclaveEpoch is null)
                 {
 
-                    // snapshot
-                    await DelegatorSnapshotHandler.HandleAsync(NewConclaveEpoch);
-                    await OperatorSnapshotHandler.HandleAsync(NewConclaveEpoch);
-                    await NftSnapshotHandler.HandleAsync(NewConclaveEpoch);
-                    await OwnerSnapshotHandler.HandleAsync(NewConclaveEpoch);
+                };
 
-                    // reward
-                    await DelegatorRewardHandler.HandleAsync(NewConclaveEpoch);
-                    await OperatorRewardHandler.HandleAsync(NewConclaveEpoch);
-                    await NftRewardHandler.HandleAsync(NewConclaveEpoch);
-                    // await ConcalveOwnerRewardHandler.HandleAsync(NewConclaveEpoch);
+                // snapshot
+                await DelegatorSnapshotHandler.HandleAsync(NewConclaveEpoch);
+                await OperatorSnapshotHandler.HandleAsync(NewConclaveEpoch);
+                await NftSnapshotHandler.HandleAsync(NewConclaveEpoch);
+                await OwnerSnapshotHandler.HandleAsync(NewConclaveEpoch);
+
+                // reward
+                await DelegatorRewardHandler.HandleAsync(NewConclaveEpoch);
+                await OperatorRewardHandler.HandleAsync(NewConclaveEpoch);
+                await NftRewardHandler.HandleAsync(NewConclaveEpoch);
 
 
-                    // end conclave epoch cycle
-                    await ExecuteSnapshotEndSchedulerAsync();
-                }
+                // end conclave epoch cycle
+                await ExecuteSnapshotEndSchedulerAsync(); // Curren = Newepoch NewCOn = null 
+
+                // calculate rewards
+                // do not await as this will block epoch snapshot execution by 10 days
+
+                // ConcalveOwnerRewardHandler.HandleAsync(CurrentConclaveEpoch);
+
             }
             catch (Exception e)
             {
@@ -207,7 +213,7 @@ public class Worker : BackgroundService
             NewConclaveEpoch.EpochStatus = EpochStatus.Current;
             await EpochsService!.UpdateAsync(NewConclaveEpoch.Id, NewConclaveEpoch);
 
-
+            //should be on top of new epoch instead of below
             if (CurrentConclaveEpoch!.EpochStatus != EpochStatus.Seed)
             {
                 // Update epoch status to Old
