@@ -15,10 +15,11 @@ public class ConclaveOwnerRewardHandler
     private readonly IConclaveEpochsService _epochService;
     private readonly IConclaveOwnerRewardService _conclaveOwnerRewardService;
     private readonly IConclaveOwnerSnapshotService _conclaveOwnerSnapshotService;
-    private IConclaveSchedulerService ConclaveOwnerScheduler { get; set; }
-    private IOptions<PoolOwnerRewardOptions> PoolOwnerRewardOptions { get; set; }
-
-    private readonly IOptions<RewardOptions> _options;
+    private readonly IConclaveSchedulerService _conclaveShchedulerService;
+    private readonly IOptions<PoolOwnerRewardOptions> _poolOwnerRewardOptions;
+    private readonly IOperatorSnapshotService _operatorSnapshotService;
+    private readonly IConclaveCardanoService _conclaveCardanoService;
+    private readonly IOptions<RewardOptions> _rewardOptions;
 
     public ConclaveOwnerRewardHandler(
         ILogger<Worker> logger,
@@ -26,25 +27,33 @@ public class ConclaveOwnerRewardHandler
         IConclaveEpochsService epochsService,
         IConclaveOwnerRewardService conclaveOwnerRewardService,
         IConclaveOwnerSnapshotService conclaveOwnerSnapshotService,
-        IOptions<RewardOptions> options)
+        IOperatorSnapshotService operatorSnapshotService,
+        IConclaveCardanoService conclaveCardanoService,
+        IConclaveSchedulerService conclaveSchedulerService,
+        IOptions<PoolOwnerRewardOptions> poolOwnerRewardOptions,
+        IOptions<RewardOptions> rewardOptions)
     {
         _rewardService = rewardService;
         _epochService = epochsService;
         _conclaveOwnerRewardService = conclaveOwnerRewardService;
         _conclaveOwnerSnapshotService = conclaveOwnerSnapshotService;
-        _options = options;
+        _rewardOptions = rewardOptions;
+        _poolOwnerRewardOptions = poolOwnerRewardOptions;
         _logger = logger;
+        _operatorSnapshotService = operatorSnapshotService;
+        _conclaveCardanoService = conclaveCardanoService;
+        _conclaveShchedulerService = conclaveSchedulerService;
     }
 
 
-    public async Task HandleAsync(ConclaveEpoch newEpoch, ConclaveEpoch? currentEpoch)
+    public async Task HandleAsync(ConclaveEpoch newEpoch, ConclaveEpoch currentEpoch)
     {
         if (newEpoch.ConclaveOwnerSnapshotStatus != SnapshotStatus.Completed) return;
         if (newEpoch.ConclaveOwnerRewardStatus == RewardStatus.Completed) return;
 
         // TODO: Need to set schedule here
-        ExecuteConclaveOwnerRewardSchedulerAsync(currentEpoch);
-
+        await ExecuteConclaveOwnerRewardSchedulerAsync(currentEpoch);
+        //uncomment in actual
         var conclaveOwnerSnapshots = _conclaveOwnerSnapshotService.GetAllByEpochNumber(newEpoch.EpochNumber);
 
         // Update reward status
@@ -52,8 +61,12 @@ public class ConclaveOwnerRewardHandler
         await _epochService.UpdateAsync(newEpoch.Id, newEpoch);
 
         // TODO: calculate reward here
-        //Get PoolOwnerReward
-        var conclaveOwnerRewards = _rewardService.CalculateConclaveOwnerRewardsAsync(conclaveOwnerSnapshots, 594.0 * (_options.Value.ConclaveOwnerRewardSharePercentage/100.0));
+        var stakeAddresses = GetStakeAddressByEpoch(newEpoch.EpochNumber);
+        var totalReward = CalculateTotalPoolOwnerReward(stakeAddresses, newEpoch);
+
+        if (conclaveOwnerSnapshots == null) return;
+        var conclaveOwnerRewards = _rewardService.CalculateConclaveOwnerRewardsAsync(
+            conclaveOwnerSnapshots, totalReward * (_rewardOptions.Value.ConclaveOwnerRewardSharePercentage/100.0));
 
         foreach (var conclaveOwnerReward in conclaveOwnerRewards) await _conclaveOwnerRewardService.CreateAsync(conclaveOwnerReward);
 
@@ -70,13 +83,45 @@ public class ConclaveOwnerRewardHandler
     {
         _logger.LogInformation("Executing ConclaveRewardCyclerAsync");
 
-        var delayInMilliseconds = ConclaveOwnerScheduler!.GetPoolOwnerRewardDelayInMilliseconds(epoch!,
-                                                                                           PoolOwnerRewardOptions!.Value.PoolOwnerRewardCompleteAfterMilliseconds);
+        var delayInMilliseconds = _conclaveShchedulerService.GetPoolOwnerRewardDelayInMilliseconds(epoch,
+                                    _poolOwnerRewardOptions.Value.PoolOwnerRewardCompleteAfterMilliseconds);
 
         _logger.LogInformation($"Conclave Rewards will be available after {DateUtils.GetReadableTimeFromMilliseconds((int)delayInMilliseconds)}");
 
-        await Task.Delay((int)delayInMilliseconds);
+        await Task.Delay(3);
 
         _logger.LogInformation("Exiting SnapshotCycleWrapperAsync");
+    }
+
+    private IEnumerable<string>? GetStakeAddressByEpoch (ulong epochNumber)
+    {
+        var operatorRewards = _operatorSnapshotService.GetAll()?.ToList();
+
+        var result = operatorRewards?
+                    .Where(t => t.ConclaveEpoch.EpochNumber == epochNumber)
+                    .Select(t => t.StakeAddress)
+                    .ToList();
+        
+        return result;
+    }
+
+    
+    public ulong CalculateTotalPoolOwnerReward(IEnumerable<string> stakeAddresses, ConclaveEpoch newEpoch)
+    {
+        ulong totalReward = 0;
+        while (totalReward == 0)
+        {
+            foreach (var stakeAddress in stakeAddresses)
+            {
+                var result = _conclaveCardanoService.GetStakeAddressReward(stakeAddress, (long)newEpoch.EpochNumber);
+                totalReward += (ulong)result.Result.RewardAmount;
+            }
+
+            if (totalReward == 0) {
+                _logger.LogInformation("No rewards yet. Wait for 5 mins");
+                Task.Delay(300000);
+            }
+        }
+        return totalReward;
     }
 }

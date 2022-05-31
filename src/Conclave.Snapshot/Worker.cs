@@ -62,7 +62,6 @@ public class Worker : BackgroundService
 
         //options
         SnapshotOptions = scopedProvider.GetService<IOptions<SnapshotOptions>>()!;
-
     }
     
     protected async override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -79,7 +78,6 @@ public class Worker : BackgroundService
 
                 if (NewConclaveEpoch is not null)
                 {
-
                     // snapshot
                     await DelegatorSnapshotHandler.HandleAsync(NewConclaveEpoch);
                     await OperatorSnapshotHandler.HandleAsync(NewConclaveEpoch);
@@ -90,7 +88,7 @@ public class Worker : BackgroundService
                     await DelegatorRewardHandler.HandleAsync(NewConclaveEpoch);
                     await OperatorRewardHandler.HandleAsync(NewConclaveEpoch);
                     await NftRewardHandler.HandleAsync(NewConclaveEpoch);
-                    await ConcalveOwnerRewardHandler.HandleAsync(NewConclaveEpoch, CurrentConclaveEpoch);
+                    await ConcalveOwnerRewardHandler.HandleAsync(NewConclaveEpoch, CurrentConclaveEpoch!);
                 }
 
                 // reward calculation
