@@ -15,10 +15,10 @@ public class ConclaveOwnerRewardHandler
     private readonly IConclaveEpochsService _epochService;
     private readonly IConclaveOwnerRewardService _conclaveOwnerRewardService;
     private readonly IConclaveOwnerSnapshotService _conclaveOwnerSnapshotService;
-    private readonly IConclaveCardanoService _conclaveCardanoService;
     private IConclaveSchedulerService ConclaveOwnerScheduler { get; set; }
     private IOptions<PoolOwnerRewardOptions> PoolOwnerRewardOptions { get; set; }
     private IOperatorSnapshotService _operatorSnapshotService;
+    private readonly IConclaveCardanoService _conclaveCardanoService;
     private readonly IOptions<RewardOptions> _options;
 
     public ConclaveOwnerRewardHandler(
@@ -27,8 +27,8 @@ public class ConclaveOwnerRewardHandler
         IConclaveEpochsService epochsService,
         IConclaveOwnerRewardService conclaveOwnerRewardService,
         IConclaveOwnerSnapshotService conclaveOwnerSnapshotService,
-        IConclaveCardanoService conclaveCardanoService,
         IOperatorSnapshotService operatorSnapshotService,
+        IConclaveCardanoService conclaveCardanoService,
         IOptions<RewardOptions> options)
     {
         _rewardService = rewardService;
