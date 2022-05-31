@@ -46,37 +46,33 @@ public class ConclaveOwnerRewardHandler
     }
 
 
-    public async Task HandleAsync(ConclaveEpoch newEpoch, ConclaveEpoch currentEpoch)
+    public async Task HandleAsync(ConclaveEpoch epoch)
     {
-        if (newEpoch.ConclaveOwnerSnapshotStatus != SnapshotStatus.Completed) return;
-        if (newEpoch.ConclaveOwnerRewardStatus == RewardStatus.Completed) return;
+        if (epoch.ConclaveOwnerSnapshotStatus != SnapshotStatus.Completed) return;
+        if (epoch.ConclaveOwnerRewardStatus == RewardStatus.Completed) return;
 
         // TODO: Need to set schedule here
-        await ExecuteConclaveOwnerRewardSchedulerAsync(currentEpoch);
+        await ExecuteConclaveOwnerRewardSchedulerAsync(epoch); // 
+
         //uncomment in actual
-        var conclaveOwnerSnapshots = _conclaveOwnerSnapshotService.GetAllByEpochNumber(newEpoch.EpochNumber);
+        var conclaveOwnerSnapshots = _conclaveOwnerSnapshotService.GetAllByEpochNumber(epoch.EpochNumber);
 
         // Update reward status
-        newEpoch.ConclaveOwnerRewardStatus = RewardStatus.InProgress;
-        await _epochService.UpdateAsync(newEpoch.Id, newEpoch);
+        epoch.ConclaveOwnerRewardStatus = RewardStatus.InProgress;
+        await _epochService.UpdateAsync(epoch.Id, epoch);
 
         // TODO: calculate reward here
-        var stakeAddresses = GetStakeAddressByEpoch(newEpoch.EpochNumber);
-        var totalReward = CalculateTotalPoolOwnerReward(stakeAddresses, newEpoch);
+        var stakeAddresses = _operatorSnapshotService.GetAllByEpochNumber(epoch.EpochNumber)?.Select(e => e.StakeAddress).ToList() ?? new List<string>();
+        var totalReward = await CalculateTotalPoolOwnerReward(stakeAddresses, epoch);
 
         if (conclaveOwnerSnapshots == null) return;
         var conclaveOwnerRewards = _rewardService.CalculateConclaveOwnerRewardsAsync(
-            conclaveOwnerSnapshots, totalReward * (_rewardOptions.Value.ConclaveOwnerRewardSharePercentage/100.0));
+            conclaveOwnerSnapshots, totalReward * (_rewardOptions.Value.ConclaveOwnerRewardSharePercentage / 100.0));
 
         foreach (var conclaveOwnerReward in conclaveOwnerRewards) await _conclaveOwnerRewardService.CreateAsync(conclaveOwnerReward);
 
-        newEpoch.ConclaveOwnerRewardStatus = RewardStatus.Completed;
-        await _epochService.UpdateAsync(newEpoch.Id, newEpoch);
-    }
-
-    private async Task PrepareAirdrop()
-    {
-
+        epoch.ConclaveOwnerRewardStatus = RewardStatus.Completed;
+        await _epochService.UpdateAsync(epoch.Id, epoch);
     }
 
     private async Task ExecuteConclaveOwnerRewardSchedulerAsync(ConclaveEpoch epoch)
@@ -84,16 +80,16 @@ public class ConclaveOwnerRewardHandler
         _logger.LogInformation("Executing ConclaveRewardCyclerAsync");
 
         var delayInMilliseconds = _conclaveShchedulerService.GetPoolOwnerRewardDelayInMilliseconds(epoch,
-                                    _poolOwnerRewardOptions.Value.PoolOwnerRewardCompleteAfterMilliseconds);
+                                  _poolOwnerRewardOptions.Value.PoolOwnerRewardCompleteAfterMilliseconds);
 
         _logger.LogInformation($"Conclave Rewards will be available after {DateUtils.GetReadableTimeFromMilliseconds((int)delayInMilliseconds)}");
 
-        await Task.Delay(3);
+        await Task.Delay(3); // TODO: Change this delay
 
         _logger.LogInformation("Exiting SnapshotCycleWrapperAsync");
     }
 
-    private IEnumerable<string>? GetStakeAddressByEpoch (ulong epochNumber)
+    private IEnumerable<string>? GetStakeAddressByEpoch(ulong epochNumber)
     {
         var operatorRewards = _operatorSnapshotService.GetAll()?.ToList();
 
@@ -101,25 +97,30 @@ public class ConclaveOwnerRewardHandler
                     .Where(t => t.ConclaveEpoch.EpochNumber == epochNumber)
                     .Select(t => t.StakeAddress)
                     .ToList();
-        
+
         return result;
     }
 
-    
-    public ulong CalculateTotalPoolOwnerReward(IEnumerable<string> stakeAddresses, ConclaveEpoch newEpoch)
+
+    public async Task<ulong> CalculateTotalPoolOwnerReward(IEnumerable<string> stakeAddresses, ConclaveEpoch newEpoch)
     {
         ulong totalReward = 0;
         while (totalReward == 0)
         {
             foreach (var stakeAddress in stakeAddresses)
             {
-                var result = _conclaveCardanoService.GetStakeAddressReward(stakeAddress, (long)newEpoch.EpochNumber);
-                totalReward += (ulong)result.Result.RewardAmount;
-            }
+                while (true)
+                {
+                    var result = _conclaveCardanoService.GetStakeAddressReward(stakeAddress, (long)newEpoch.EpochNumber); // dsadsa
+                    totalReward += (ulong)result.Result.RewardAmount;
 
-            if (totalReward == 0) {
-                _logger.LogInformation("No rewards yet. Wait for 5 mins");
-                Task.Delay(300000);
+                    if (totalReward >= 0) break;
+
+                    _logger.LogInformation("No rewards yet. Wait for 5 mins");
+                    await Task.Delay(300000); // 5 mins
+
+                }
+
             }
         }
         return totalReward;
