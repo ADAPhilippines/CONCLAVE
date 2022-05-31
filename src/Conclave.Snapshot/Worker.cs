@@ -72,7 +72,7 @@ public class Worker : BackgroundService
                 // prepare snapshot
                 await ExecuteSeedEpochGetterOrSetterAsync();
                 await ExecuteCurrentEpochGetterOrSetterAsync();
-                // await ExecuteSnapshotSchedulerAsync(); 
+                await ExecuteSnapshotSchedulerAsync();
                 await ExecuteNewEpochGetterOrSetterAsync();
 
                 if (NewConclaveEpoch is not null)
