@@ -68,6 +68,7 @@ public class ConclaveOwnerSnapshotHandler
         if (delegators.Count() < 20)
             return await _snapshotService.SnapshotConclaveOwnersAsync(conclavePolicyId, delegators, epoch);
 
+        // Split the delegators into chunks
         var partialDelegators = Enumerable.Range(0, threadCount).Aggregate(new List<List<DelegatorSnapshot>>(), (list, i) =>
         {
             if (i == 0) list.Add(delegators.Take(delegatorCountPerThread).ToList());
@@ -76,14 +77,17 @@ public class ConclaveOwnerSnapshotHandler
             return list;
         });
 
+        // Snapshot the delegators in parallel
         var partialConclaveOwnerSnapshots = Enumerable.Range(0, threadCount).Aggregate(new List<Task<IEnumerable<ConclaveOwnerSnapshot>>>(), (current, i) =>
         {
             current.Add(_snapshotService.SnapshotConclaveOwnersAsync(conclavePolicyId, partialDelegators[i], epoch));
             return current;
         });
 
+        // Wait for all the tasks to complete
         var partialSnapshots = await Task.WhenAll(partialConclaveOwnerSnapshots);
 
+        // concatenate list of snapshots
         var conclaveOwnerSnapshots = partialSnapshots.Aggregate(new List<ConclaveOwnerSnapshot>(), (current, partialSnapshot) =>
         {
             current.AddRange(partialSnapshot);
