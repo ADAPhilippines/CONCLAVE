@@ -69,16 +69,15 @@ public class Worker : BackgroundService
         {
             try
             {
+                // TODO: check for blockfrost health status before proceeding
+
                 // prepare snapshot
                 await ExecuteSeedEpochGetterOrSetterAsync();
                 await ExecuteCurrentEpochGetterOrSetterAsync();
                 await ExecuteSnapshotSchedulerAsync();
                 await ExecuteNewEpochGetterOrSetterAsync();
 
-                if (NewConclaveEpoch is null)
-                {
-
-                };
+                if (NewConclaveEpoch is null) return;
 
                 // snapshot
                 await DelegatorSnapshotHandler.HandleAsync(NewConclaveEpoch);
@@ -95,9 +94,7 @@ public class Worker : BackgroundService
                 // end conclave epoch cycle
                 await ExecuteSnapshotEndSchedulerAsync(); // Curren = Newepoch NewCOn = null 
 
-                // calculate rewards
-                // do not await as this will block epoch snapshot execution by 10 days
-
+                // TODO: calculate conclave owner rewards without blocking the worker
                 // ConcalveOwnerRewardHandler.HandleAsync(CurrentConclaveEpoch);
 
             }
