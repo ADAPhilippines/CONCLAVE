@@ -1,5 +1,6 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
+using Conclave.Common.Utils;
 using Conclave.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -36,13 +37,13 @@ public class ConclaveOwnerSnapshotService : IConclaveOwnerSnapshotService
 
     public IEnumerable<ConclaveOwnerSnapshot> GetAll() => _context.ConclaveOwnerSnapshots.ToList() ?? new List<ConclaveOwnerSnapshot>();
     
-    public IEnumerable<ConclaveOwnerSnapshot>? GetAllByEpochNumber(ulong epochNumber)
+    public IEnumerable<ConclaveOwnerSnapshot> GetAllByEpochNumber(ulong epochNumber)
     {
         var conclaveOwners = _context.ConclaveOwnerSnapshots.Include(c => c.ConclaveEpoch)
                                                             .Where(c => c.ConclaveEpoch.EpochNumber == epochNumber)
                                                             .ToList();
 
-        return conclaveOwners;
+        return conclaveOwners ?? new List<ConclaveOwnerSnapshot>();
     }
 
     public ConclaveOwnerSnapshot? GetById(Guid id) => _context.ConclaveOwnerSnapshots.Find(id);
@@ -52,7 +53,8 @@ public class ConclaveOwnerSnapshotService : IConclaveOwnerSnapshotService
         var existing = _context.ConclaveOwnerSnapshots.Find(id);
 
         if (existing is null) return null;
-
+        
+        entity.DateUpdated = DateUtils.DateTimeToUtc(DateTime.Now);
         _context.Update(entity);
         await _context.SaveChangesAsync();
 

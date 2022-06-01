@@ -2,6 +2,7 @@ using Conclave.Api.Interfaces;
 using Conclave.Api.Options;
 using Conclave.Common.Enums;
 using Conclave.Common.Models;
+using Conclave.Common.Utils;
 using Microsoft.Extensions.Options;
 
 namespace Conclave.Snapshot.Handlers;

@@ -2,6 +2,7 @@ using Conclave.Api.Interfaces;
 using Conclave.Api.Options;
 using Conclave.Common.Enums;
 using Conclave.Common.Models;
+using Conclave.Common.Utils;
 using Microsoft.Extensions.Options;
 
 namespace Conclave.Snapshot.Handlers;
@@ -45,7 +46,7 @@ public class NFTSnapshotHandler
         var nftGroups = _nftGroupService.GetAll();
         var delegators = _delegatorSnapshotService.GetAllByEpochNumber(epoch.EpochNumber);
 
-        if (nftGroups is null || delegators is null)
+        if (nftGroups.Count() is 0 || delegators.Count() is 0)
         {
             epoch.NFTSnapshotStatus = SnapshotStatus.Completed;
             await _epochsService.UpdateAsync(epoch.Id, epoch);
@@ -59,12 +60,11 @@ public class NFTSnapshotHandler
         {
             var nftProjects = _nftProjectService.GetAllByNFTGroup(nftGroup.Id);
 
-            if (nftProjects is null) continue;
-
+            if (nftProjects.Count() is 0) continue;
 
             var partialNFTSnapshots = await _snapshotService.SnapshotNFTsForStakeAddressesAsync(nftProjects, delegators, epoch);
 
-            if (partialNFTSnapshots is null) continue;
+            if (partialNFTSnapshots.Count() is 0) continue;
 
             nftSnapshots.AddRange(partialNFTSnapshots);
         }

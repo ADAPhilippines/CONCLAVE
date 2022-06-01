@@ -95,7 +95,9 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         return delegatorSnapshots;
     }
 
-    public async Task<IEnumerable<DelegatorSnapshot>> SnapshotDelegatorsAsync(IEnumerable<string> poolIds, ConclaveEpoch epoch)
+    public async Task<IEnumerable<DelegatorSnapshot>> SnapshotDelegatorsAsync(
+        IEnumerable<string> poolIds, 
+        ConclaveEpoch epoch)
     {
         var delegatorSnapshots = new List<DelegatorSnapshot>();
 
@@ -108,7 +110,10 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         return delegatorSnapshots;
     }
 
-    public async Task<NFTSnapshot?> SnapshotNFTsForStakeAddressAsync(NFTProject nftProject, DelegatorSnapshot delegatorSnapshot, ConclaveEpoch epoch)
+    public async Task<NFTSnapshot?> SnapshotNFTsForStakeAddressAsync(
+        NFTProject nftProject, 
+        DelegatorSnapshot delegatorSnapshot, 
+        ConclaveEpoch epoch)
     {
         var assets = await _service.GetAssetDetailsForStakeAddress(delegatorSnapshot.StakeAddress, nftProject.PolicyId);
 
@@ -151,10 +156,13 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         return nftSnapshots;
     }
 
-    public async Task<OperatorSnapshot> SnapshotOperatorAsync(string poolId, ConclaveEpoch epoch)
+    public async Task<OperatorSnapshot?> SnapshotOperatorAsync(string poolId, ConclaveEpoch epoch)
     {
-        var owner = await _service.GetPoolOwnerAsync(poolId);
-        var walletAddress = await _service.GetAssociatedWalletAddressAsync(owner.Address);
+        Operator owner = await _service.GetPoolOwnerAsync(poolId);
+
+        if (owner is null) return null;
+
+        IEnumerable<string> walletAddress = await _service.GetAssociatedWalletAddressAsync(owner.Address);
 
         var operatorSnapshot = new OperatorSnapshot
         {

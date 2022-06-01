@@ -187,7 +187,6 @@ public class Worker : BackgroundService
 
         while (NewConclaveEpoch is not null)
         {
-
             var currentEpoch = await CardanoService!.GetCurrentEpochAsync();
 
             if (currentEpoch.Number != NewConclaveEpoch.EpochNumber)

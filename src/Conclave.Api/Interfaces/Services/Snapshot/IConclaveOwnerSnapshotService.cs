@@ -4,5 +4,5 @@ namespace Conclave.Api.Interfaces;
 
 public interface IConclaveOwnerSnapshotService : IRepository<ConclaveOwnerSnapshot, Guid>
 {
-    IEnumerable<ConclaveOwnerSnapshot>? GetAllByEpochNumber(ulong epochNumber);
+    IEnumerable<ConclaveOwnerSnapshot> GetAllByEpochNumber(ulong epochNumber);
 }

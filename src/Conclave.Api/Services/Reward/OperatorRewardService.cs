@@ -1,5 +1,6 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
+using Conclave.Common.Utils;
 using Conclave.Data;
 
 namespace Conclave.Api.Services;
@@ -34,15 +35,16 @@ public class OperatorRewardService : IOperatorRewardService
     }
 
     public IEnumerable<OperatorReward> GetAll() => _context.OperatorRewards.ToList() ?? new List<OperatorReward>();
-    
+
     public OperatorReward? GetById(Guid id) => _context.OperatorRewards.Find(id);
-    
+
     public async Task<OperatorReward?> UpdateAsync(Guid id, OperatorReward entity)
     {
         var existing = _context.OperatorRewards.Find(id);
 
         if (existing is null) return null;
 
+        entity.DateUpdated = DateUtils.DateTimeToUtc(DateTime.Now);
         _context.Update(entity);
         await _context.SaveChangesAsync();
 

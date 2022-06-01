@@ -1,5 +1,6 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
+using Conclave.Common.Utils;
 using Conclave.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -36,14 +37,14 @@ public class NFTSnapshotService : INFTSnapshotService
 
     public IEnumerable<NFTSnapshot> GetAll() => _context.NFTSnapshots.ToList() ?? new List<NFTSnapshot>();
 
-    public IEnumerable<NFTSnapshot>? GetAllByEpochNumber(ulong epochNumber)
+    public IEnumerable<NFTSnapshot> GetAllByEpochNumber(ulong epochNumber)
     {
         var nftStakers = _context.NFTSnapshots.Include(n => n.ConclaveEpoch)
                                               .Include(n => n.DelegatorSnapshot)
                                               .Where(n => n.ConclaveEpoch.EpochNumber == epochNumber)
                                               .ToList();
 
-        return nftStakers;
+        return nftStakers ?? new List<NFTSnapshot>();
     }
 
     public NFTSnapshot? GetById(Guid id) => _context.NFTSnapshots.Find(id);
@@ -54,7 +55,8 @@ public class NFTSnapshotService : INFTSnapshotService
         var existing = _context.NFTSnapshots.Find(id);
 
         if (existing is null) return null;
-
+        
+        entity.DateUpdated = DateUtils.DateTimeToUtc(DateTime.Now);
         _context.Update(entity);
         await _context.SaveChangesAsync();
 

@@ -1,5 +1,6 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
+using Conclave.Common.Utils;
 using Conclave.Data;
 
 namespace Conclave.Api.Services;
@@ -12,6 +13,7 @@ public class ConclaveOwnerRewardService : IConclaveOwnerRewardService
     {
         _context = context;
     }
+
     public async Task<ConclaveOwnerReward> CreateAsync(ConclaveOwnerReward entity)
     {
         _context.Add(entity);
@@ -33,15 +35,16 @@ public class ConclaveOwnerRewardService : IConclaveOwnerRewardService
     }
 
     public IEnumerable<ConclaveOwnerReward> GetAll() => _context.ConclaveOwnerRewards.ToList() ?? new List<ConclaveOwnerReward>();
-    
+
     public ConclaveOwnerReward? GetById(Guid id) => _context.ConclaveOwnerRewards.Find(id);
-    
+
     public async Task<ConclaveOwnerReward?> UpdateAsync(Guid id, ConclaveOwnerReward entity)
     {
         var existing = _context.ConclaveOwnerRewards.Find(id);
 
         if (existing is null) return null;
 
+        entity.DateUpdated = DateUtils.DateTimeToUtc(DateTime.Now);
         _context.Update(entity);
         await _context.SaveChangesAsync();
 

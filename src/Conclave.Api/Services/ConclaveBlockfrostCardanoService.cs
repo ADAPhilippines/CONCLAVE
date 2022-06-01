@@ -1,3 +1,4 @@
+using Blockfrost.Api.Models;
 using Blockfrost.Api.Services;
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;

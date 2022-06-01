@@ -16,6 +16,5 @@ public interface IConclaveEpochsService : IRepository<ConclaveEpoch, Guid>
                                                RewardStatus rewardStatus, AirdropStatus airdropStatus);
 
     // WRITE
-    Task<ConclaveEpoch> DeleteByEpochNumber(ulong epochNumber);
-
+    Task<ConclaveEpoch?> DeleteByEpochNumber(ulong epochNumber);
 }

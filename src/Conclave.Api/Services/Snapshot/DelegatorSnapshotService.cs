@@ -1,5 +1,6 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
+using Conclave.Common.Utils;
 using Conclave.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,25 +35,30 @@ public class DelegatorSnapshotService : IDelegatorSnapshotService
         return entity;
     }
 
-    public IEnumerable<DelegatorSnapshot> GetAll() => _context.DelegatorSnapshots.ToList();
-    
+    public IEnumerable<DelegatorSnapshot> GetAll()
+    {
+        return _context.DelegatorSnapshots.ToList() ?? new List<DelegatorSnapshot>();
+    }
+
     public IEnumerable<DelegatorSnapshot> GetAllByEpochNumber(ulong epochNumber)
     {
-        var delegators = _context.DelegatorSnapshots.Include(d => d.ConclaveEpoch)
-                                                    .Where(d => d.ConclaveEpoch.EpochNumber == epochNumber)
-                                                    .ToList();
+        var delegators = _context.DelegatorSnapshots
+                                    .Include(d => d.ConclaveEpoch)
+                                    .Where(d => d.ConclaveEpoch.EpochNumber == epochNumber)
+                                    .ToList();
 
         return delegators ?? new List<DelegatorSnapshot>();
     }
 
     public DelegatorSnapshot? GetById(Guid id) => _context.DelegatorSnapshots.Find(id);
-    
+
     public async Task<DelegatorSnapshot?> UpdateAsync(Guid id, DelegatorSnapshot entity)
     {
         var existing = _context.DelegatorSnapshots.Find(id);
 
         if (existing is null) return null;
 
+        entity.DateUpdated = DateUtils.DateTimeToUtc(DateTime.Now);
         _context.Update(entity);
         await _context.SaveChangesAsync();
 

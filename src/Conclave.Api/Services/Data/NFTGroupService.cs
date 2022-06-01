@@ -34,9 +34,9 @@ public class NFTGroupService : INFTGroupService
         return entity;
     }
 
-    public IEnumerable<NFTGroup>? GetAll()
+    public IEnumerable<NFTGroup> GetAll()
     {
-        return _context.NFTGroups.ToList();
+        return _context.NFTGroups.ToList() ?? new List<NFTGroup>();
     }
 
     public NFTGroup? GetById(Guid id)
