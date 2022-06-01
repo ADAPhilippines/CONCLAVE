@@ -1,6 +1,7 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
 using Conclave.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Conclave.Api.Services;
 
@@ -35,6 +36,16 @@ public class NFTRewardService : INFTRewardService
     public IEnumerable<NFTReward>? GetAll()
     {
         return _context.NFTRewards.ToList();
+    }
+
+    public IEnumerable<NFTReward>? GetAllByEpochNumber(ulong epochNumber)
+    {
+        var result = _context.NFTRewards.Include(n => n.NFTSnapshot)
+                                        .ThenInclude(s => s.ConclaveEpoch)
+                                        .Where(n => n.NFTSnapshot.ConclaveEpoch.EpochNumber == epochNumber)
+                                        .ToList();
+
+        return result;
     }
 
     public NFTReward? GetById(Guid id)
