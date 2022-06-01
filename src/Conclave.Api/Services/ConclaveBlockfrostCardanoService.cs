@@ -28,11 +28,6 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
     {
         var assets = await GetStakeAddressAssetsAsync(stakeAddress);
 
-        if (stakeAddress == "stake1uyjpkz0n2dn4un8n4dz7nfq8e670756mrndkkfmv4jdz0ys46e0z7")
-        {
-            System.Console.WriteLine("Here");
-        }
-
         if (assets.Assets.Count < 1) return null;
 
         return assets.Assets.FindAll(a => a.Unit.Contains(policyId)).ToList();
