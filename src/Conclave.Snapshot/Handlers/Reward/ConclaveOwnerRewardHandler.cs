@@ -88,7 +88,9 @@ public class ConclaveOwnerRewardHandler
         _logger.LogInformation("Exiting ConclaveRewardCyclerAsync");
     }
 
-    public async Task<ulong> CalculateTotalPoolOwnerReward(IEnumerable<string> stakeAddresses, ConclaveEpoch newEpoch)
+    public async Task<ulong> CalculateTotalPoolOwnerReward(
+        IEnumerable<string> stakeAddresses, 
+        ConclaveEpoch newEpoch)
     {
         ulong totalReward = 0;
 

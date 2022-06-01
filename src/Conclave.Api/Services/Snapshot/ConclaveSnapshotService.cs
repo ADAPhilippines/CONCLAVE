@@ -73,10 +73,9 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
             foreach (var delegator in delegators)
             {
                 if (uniqueDelegatorIds.Contains(delegator.StakeId!)) continue;
-
                 uniqueDelegatorIds.Add(delegator.StakeId!);
-                var walletAddress = await _service.GetAssociatedWalletAddressAsync(delegator.StakeId!);
 
+                var walletAddress = await _service.GetAssociatedWalletAddressAsync(delegator.StakeId!);
                 delegatorSnapshots.Add(new DelegatorSnapshot
                 {
                     ConclaveEpoch = epoch,
@@ -100,7 +99,6 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         ConclaveEpoch epoch)
     {
         var delegatorSnapshots = new List<DelegatorSnapshot>();
-
         foreach (var poolId in poolIds)
         {
             var partialSnapshots = await SnapshotDelegatorsAsync(poolId, epoch);
@@ -116,11 +114,9 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         ConclaveEpoch epoch)
     {
         var assets = await _service.GetAssetDetailsForStakeAddress(delegatorSnapshot.StakeAddress, nftProject.PolicyId);
-
         if (assets is null) return null;
 
         var conclaveNFTAssetCount = assets.Aggregate(0, (current, asset) => current + (int)asset.Quantity);
-
         if (conclaveNFTAssetCount == 0) return null;
 
         var nftSnapshot = new NFTSnapshot
@@ -140,7 +136,6 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         ConclaveEpoch epoch)
     {
         var nftSnapshots = new List<NFTSnapshot>();
-
         foreach (var nftProject in nftProjects)
         {
             foreach (var delegatorSnapshot in delegatorSnapshots)
@@ -158,12 +153,10 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
 
     public async Task<OperatorSnapshot?> SnapshotOperatorAsync(string poolId, ConclaveEpoch epoch)
     {
-        Operator owner = await _service.GetPoolOwnerAsync(poolId);
-
+        var owner = await _service.GetPoolOwnerAsync(poolId);
         if (owner is null) return null;
 
-        IEnumerable<string> walletAddress = await _service.GetAssociatedWalletAddressAsync(owner.Address);
-
+        var walletAddress = await _service.GetAssociatedWalletAddressAsync(owner.Address);
         var operatorSnapshot = new OperatorSnapshot
         {
             ConclaveEpoch = epoch,
@@ -181,7 +174,6 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         ConclaveEpoch epoch)
     {
         var operatosSnapshots = new List<OperatorSnapshot>();
-
         foreach (var poolId in poolIds)
         {
             var partialSnapshot = await SnapshotOperatorAsync(poolId, epoch);

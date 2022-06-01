@@ -91,7 +91,6 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
         if (page < 1) page = 1;
 
         var poolDelegators = await _poolsService.GetDelegatorsAsync(poolId, count, page);
-
         List<Delegator> delegators = poolDelegators
                                     .Select(t => 
                                         new Delegator(t.Address, ulong.Parse(t.LiveStake)))
@@ -113,11 +112,9 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
         long epochNumber)
     {
         var result = await _accountsService.GetRewardsAsync(stakeAddress);
-
         var stakeReward = result
                         .Where(t => t.Epoch == epochNumber)
                         .FirstOrDefault();
-        
         return new StakeAddressReward(
             stakeAddress, 
             long.Parse(string.IsNullOrEmpty(stakeReward?.Amount) ? "-1" : stakeReward.Amount), 
