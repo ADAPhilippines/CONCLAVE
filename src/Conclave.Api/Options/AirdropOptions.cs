@@ -1,6 +1,6 @@
 namespace Conclave.Api.Options;
 
-public class AidropOptions
+public class AirdropOptions
 {
 
     public string ConclaveTokenWalletAddress { get; set; } = string.Empty;
