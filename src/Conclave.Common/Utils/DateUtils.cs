@@ -20,7 +20,7 @@ public static class DateUtils
     public static DateTime DateTimeToUtc(DateTime dateTime)
     {
         dateTime = DateTime.SpecifyKind(dateTime, DateTimeKind.Utc);
-        return dateTime;
+        return dateTime.AddSeconds(DateTimeOffset.Now.Offset.TotalSeconds);
     }
 
     public static long GetTimeDifferenceFromNowInMilliseconds(DateTime? dateTime)
