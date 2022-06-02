@@ -151,10 +151,9 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         return nftSnapshots;
     }
 
-    public async Task<OperatorSnapshot?> SnapshotOperatorAsync(string poolId, ConclaveEpoch epoch)
+    public async Task<OperatorSnapshot> SnapshotOperatorAsync(string poolId, ConclaveEpoch epoch)
     {
         var owner = await _service.GetPoolOwnerAsync(poolId);
-        if (owner is null) return null;
 
         var walletAddress = await _service.GetAssociatedWalletAddressAsync(owner.Address);
         var operatorSnapshot = new OperatorSnapshot
