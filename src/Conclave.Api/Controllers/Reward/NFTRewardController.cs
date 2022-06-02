@@ -6,12 +6,11 @@ namespace Conclave.Api.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class NFTGroupController : ControllerBase
+public class NFTRewardController : ControllerBase
 {
+    private readonly INFTRewardService _service;
 
-    private readonly INFTGroupService _service;
-
-    public NFTGroupController(INFTGroupService service)
+    public NFTRewardController(INFTRewardService service)
     {
         _service = service;
     }
@@ -32,16 +31,18 @@ public class NFTGroupController : ControllerBase
         return Ok(result);
     }
 
-    [HttpPost]
-    public async Task<IActionResult> Create(string name)
+    [HttpGet("epoch/{epochNumber}")]
+    public IActionResult GetByAllEpochNumber(ulong epochNumber)
     {
+        var result = _service.GetAllByEpochNumber(epochNumber);
 
-        var nftGroup = new NFTGroup()
-        {
-            Name = name
-        };
+        return Ok(result);
+    }
 
-        var result = await _service.CreateAsync(nftGroup);
+    [HttpPost]
+    public async Task<IActionResult> Create(NFTReward entity)
+    {
+        var result = await _service.CreateAsync(entity);
 
         return Ok(result);
     }
@@ -55,7 +56,7 @@ public class NFTGroupController : ControllerBase
     }
 
     [HttpPut]
-    public async Task<IActionResult> Update(Guid id, NFTGroup entity)
+    public async Task<IActionResult> Update(Guid id, NFTReward entity)
     {
         var result = await _service.UpdateAsync(id, entity);
 

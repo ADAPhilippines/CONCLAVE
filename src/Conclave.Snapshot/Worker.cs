@@ -70,10 +70,12 @@ public class Worker : BackgroundService
         {
             try
             {
+                // TODO: check for blockfrost health status before proceeding
+
                 // prepare snapshot
                 await ExecuteSeedEpochGetterOrSetterAsync();
                 await ExecuteCurrentEpochGetterOrSetterAsync();
-                // await ExecuteSnapshotSchedulerAsync(); // skipped for testing
+                await ExecuteSnapshotSchedulerAsync();
                 await ExecuteNewEpochGetterOrSetterAsync();
 
                 if (NewConclaveEpoch is not null)
@@ -124,6 +126,10 @@ public class Worker : BackgroundService
             DelegatorSnapshotStatus = SnapshotStatus.Skip,
             OperatorSnapshotStatus = SnapshotStatus.Skip,
             NFTSnapshotStatus = SnapshotStatus.Skip,
+            DelegatorRewardStatus = RewardStatus.Skip,
+            OperatorRewardStatus = RewardStatus.Skip,
+            NFTRewardStatus = RewardStatus.Skip,
+            ConclaveOwnerRewardStatus = RewardStatus.Skip
         });
 
         _logger.LogInformation("Exiting SeedEpochGetterOrSetterAsync");
@@ -203,7 +209,7 @@ public class Worker : BackgroundService
             NewConclaveEpoch.EpochStatus = EpochStatus.Current;
             await EpochsService!.UpdateAsync(NewConclaveEpoch.Id, NewConclaveEpoch);
 
-
+            //should be on top of new epoch instead of below
             if (CurrentConclaveEpoch!.EpochStatus != EpochStatus.Seed)
             {
                 // Update epoch status to Old

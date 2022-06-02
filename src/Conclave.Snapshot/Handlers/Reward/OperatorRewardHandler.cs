@@ -17,10 +17,10 @@ public class OperatorRewardHandler
     private readonly IOptions<RewardOptions> _options;
 
     public OperatorRewardHandler(IConclaveRewardService rewardService,
-                                  IConclaveEpochsService epochsService,
-                                  IOperatorRewardService operatorRewardService,
-                                  IOperatorSnapshotService operatorSnapshotService,
-                                  IOptions<RewardOptions> options)
+                                 IConclaveEpochsService epochsService,
+                                 IOperatorRewardService operatorRewardService,
+                                 IOperatorSnapshotService operatorSnapshotService,
+                                 IOptions<RewardOptions> options)
     {
         _rewardService = rewardService;
         _epochService = epochsService;
@@ -57,8 +57,4 @@ public class OperatorRewardHandler
         await _epochService.UpdateAsync(epoch.Id, epoch);
     }
 
-    private async Task PrepareAirdrop()
-    {
-
-    }
 }

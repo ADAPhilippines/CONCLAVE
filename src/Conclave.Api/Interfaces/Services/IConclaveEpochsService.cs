@@ -13,7 +13,7 @@ public interface IConclaveEpochsService : IRepository<ConclaveEpoch, Guid>
     // IEnumerable<ConclaveEpoch> GetByRewardStatus(RewardStatus rewardStatus);
     //IEnumerable<ConclaveEpoch> GetByAirdropStatus(AirdropStatus airdropStatus);
     IEnumerable<ConclaveEpoch> GetByAllStatus(EpochStatus epochStatus, SnapshotStatus snapshotStatus,
-                                               RewardStatus rewardStatus, AirdropStatus airdropStatus);
+                                              RewardStatus rewardStatus, AirdropStatus airdropStatus);
 
     // WRITE
     Task<ConclaveEpoch?> DeleteByEpochNumber(ulong epochNumber);
