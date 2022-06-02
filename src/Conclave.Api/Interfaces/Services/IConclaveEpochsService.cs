@@ -8,7 +8,7 @@ public interface IConclaveEpochsService : IRepository<ConclaveEpoch, Guid>
 {
     // READ
     ConclaveEpoch? GetByEpochNumber(ulong epochNumber);
-    IEnumerable<ConclaveEpoch> GetByEpochStatus(EpochStatus epochStatus);
+    IEnumerable<ConclaveEpoch>? GetByEpochStatus(EpochStatus epochStatus);
     // IEnumerable<ConclaveEpoch> GetBySnapshotStatus(SnapshotStatus snapshotStatus);
     // IEnumerable<ConclaveEpoch> GetByRewardStatus(RewardStatus rewardStatus);
     //IEnumerable<ConclaveEpoch> GetByAirdropStatus(AirdropStatus airdropStatus);

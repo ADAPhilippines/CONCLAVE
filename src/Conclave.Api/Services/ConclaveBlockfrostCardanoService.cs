@@ -76,7 +76,7 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
             DateUtils.UnixTimeStampToDateTime(currentEpoch.EndTime));
     }
 
-    public async Task<IEnumerable<Delegator>> GetPoolDelegatorsAsync(
+    public async Task<IEnumerable<Delegator>?> GetPoolDelegatorsAsync(
         string poolId, 
         int? count = 100, 
         int? page = 1)
@@ -89,7 +89,7 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
         List<Delegator> delegators = poolDelegators
                                     .Select(t => 
                                         new Delegator(t.Address, ulong.Parse(t.LiveStake)))
-                                    .ToList() ?? new List<Delegator>();
+                                    .ToList();
 
         return delegators;
     }

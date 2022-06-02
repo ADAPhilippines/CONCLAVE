@@ -34,10 +34,10 @@ public class ConclaveEpochsService : IConclaveEpochsService
         return _context.ConclaveEpochs.Where(c => c.EpochNumber == epochNumber).FirstOrDefault();
     }
 
-    public IEnumerable<ConclaveEpoch> GetByEpochStatus(EpochStatus epochStatus)
+    public IEnumerable<ConclaveEpoch>? GetByEpochStatus(EpochStatus epochStatus)
     {
         var epochsByStatus = _context.ConclaveEpochs.Where(e => e.EpochStatus == epochStatus).ToList();
-        return epochsByStatus ?? new List<ConclaveEpoch>();
+        return epochsByStatus;
     }
 
     public ConclaveEpoch? GetById(Guid id) => _context.ConclaveEpochs.Find(id);
@@ -71,9 +71,9 @@ public class ConclaveEpochsService : IConclaveEpochsService
         return epoch;
     }
 
-    public IEnumerable<ConclaveEpoch> GetAll()
+    public IEnumerable<ConclaveEpoch>? GetAll()
     {
-        return _context.ConclaveEpochs.ToList() ?? new List<ConclaveEpoch>();
+        return _context.ConclaveEpochs.ToList();
     }
 
     public async Task<ConclaveEpoch?> UpdateAsync(Guid id, ConclaveEpoch entity)
