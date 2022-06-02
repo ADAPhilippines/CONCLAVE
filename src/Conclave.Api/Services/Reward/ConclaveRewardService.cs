@@ -19,7 +19,7 @@ public class ConclaveRewardService : IConclaveRewardService
 
             var reward = new ConclaveOwnerReward
             {
-                DelegatorSnapshot = conclaveOwnerSnapshot,
+                ConclaveOwnerSnapshot = conclaveOwnerSnapshot,
                 RewardPercentage = rewardPercentage,
                 RewardAmount = rewardAmount
             };

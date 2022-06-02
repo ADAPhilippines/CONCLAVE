@@ -48,6 +48,26 @@ public class DelegatorRewardService : IDelegatorRewardService
         return result;
     }
 
+    public IEnumerable<DelegatorReward>? GetAllByStakeAddress(string stakeAddress)
+    {
+        var result = _context.DelegatorRewards.Include(d => d.DelegatorSnapshot)
+                                              .Where(d => d.DelegatorSnapshot.StakeAddress == stakeAddress)
+                                              .ToList();
+
+        return result;
+    }
+
+    public DelegatorReward? GetByStakeAddressAndEpochNumber(string stakeAddress, ulong epochNumber)
+    {
+        var result = _context.DelegatorRewards.Include(d => d.DelegatorSnapshot)
+                                              .ThenInclude(d => d.ConclaveEpoch)
+                                              .Where(d => d.DelegatorSnapshot.StakeAddress == stakeAddress)
+                                              .Where(d => d.DelegatorSnapshot.ConclaveEpoch.EpochNumber == epochNumber)
+                                              .FirstOrDefault();
+
+        return result;
+    }
+
     public DelegatorReward? GetById(Guid id)
     {
         return _context.DelegatorRewards.Find(id);

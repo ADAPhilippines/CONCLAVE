@@ -74,10 +74,14 @@ public class Worker : BackgroundService
                 // prepare snapshot
                 await ExecuteSeedEpochGetterOrSetterAsync();
                 await ExecuteCurrentEpochGetterOrSetterAsync();
-                await ExecuteSnapshotSchedulerAsync();
+                // await ExecuteSnapshotSchedulerAsync();
                 await ExecuteNewEpochGetterOrSetterAsync();
 
-                if (NewConclaveEpoch is null) return;
+                if (NewConclaveEpoch is null)
+                {
+                    await Task.Delay(60 * 5 * 1000, stoppingToken);
+                    return;
+                } // 5 minutes
 
                 // snapshot
                 await DelegatorSnapshotHandler.HandleAsync(NewConclaveEpoch);

@@ -26,7 +26,7 @@ public class NFTProjectController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("/group/{id}")]
+    [HttpGet("group/{id}")]
     public IActionResult GetAllByNFTGroup(Guid id)
     {
         var result = _nftProjectService.GetAllByNFTGroup(id);
