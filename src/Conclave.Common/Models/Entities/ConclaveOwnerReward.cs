@@ -7,7 +7,7 @@ namespace Conclave.Common.Models;
 public class ConclaveOwnerReward
 {
     public Guid Id { get; set; } = Guid.NewGuid();
-    public ConclaveOwnerSnapshot DelegatorSnapshot { get; set; } = new();
+    public ConclaveOwnerSnapshot ConclaveOwnerSnapshot { get; set; } = new();
     public double RewardPercentage { get; set; }
     public double RewardAmount { get; set; }
     public AirdropStatus AirdropStatus { get; set; } = AirdropStatus.New;
