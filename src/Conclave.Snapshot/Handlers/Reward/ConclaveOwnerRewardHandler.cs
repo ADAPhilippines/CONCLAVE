@@ -56,6 +56,8 @@ public class ConclaveOwnerRewardHandler
 
         var conclaveOwnerSnapshots = _conclaveOwnerSnapshotService.GetAllByEpochNumber(epoch.EpochNumber);
 
+        if (conclaveOwnerSnapshots is null) return;
+
         epoch.ConclaveOwnerRewardStatus = RewardStatus.InProgress;
         await _epochService.UpdateAsync(epoch.Id, epoch);
 

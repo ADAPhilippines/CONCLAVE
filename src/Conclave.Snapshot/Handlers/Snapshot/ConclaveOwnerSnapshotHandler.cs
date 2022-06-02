@@ -40,7 +40,7 @@ public class ConclaveOwnerSnapshotHandler
         // Get all delegators
         var delegators = _delegatorSnapshotService.GetAllByEpochNumber(epoch.EpochNumber);
 
-        if (delegators.Count() is 0)
+        if (delegators is null)
         {
             epoch.ConclaveOwnerSnapshotStatus = SnapshotStatus.Completed;
             await _epochsService.UpdateAsync(epoch.Id, epoch);

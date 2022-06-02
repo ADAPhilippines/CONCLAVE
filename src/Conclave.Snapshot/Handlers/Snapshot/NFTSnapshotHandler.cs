@@ -45,7 +45,7 @@ public class NFTSnapshotHandler
         var nftGroups = _nftGroupService.GetAll();
         var delegators = _delegatorSnapshotService.GetAllByEpochNumber(epoch.EpochNumber);
 
-        if (nftGroups.Count() is 0 || delegators.Count() is 0)
+        if (nftGroups is null || delegators is null)
         {
             epoch.NFTSnapshotStatus = SnapshotStatus.Completed;
             await _epochsService.UpdateAsync(epoch.Id, epoch);

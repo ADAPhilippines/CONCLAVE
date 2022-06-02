@@ -38,6 +38,8 @@ public class NFTRewardHandler
         // fetch all NFT snapshots
         var nftSnapshots = _nftSnapshotService.GetAllByEpochNumber(epoch.EpochNumber);
 
+        if (nftSnapshots is null) return;
+
         // Update reward status
         epoch.NFTRewardStatus = RewardStatus.InProgress;
         await _epochService.UpdateAsync(epoch.Id, epoch);

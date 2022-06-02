@@ -69,7 +69,7 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         while (true)
         {
             var delegators = await _service.GetPoolDelegatorsAsync(poolId, 100, page);
-
+            
             foreach (var delegator in delegators)
             {
                 if (uniqueDelegatorIds.Contains(delegator.StakeId!)) continue;

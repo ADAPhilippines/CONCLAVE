@@ -76,7 +76,7 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
             DateUtils.UnixTimeStampToDateTime(currentEpoch.EndTime));
     }
 
-    public async Task<IEnumerable<Delegator>?> GetPoolDelegatorsAsync(
+    public async Task<IEnumerable<Delegator>> GetPoolDelegatorsAsync(
         string poolId, 
         int? count = 100, 
         int? page = 1)

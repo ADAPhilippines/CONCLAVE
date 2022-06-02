@@ -34,9 +34,10 @@ public class ConclaveEpochsService : IConclaveEpochsService
         return _context.ConclaveEpochs.Where(c => c.EpochNumber == epochNumber).FirstOrDefault();
     }
 
-    public IEnumerable<ConclaveEpoch>? GetByEpochStatus(EpochStatus epochStatus)
+    public IEnumerable<ConclaveEpoch> GetByEpochStatus(EpochStatus epochStatus)
     {
-        var epochsByStatus = _context.ConclaveEpochs.Where(e => e.EpochStatus == epochStatus).ToList();
+        var epochsByStatus = _context.ConclaveEpochs.Where(e => e.EpochStatus == epochStatus).ToList() 
+            ?? new List<ConclaveEpoch>();
         return epochsByStatus;
     }
 

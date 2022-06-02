@@ -37,7 +37,7 @@ public class OperatorRewardHandler
 
         var operatorSnapshots = _operatorSnapshotService.GetAllByEpochNumber(epoch.EpochNumber);
 
-        if (operatorSnapshots.Count() is 0) return;
+        if (operatorSnapshots is null) return;
 
         // Update reward status
         epoch.OperatorRewardStatus = RewardStatus.InProgress;

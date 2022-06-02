@@ -4,5 +4,5 @@ namespace Conclave.Api.Interfaces;
 
 public interface IDelegatorSnapshotService : IRepository<DelegatorSnapshot, Guid>
 {
-    IEnumerable<DelegatorSnapshot> GetAllByEpochNumber(ulong epochNumber);
+    IEnumerable<DelegatorSnapshot>? GetAllByEpochNumber(ulong epochNumber);
 }
