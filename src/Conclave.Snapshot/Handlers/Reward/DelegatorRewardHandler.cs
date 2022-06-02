@@ -2,6 +2,7 @@ using Conclave.Api.Interfaces;
 using Conclave.Api.Options;
 using Conclave.Common.Enums;
 using Conclave.Common.Models;
+using Conclave.Common.Utils;
 using Microsoft.Extensions.Options;
 
 namespace Conclave.Snapshot.Handlers;
@@ -45,7 +46,7 @@ public class DelegatorRewardHandler
         var totalEpochReward = _options.Value.ConclaveTokenAirdropSupply / _options.Value.ConclaveAirdropEpochsCount;
         var delegatorShare = totalEpochReward * (_options.Value.DelegatorPercentage / 100.0);
 
-        // Calculate delegator rewars
+        // Calculate delegator rewards
         var delegatorRewards = _rewardService.CalculateDelegatorRewardsAsync(delegatorSnapshots, delegatorShare);
 
         foreach (var delegatorReward in delegatorRewards) await _delegatorRewardService.CreateAsync(delegatorReward);

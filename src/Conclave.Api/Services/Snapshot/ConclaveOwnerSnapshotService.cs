@@ -1,5 +1,6 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
+using Conclave.Common.Utils;
 using Conclave.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +8,6 @@ namespace Conclave.Api.Services;
 
 public class ConclaveOwnerSnapshotService : IConclaveOwnerSnapshotService
 {
-
     private readonly ApplicationDbContext _context;
 
     public ConclaveOwnerSnapshotService(ApplicationDbContext context)
@@ -35,11 +35,8 @@ public class ConclaveOwnerSnapshotService : IConclaveOwnerSnapshotService
         return entity;
     }
 
-    public IEnumerable<ConclaveOwnerSnapshot>? GetAll()
-    {
-        return _context.ConclaveOwnerSnapshots.ToList();
-    }
-
+    public IEnumerable<ConclaveOwnerSnapshot>? GetAll() => _context.ConclaveOwnerSnapshots.ToList();
+    
     public IEnumerable<ConclaveOwnerSnapshot>? GetAllByEpochNumber(ulong epochNumber)
     {
         var conclaveOwners = _context.ConclaveOwnerSnapshots.Include(c => c.ConclaveEpoch)
@@ -49,17 +46,15 @@ public class ConclaveOwnerSnapshotService : IConclaveOwnerSnapshotService
         return conclaveOwners;
     }
 
-    public ConclaveOwnerSnapshot? GetById(Guid id)
-    {
-        return _context.ConclaveOwnerSnapshots.Find(id);
-    }
-
+    public ConclaveOwnerSnapshot? GetById(Guid id) => _context.ConclaveOwnerSnapshots.Find(id);
+    
     public async Task<ConclaveOwnerSnapshot?> UpdateAsync(Guid id, ConclaveOwnerSnapshot entity)
     {
         var existing = _context.ConclaveOwnerSnapshots.Find(id);
 
         if (existing is null) return null;
-
+        
+        entity.DateUpdated = DateUtils.DateTimeToUtc(DateTime.Now);
         _context.Update(entity);
         await _context.SaveChangesAsync();
 

@@ -2,6 +2,7 @@ using Conclave.Api.Interfaces;
 using Conclave.Api.Options;
 using Conclave.Common.Enums;
 using Conclave.Common.Models;
+using Conclave.Common.Utils;
 using Microsoft.Extensions.Options;
 
 namespace Conclave.Snapshot.Handlers;
@@ -33,12 +34,13 @@ public class ConclaveOwnerSnapshotHandler
 
         // Update status to InProgress
         epoch.ConclaveOwnerSnapshotStatus = SnapshotStatus.InProgress;
+        epoch.DateUpdated = DateUtils.DateTimeToUtc(DateTime.Now);
         await _epochsService.UpdateAsync(epoch.Id, epoch);
 
         // Get all delegators
         var delegators = _delegatorSnapshotService.GetAllByEpochNumber(epoch.EpochNumber);
 
-        if (delegators is null)
+        if (delegators.Count() is 0)
         {
             epoch.ConclaveOwnerSnapshotStatus = SnapshotStatus.Completed;
             await _epochsService.UpdateAsync(epoch.Id, epoch);

@@ -1,5 +1,6 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
+using Conclave.Common.Utils;
 using Conclave.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,6 +14,7 @@ public class DelegatorRewardService : IDelegatorRewardService
     {
         _context = context;
     }
+
     public async Task<DelegatorReward> CreateAsync(DelegatorReward entity)
     {
         _context.Add(entity);
@@ -33,10 +35,7 @@ public class DelegatorRewardService : IDelegatorRewardService
         return entity;
     }
 
-    public IEnumerable<DelegatorReward> GetAll()
-    {
-        return _context.DelegatorRewards.ToList();
-    }
+    public IEnumerable<DelegatorReward>? GetAll() => _context.DelegatorRewards.ToList();
 
     public IEnumerable<DelegatorReward>? GetAllByEpochNumber(ulong epochNumber)
     {
@@ -59,6 +58,7 @@ public class DelegatorRewardService : IDelegatorRewardService
 
         if (existing is null) return null;
 
+        entity.DateUpdated = DateUtils.DateTimeToUtc(DateTime.Now);
         _context.Update(entity);
         await _context.SaveChangesAsync();
 
