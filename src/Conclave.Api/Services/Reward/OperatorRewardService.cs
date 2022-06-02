@@ -49,9 +49,24 @@ public class OperatorRewardService : IOperatorRewardService
         return result;
     }
 
+    public IEnumerable<OperatorReward>? GetAllByStakeAddress(string stakeAddress)
+    {
+        var result = _context.OperatorRewards.Include(o => o.OperatorSnapshot)
+                                             .ThenInclude(os => os.ConclaveEpoch)
+                                             .Where(n => n.OperatorSnapshot.StakeAddress == stakeAddress)
+                                             .ToList();
+
+        return result;
+    }
+
     public OperatorReward? GetById(Guid id)
     {
         return _context.OperatorRewards.Find(id);
+    }
+
+    public OperatorReward? GetByStakeAddressAndEpochNumber(string stakeAddress, ulong epochNumber)
+    {
+        throw new NotImplementedException();
     }
 
     public async Task<OperatorReward?> UpdateAsync(Guid id, OperatorReward entity)
