@@ -39,6 +39,22 @@ public class NFTRewardController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("epoch/{epochNumber}/{stakeAddress}")]
+    public IActionResult GetByEpochNumberAndStakeAddress(ulong epochNumber, string stakeAddress)
+    {
+        var result = _service.GetAllByStakeAddressAndEpochNumber(stakeAddress, epochNumber);
+
+        return Ok(result);
+    }
+
+    [HttpGet("stake/{stakeAddress}")]
+    public IActionResult GetAllByStakeAddress(string stakeAddress)
+    {
+        var result = _service.GetAllByStakeAddress(stakeAddress);
+
+        return Ok(result);
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create(NFTReward entity)
     {
