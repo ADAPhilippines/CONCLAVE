@@ -10,6 +10,6 @@ public class NFTProject
     public string PolicyId { get; set; } = string.Empty;
     public int Weight { get; set; }
     public bool IsActive { get; set; } = true;
-    public DateTime DateCreated { get; set; } = DateUtils.DateTimeToUtc(DateTime.Now);
-    public DateTime DateUpdated { get; set; } = DateUtils.DateTimeToUtc(DateTime.Now);
+    public DateTime DateCreated { get; set; } = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
+    public DateTime DateUpdated { get; set; } = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
 }
