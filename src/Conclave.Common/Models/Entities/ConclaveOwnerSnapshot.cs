@@ -8,6 +8,6 @@ public class ConclaveOwnerSnapshot
     public ConclaveEpoch ConclaveEpoch { get; set; } = new();
     public DelegatorSnapshot DelegatorSnapshot { get; set; } = new();
     public ulong Quantity { get; set; }
-    public DateTime DateCreated { get; set; } = DateUtils.DateTimeToUtc(DateTime.Now);
-    public DateTime DateUpdated { get; set; } = DateUtils.DateTimeToUtc(DateTime.Now);
+    public DateTime DateCreated { get; set; } = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
+    public DateTime DateUpdated { get; set; } = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
 }

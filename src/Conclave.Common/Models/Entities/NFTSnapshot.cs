@@ -11,6 +11,6 @@ public class NFTSnapshot
     public NFTProject NFTProject { get; set; } = new();
     public int Quantity { get; set; }
     public double Weight { get; set; }
-    public DateTime DateCreated { get; set; } = DateUtils.DateTimeToUtc(DateTime.Now);
-    public DateTime DateUpdated { get; set; } = DateUtils.DateTimeToUtc(DateTime.Now);
+    public DateTime DateCreated { get; set; } = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
+    public DateTime DateUpdated { get; set; } = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
 }
