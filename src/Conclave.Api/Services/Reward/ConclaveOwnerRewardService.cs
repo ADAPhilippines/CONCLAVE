@@ -39,10 +39,30 @@ public class ConclaveOwnerRewardService : IConclaveOwnerRewardService
 
     public IEnumerable<ConclaveOwnerReward>? GetAllByEpochNumber(ulong epochNumber)
     {
-        var result = _context.ConclaveOwnerRewards.Include(c => c.DelegatorSnapshot)
+        var result = _context.ConclaveOwnerRewards.Include(c => c.ConclaveOwnerSnapshot)
                                                   .ThenInclude(d => d.ConclaveEpoch)
-                                                  .Where(c => c.DelegatorSnapshot.ConclaveEpoch.EpochNumber == epochNumber)
+                                                  .Where(c => c.ConclaveOwnerSnapshot.ConclaveEpoch.EpochNumber == epochNumber)
                                                   .ToList();
+
+        return result;
+    }
+
+    public IEnumerable<ConclaveOwnerReward>? GetAllByStakeAddress(string stakeAddress)
+    {
+        var result = _context.ConclaveOwnerRewards.Include(c => c.ConclaveOwnerSnapshot)
+                                                  .Where(c => c.ConclaveOwnerSnapshot.DelegatorSnapshot.StakeAddress == stakeAddress)
+                                                  .ToList();
+
+        return result;
+    }
+
+    public ConclaveOwnerReward? GetByStakeAddressAndEpochNumber(string stakeAddress, ulong epochNumber)
+    {
+        var result = _context.ConclaveOwnerRewards.Include(c => c.ConclaveOwnerSnapshot)
+                                                  .ThenInclude(cs => cs.ConclaveEpoch)
+                                                  .Where(c => c.ConclaveOwnerSnapshot.ConclaveEpoch.EpochNumber == epochNumber)
+                                                  .Where(c => c.ConclaveOwnerSnapshot.DelegatorSnapshot.StakeAddress == stakeAddress)
+                                                  .FirstOrDefault();
 
         return result;
     }

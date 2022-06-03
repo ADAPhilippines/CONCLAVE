@@ -12,6 +12,6 @@ public class OperatorReward
     public double RewardAmount { get; set; }
     public AirdropStatus AirdropStatus { get; set; } = AirdropStatus.New;
     public string TransactionHash { get; set; } = string.Empty;
-    public DateTime DateCreated { get; set; } = DateUtils.DateTimeToUtc(DateTime.Now);
-    public DateTime DateUpdated { get; set; } = DateUtils.DateTimeToUtc(DateTime.Now);
+    public DateTime DateCreated { get; set; } = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
+    public DateTime DateUpdated { get; set; } = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
 }

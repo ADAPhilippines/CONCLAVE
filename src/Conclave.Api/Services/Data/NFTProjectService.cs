@@ -2,6 +2,7 @@ using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
 using Conclave.Common.Utils;
 using Conclave.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Conclave.Api.Services;
 
@@ -36,12 +37,12 @@ public class NFTProjectService : INFTProjectService
 
     public IEnumerable<NFTProject>? GetAll()
     {
-        return _context.NFTProjects.ToList();
+        return _context.NFTProjects.Include(n => n.NFTGroup).ToList();
     }
 
     public IEnumerable<NFTProject>? GetAllByNFTGroup(Guid nftGroupId)
     {
-        return _context.NFTProjects.Where(n => n.NFTGroup.Id == nftGroupId).ToList();
+        return _context.NFTProjects.Include(n => n.NFTGroup).Where(n => n.NFTGroup.Id == nftGroupId).ToList();
     }
 
     public NFTProject? GetById(Guid id)

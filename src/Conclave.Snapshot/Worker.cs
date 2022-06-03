@@ -75,28 +75,33 @@ public class Worker : BackgroundService
                 // prepare snapshot
                 await ExecuteSeedEpochGetterOrSetterAsync();
                 await ExecuteCurrentEpochGetterOrSetterAsync();
-                await ExecuteSnapshotSchedulerAsync();
+                // await ExecuteSnapshotSchedulerAsync();
                 await ExecuteNewEpochGetterOrSetterAsync();
 
-                if (NewConclaveEpoch is not null)
+                if (NewConclaveEpoch is null)
                 {
-                    // snapshot
-                    await DelegatorSnapshotHandler.HandleAsync(NewConclaveEpoch);
-                    await OperatorSnapshotHandler.HandleAsync(NewConclaveEpoch);
-                    await NftSnapshotHandler.HandleAsync(NewConclaveEpoch);
-                    await OwnerSnapshotHandler.HandleAsync(NewConclaveEpoch);
+                    await Task.Delay(60 * 5 * 1000, stoppingToken);
+                    return;
+                } // 5 minutes
 
-                    // reward
-                    await DelegatorRewardHandler.HandleAsync(NewConclaveEpoch);
-                    await OperatorRewardHandler.HandleAsync(NewConclaveEpoch);
-                    await NftRewardHandler.HandleAsync(NewConclaveEpoch);
-                }
+                // snapshot
+                await DelegatorSnapshotHandler.HandleAsync(NewConclaveEpoch);
+                await OperatorSnapshotHandler.HandleAsync(NewConclaveEpoch);
+                await NftSnapshotHandler.HandleAsync(NewConclaveEpoch);
+                await OwnerSnapshotHandler.HandleAsync(NewConclaveEpoch);
 
-                // reward calculation
-                await ConcalveOwnerRewardHandler.HandleAsync(CurrentConclaveEpoch!);
+                // reward
+                await DelegatorRewardHandler.HandleAsync(NewConclaveEpoch);
+                await OperatorRewardHandler.HandleAsync(NewConclaveEpoch);
+                await NftRewardHandler.HandleAsync(NewConclaveEpoch);
 
-                // end epoch cycle
-                await ExecuteSnapshotEndSchedulerAsync();
+
+                // end conclave epoch cycle
+                await ExecuteSnapshotEndSchedulerAsync(); // Curren = Newepoch NewCOn = null 
+
+                // TODO: calculate conclave owner rewards without blocking the worker
+                ConcalveOwnerRewardHandler.HandleAsync(CurrentConclaveEpoch);
+
             }
             catch (Exception e)
             {

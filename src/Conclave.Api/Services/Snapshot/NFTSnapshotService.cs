@@ -41,6 +41,7 @@ public class NFTSnapshotService : INFTSnapshotService
     {
         var nftStakers = _context.NFTSnapshots.Include(n => n.ConclaveEpoch)
                                               .Include(n => n.DelegatorSnapshot)
+                                              .Include(n => n.NFTProject.NFTGroup)
                                               .Where(n => n.ConclaveEpoch.EpochNumber == epochNumber)
                                               .ToList();
 

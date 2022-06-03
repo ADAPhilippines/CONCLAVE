@@ -48,7 +48,7 @@ public class ConclaveOwnerSnapshotHandler
         }
 
         // Snapshot current conclave owners for all the conclave pools
-        var conclaveOwnerSnapshots = await SnapshotInParallel(_options.Value.ConclaveAddress, delegators, epoch);
+        var conclaveOwnerSnapshots = await SnapshotInParallelAsync(_options.Value.ConclaveAddress, delegators, epoch);
 
         // Save the snapshot to database
         foreach (var conclaveOwnerSnapshot in conclaveOwnerSnapshots) await _conclaveOwnerSnapshotService.CreateAsync(conclaveOwnerSnapshot);
@@ -59,7 +59,7 @@ public class ConclaveOwnerSnapshotHandler
     }
 
 
-    private async Task<IEnumerable<ConclaveOwnerSnapshot>> SnapshotInParallel(string conclavePolicyId,
+    private async Task<IEnumerable<ConclaveOwnerSnapshot>> SnapshotInParallelAsync(string conclavePolicyId,
                                                                                IEnumerable<DelegatorSnapshot> delegators,
                                                                                ConclaveEpoch epoch,
                                                                                int threadCount = 50)
