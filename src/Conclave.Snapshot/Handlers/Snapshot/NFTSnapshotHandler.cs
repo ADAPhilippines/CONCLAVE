@@ -61,7 +61,7 @@ public class NFTSnapshotHandler
 
             if (nftProjects is null) continue;
 
-            var partialNFTSnapshots = await SnapshotInParallel(nftProjects, delegators, epoch);
+            var partialNFTSnapshots = await SnapshotInParallelAsync(nftProjects, delegators, epoch);
 
             nftSnapshots.AddRange(partialNFTSnapshots);
         }
@@ -74,7 +74,7 @@ public class NFTSnapshotHandler
         await _epochsService.UpdateAsync(epoch.Id, epoch);
     }
 
-    private async Task<IEnumerable<NFTSnapshot>> SnapshotInParallel(IEnumerable<NFTProject> nftProjects,
+    private async Task<IEnumerable<NFTSnapshot>> SnapshotInParallelAsync(IEnumerable<NFTProject> nftProjects,
                                                                     IEnumerable<DelegatorSnapshot> delegators,
                                                                     ConclaveEpoch epoch,
                                                                     int threadCount = 50)

@@ -124,7 +124,8 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
             ConclaveEpoch = epoch,
             DelegatorSnapshot = delegatorSnapshot,
             NFTProject = nftProject,
-            Quantity = conclaveNFTAssetCount
+            Quantity = conclaveNFTAssetCount,
+            Weight = conclaveNFTAssetCount * nftProject.Weight
         };
 
         return nftSnapshot;
