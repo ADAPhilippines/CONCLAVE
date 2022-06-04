@@ -1,5 +1,6 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
+using Conclave.Common.Utils;
 using Conclave.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -33,10 +34,7 @@ public class NFTRewardService : INFTRewardService
         return entity;
     }
 
-    public IEnumerable<NFTReward>? GetAll()
-    {
-        return _context.NFTRewards.ToList();
-    }
+    public IEnumerable<NFTReward>? GetAll() => _context.NFTRewards.ToList();
 
     public IEnumerable<NFTReward>? GetAllByEpochNumber(ulong epochNumber)
     {
@@ -81,6 +79,7 @@ public class NFTRewardService : INFTRewardService
 
         if (existing is null) return null;
 
+        entity.DateUpdated = DateUtils.DateTimeToUtc(DateTime.Now);
         _context.Update(entity);
         await _context.SaveChangesAsync();
 

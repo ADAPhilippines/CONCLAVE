@@ -33,7 +33,14 @@ IHost host = Host.CreateDefaultBuilder(args)
             o.SnapshotCompleteAfterMilliseconds = (long)TimeSpan.FromMinutes(10).TotalMilliseconds;
         });
 
+        services.Configure<PoolOwnerRewardOptions>(o =>
+        {
+            o.PoolOwnerRewardBeforeMilliseconds = (long)TimeSpan.FromHours(1).TotalMilliseconds;
+            o.PoolOwnerRewardCompleteAfterMilliseconds = (long)TimeSpan.FromMinutes(10).TotalMilliseconds;
+        });
+
         services.Configure<RewardOptions>(hostContext.Configuration.GetSection("RewardOptions"));
+        services.Configure<PoolOwnerRewardOptions>(hostContext.Configuration.GetSection("PoolOwnerRewardOptions"));
     })
     .Build();
 

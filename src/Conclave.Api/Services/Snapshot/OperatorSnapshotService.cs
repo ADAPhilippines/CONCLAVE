@@ -1,5 +1,6 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
+using Conclave.Common.Utils;
 using Conclave.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,6 +14,7 @@ public class OperatorSnapshotService : IOperatorSnapshotService
     {
         _context = context;
     }
+
     public async Task<OperatorSnapshot> CreateAsync(OperatorSnapshot entity)
     {
         _context.Add(entity);
@@ -33,10 +35,7 @@ public class OperatorSnapshotService : IOperatorSnapshotService
         return entity;
     }
 
-    public IEnumerable<OperatorSnapshot>? GetAll()
-    {
-        return _context.OperatorSnapshots.ToList();
-    }
+    public IEnumerable<OperatorSnapshot>? GetAll() => _context.OperatorSnapshots.ToList();
 
     public IEnumerable<OperatorSnapshot>? GetAllByEpochNumber(ulong epochNumber)
     {
@@ -48,17 +47,15 @@ public class OperatorSnapshotService : IOperatorSnapshotService
     }
 
 
-    public OperatorSnapshot? GetById(Guid id)
-    {
-        return _context.OperatorSnapshots.Find(id);
-    }
-
+    public OperatorSnapshot? GetById(Guid id) => _context.OperatorSnapshots.Find(id);
+    
     public async Task<OperatorSnapshot?> UpdateAsync(Guid id, OperatorSnapshot entity)
     {
         var existing = _context.OperatorSnapshots.Find(id);
 
         if (existing is null) return null;
 
+        entity.DateUpdated = DateUtils.DateTimeToUtc(DateTime.Now);
         _context.Update(entity);
         await _context.SaveChangesAsync();
 
