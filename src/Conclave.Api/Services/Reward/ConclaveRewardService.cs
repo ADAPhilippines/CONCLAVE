@@ -56,17 +56,18 @@ public class ConclaveRewardService : IConclaveRewardService
         return delegatorRewards;
     }
 
-    public IEnumerable<NFTReward> CalculateNFTRewardsAsync(
-        IEnumerable<NFTSnapshot> nftSnapshots,
-        double totalReward)
+    public IEnumerable<NFTReward> CalculateNFTRewardsAsync(IEnumerable<NFTSnapshot> nftSnapshots, double totalReward)
     {
-        var totalQuantity = nftSnapshots.Aggregate(0.0, (acc, cur) => acc + cur.Quantity);
         var nftRewards = new List<NFTReward>();
+        var uniqueNFTGroupCount = nftSnapshots.GroupBy(x => x.NFTProject.NFTGroup).Count();
 
         foreach (var nftSnapshot in nftSnapshots)
         {
-            var rewardPercentage = CalculatorUtils.GetPercentage(totalQuantity, nftSnapshot.Quantity);
-            var rewardAmount = totalReward * (rewardPercentage / 100);
+            var totalWeight = nftSnapshots.Where(x => x.NFTProject.NFTGroup == nftSnapshot.NFTProject.NFTGroup).Sum(x => x.Weight);
+            var rewardPercentage = CalculatorUtils.GetPercentage(totalWeight, nftSnapshot.Weight);
+
+            // Get NFT Group share of total reward
+            var rewardAmount = totalReward * (rewardPercentage / 100) / uniqueNFTGroupCount;
 
             var reward = new NFTReward
             {
