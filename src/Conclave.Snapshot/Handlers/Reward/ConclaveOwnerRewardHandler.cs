@@ -63,10 +63,10 @@ public class ConclaveOwnerRewardHandler
 
         // TODO: calculate reward here
         var stakeAddresses = _operatorSnapshotService.GetAllByEpochNumber(epoch.EpochNumber)?.Select(e => e.StakeAddress).ToList() ?? new List<string>();
-        var totalReward = await CalculateTotalPoolOwnerReward(stakeAddresses, epoch);
+        var totalPoolOwnerReward = await CalculateTotalPoolOwnerReward(stakeAddresses, epoch);
 
         var conclaveOwnerRewards = _rewardService.CalculateConclaveOwnerRewardsAsync(
-            conclaveOwnerSnapshots, totalReward * (_rewardOptions.Value.ConclaveOwnerRewardSharePercentage / 100.0));
+            conclaveOwnerSnapshots, totalPoolOwnerReward * (_rewardOptions.Value.ConclaveOwnerRewardSharePercentage / 100.0));
 
         foreach (var conclaveOwnerReward in conclaveOwnerRewards) await _conclaveOwnerRewardService.CreateAsync(conclaveOwnerReward);
 

@@ -210,6 +210,8 @@ public class Worker : BackgroundService
             NewConclaveEpoch.StartTime = currentEpoch.StartTime;
             NewConclaveEpoch.EndTime = currentEpoch.EndTime;
             NewConclaveEpoch.EpochStatus = EpochStatus.Current;
+            NewConclaveEpoch.TotalConclaveReward = CalculateTotalConclaveReward(NewConclaveEpoch.EpochNumber - SeedEpoch!.EpochNumber);
+
             await EpochsService!.UpdateAsync(NewConclaveEpoch.Id, NewConclaveEpoch);
 
             //should be on top of new epoch instead of below
@@ -226,5 +228,10 @@ public class Worker : BackgroundService
         }
 
         _logger.LogInformation("Exiting SnapshotCycleWrapperAsync");
+    }
+
+    private ulong CalculateTotalConclaveReward(ulong epochNumber)
+    {
+        return (ulong)(3587951*(Math.Pow(0.93, epochNumber)) + 13000000);
     }
 }

@@ -20,4 +20,5 @@ public class ConclaveEpoch
     public RewardStatus ConclaveOwnerRewardStatus { get; set; } = RewardStatus.New;
     public DateTime DateCreated { get; set; } = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
     public DateTime DateUpdated { get; set; } = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
+    public ulong TotalConclaveReward { get; set; }
 }
