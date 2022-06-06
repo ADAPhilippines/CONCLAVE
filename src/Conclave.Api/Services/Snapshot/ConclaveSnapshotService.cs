@@ -5,7 +5,6 @@ using Conclave.Api.Interfaces;
 using Conclave.Api.Options;
 using Conclave.Common.Enums;
 using Conclave.Common.Models;
-using Conclave.Common.Utils;
 using Conclave.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;

@@ -56,9 +56,7 @@ public class ConclaveRewardService : IConclaveRewardService
         return delegatorRewards;
     }
 
-    public IEnumerable<NFTReward> CalculateNFTRewardsAsync(
-        IEnumerable<NFTSnapshot> nftSnapshots,
-        double totalReward)
+    public IEnumerable<NFTReward> CalculateNFTRewardsAsync(IEnumerable<NFTSnapshot> nftSnapshots, double totalReward)
     {
         var nftRewards = new List<NFTReward>();
         var uniqueNFTGroupCount = nftSnapshots.GroupBy(x => x.NFTProject.NFTGroup).Count();
