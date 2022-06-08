@@ -19,7 +19,7 @@ public class Worker : BackgroundService
 
     private IConclaveEpochsService EpochsService { get; set; }
     private IConclaveCardanoService CardanoService { get; set; }
-    private IConclaveSnapshotSchedulerService SnapshotSchedulerService { get; set; }
+    private IConclaveSchedulerService SnapshotSchedulerService { get; set; }
 
     // Snapshot Handlers
     private DelegatorSnapshotHandler DelegatorSnapshotHandler { get; }
@@ -57,7 +57,7 @@ public class Worker : BackgroundService
         // services
         EpochsService = scopedProvider.GetService<IConclaveEpochsService>()!;
         CardanoService = scopedProvider.GetService<IConclaveCardanoService>()!;
-        SnapshotSchedulerService = scopedProvider.GetService<IConclaveSnapshotSchedulerService>()!;
+        SnapshotSchedulerService = scopedProvider.GetService<IConclaveSchedulerService>()!;
 
         //options
         SnapshotOptions = scopedProvider.GetService<IOptions<SnapshotOptions>>()!;
@@ -99,7 +99,7 @@ public class Worker : BackgroundService
                 await ExecuteSnapshotEndSchedulerAsync(); // Curren = Newepoch NewCOn = null 
 
                 // TODO: calculate conclave owner rewards without blocking the worker
-                // ConcalveOwnerRewardHandler.HandleAsync(CurrentConclaveEpoch);
+                ConcalveOwnerRewardHandler.HandleAsync(CurrentConclaveEpoch);
 
             }
             catch (Exception e)
@@ -212,6 +212,8 @@ public class Worker : BackgroundService
             NewConclaveEpoch.StartTime = currentEpoch.StartTime;
             NewConclaveEpoch.EndTime = currentEpoch.EndTime;
             NewConclaveEpoch.EpochStatus = EpochStatus.Current;
+            NewConclaveEpoch.TotalConclaveReward = ConcalveOwnerRewardHandler.CalculateTotalConclaveReward(NewConclaveEpoch.EpochNumber - SeedEpoch!.EpochNumber);
+
             await EpochsService!.UpdateAsync(NewConclaveEpoch.Id, NewConclaveEpoch);
 
             //should be on top of new epoch instead of below

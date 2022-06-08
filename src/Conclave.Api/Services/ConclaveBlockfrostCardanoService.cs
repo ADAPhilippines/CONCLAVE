@@ -1,7 +1,9 @@
+using Blockfrost.Api.Models;
 using Blockfrost.Api.Services;
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
 using Conclave.Common.Utils;
+using Microsoft.EntityFrameworkCore;
 
 namespace Conclave.Api.Services;
 
@@ -13,10 +15,11 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
     private readonly IAccountsService _accountsService;
     private readonly IAssetsService _assetsService;
 
-    public ConclaveBlockfrostCardanoService(IEpochsService epochsService,
-                                            IPoolsService poolsService,
-                                            IAccountsService accountsService,
-                                            IAssetsService assetsService)
+    public ConclaveBlockfrostCardanoService(
+        IEpochsService epochsService,
+        IPoolsService poolsService,
+        IAccountsService accountsService,
+        IAssetsService assetsService)
     {
         _epochsService = epochsService;
         _poolsService = poolsService;
@@ -69,20 +72,24 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
         var currentEpoch = await _epochsService.GetLatestAsync();
 
         return new Epoch((ulong)currentEpoch.Epoch,
-        DateUtils.UnixTimeStampToDateTime(currentEpoch.StartTime),
-        DateUtils.UnixTimeStampToDateTime(currentEpoch.EndTime));
+            DateUtils.UnixTimeStampToDateTime(currentEpoch.StartTime),
+            DateUtils.UnixTimeStampToDateTime(currentEpoch.EndTime));
     }
 
-    public async Task<IEnumerable<Delegator>> GetPoolDelegatorsAsync(string poolId, int? count = 100, int? page = 1)
+    public async Task<IEnumerable<Delegator>> GetPoolDelegatorsAsync(
+        string poolId, 
+        int? count = 100, 
+        int? page = 1)
     {
         if (count > 100) count = 100;
         if (count < 1) count = 100;
         if (page < 1) page = 1;
 
         var poolDelegators = await _poolsService.GetDelegatorsAsync(poolId, count, page);
-        List<Delegator> delegators = new();
-
-        foreach (var poolDelegator in poolDelegators) delegators.Add(new Delegator(poolDelegator.Address, ulong.Parse(poolDelegator.LiveStake)));
+        List<Delegator> delegators = poolDelegators
+                                    .Select(t => 
+                                        new Delegator(t.Address, ulong.Parse(t.LiveStake)))
+                                    .ToList();
 
         return delegators;
     }
@@ -93,6 +100,20 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
         var stakeAddress = details.Owners.First();
         var pledge = ulong.Parse(details.LivePledge);
         return new Operator(stakeAddress, pledge);
+    }
+
+    public async Task<StakeAddressReward?> GetStakeAddressReward(
+        string stakeAddress, 
+        long epochNumber)
+    {
+        var result = await _accountsService.GetRewardsAsync(stakeAddress);
+        var stakeReward = result
+                        .Where(t => t.Epoch == epochNumber)
+                        .FirstOrDefault();
+        return new StakeAddressReward(
+            stakeAddress, 
+            long.Parse(string.IsNullOrEmpty(stakeReward?.Amount) ? "-1" : stakeReward.Amount), 
+            (ulong)(stakeReward?.Epoch ?? 0));
     }
 
     public async Task<StakeAddressAssets> GetStakeAddressAssetsAsync(string stakeAddress)
