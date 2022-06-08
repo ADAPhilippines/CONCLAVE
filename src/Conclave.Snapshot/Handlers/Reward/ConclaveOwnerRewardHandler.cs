@@ -20,6 +20,7 @@ public class ConclaveOwnerRewardHandler
     private readonly IOperatorSnapshotService _operatorSnapshotService;
     private readonly IConclaveCardanoService _conclaveCardanoService;
     private readonly IOptions<RewardOptions> _rewardOptions;
+    private readonly IOptions<ConclaveDistributionParameters> _conclaveDistributionParameters;
 
     public ConclaveOwnerRewardHandler(
         ILogger<Worker> logger,
@@ -31,6 +32,7 @@ public class ConclaveOwnerRewardHandler
         IConclaveCardanoService conclaveCardanoService,
         IConclaveSchedulerService conclaveSchedulerService,
         IOptions<PoolOwnerRewardOptions> poolOwnerRewardOptions,
+        IOptions<ConclaveDistributionParameters> conclaveDistributionParameters,
         IOptions<RewardOptions> rewardOptions)
     {
         _rewardService = rewardService;
@@ -43,6 +45,7 @@ public class ConclaveOwnerRewardHandler
         _operatorSnapshotService = operatorSnapshotService;
         _conclaveCardanoService = conclaveCardanoService;
         _conclaveShchedulerService = conclaveSchedulerService;
+        _conclaveDistributionParameters = conclaveDistributionParameters;
     }
 
     public async Task HandleAsync(ConclaveEpoch epoch)
@@ -112,5 +115,14 @@ public class ConclaveOwnerRewardHandler
         }
 
         return totalReward;
+    }
+
+    public ulong CalculateTotalConclaveReward(ulong epochNumber)
+    {
+        var delta = _conclaveDistributionParameters.Value.DeltaInitialSaturationValue;
+        var satAmount = _conclaveDistributionParameters.Value.SaturationAmount;
+        var satRate = _conclaveDistributionParameters.Value.SaturationRate;
+
+        return (ulong)(delta*((decimal)Math.Pow((double)satRate, epochNumber-1)) + satAmount);
     }
 }

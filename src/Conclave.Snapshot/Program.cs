@@ -41,7 +41,6 @@ IHost host = Host.CreateDefaultBuilder(args)
         });
 
         services.Configure<RewardOptions>(hostContext.Configuration.GetSection("RewardOptions"));
-        services.Configure<PoolOwnerRewardOptions>(hostContext.Configuration.GetSection("PoolOwnerRewardOptions"));
         services.Configure<ConclaveDistributionParameters>(hostContext.Configuration.GetSection("ConclaveDistributionParameters"));
     })
     .Build();
