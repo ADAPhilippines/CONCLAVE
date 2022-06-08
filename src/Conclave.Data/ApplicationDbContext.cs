@@ -6,10 +6,8 @@ namespace Conclave.Data;
 public class ApplicationDbContext : DbContext
 {
 
-    public ApplicationDbContext(DbContextOptions options) : base(options)
-    {
-
-    }
+    public ApplicationDbContext(DbContextOptions options)
+        : base(options) { }
 
     public DbSet<ConclaveEpoch> ConclaveEpochs => Set<ConclaveEpoch>();
     public DbSet<DelegatorSnapshot> DelegatorSnapshots => Set<DelegatorSnapshot>();

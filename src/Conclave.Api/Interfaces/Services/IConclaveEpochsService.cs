@@ -3,7 +3,6 @@ using Conclave.Common.Models;
 
 namespace Conclave.Api.Interfaces;
 
-
 public interface IConclaveEpochsService : IRepository<ConclaveEpoch, Guid>
 {
     // READ
@@ -17,5 +16,4 @@ public interface IConclaveEpochsService : IRepository<ConclaveEpoch, Guid>
 
     // WRITE
     Task<ConclaveEpoch> DeleteByEpochNumber(ulong epochNumber);
-
 }
