@@ -43,7 +43,7 @@ public class OperatorRewardHandler
         await _epochService.UpdateAsync(epoch.Id, epoch);
 
         // Get total reward for this epoch
-        var totalEpochReward = epoch.TotalConclaveReward;
+        var totalEpochReward = _options.Value.ConclaveTokenAirdropSupply / _options.Value.ConclaveAirdropEpochsCount;
         var operatorShare = totalEpochReward * (_options.Value.OperatorPercentage / 100.0);
 
         // Calculate delegator rewars
@@ -55,4 +55,5 @@ public class OperatorRewardHandler
         epoch.OperatorRewardStatus = RewardStatus.Completed;
         await _epochService.UpdateAsync(epoch.Id, epoch);
     }
+
 }
