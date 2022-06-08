@@ -96,11 +96,11 @@ public class Worker : BackgroundService
 
 
                 // end conclave epoch cycle
+
                 await ExecuteSnapshotEndSchedulerAsync(); // Curren = Newepoch NewCOn = null 
-
-                // TODO: calculate conclave owner rewards without blocking the worker
+               
                 ConcalveOwnerRewardHandler.HandleAsync(CurrentConclaveEpoch);
-
+                // TODO: calculate conclave owner rewards without blocking the worker
             }
             catch (Exception e)
             {
