@@ -1,3 +1,4 @@
+using Blockfrost.Api.Models;
 using Blockfrost.Api.Services;
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
@@ -29,11 +30,6 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
     public async Task<IEnumerable<Asset>?> GetAssetDetailsForStakeAddress(string stakeAddress, string policyId)
     {
         var assets = await GetStakeAddressAssetsAsync(stakeAddress);
-
-        if (stakeAddress == "stake1uyjpkz0n2dn4un8n4dz7nfq8e670756mrndkkfmv4jdz0ys46e0z7")
-        {
-            System.Console.WriteLine("Here");
-        }
 
         if (assets.Assets.Count < 1) return null;
 
@@ -80,7 +76,7 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
             DateUtils.UnixTimeStampToDateTime(currentEpoch.EndTime));
     }
 
-    public async Task<IEnumerable<Delegator?>> GetPoolDelegatorsAsync(
+    public async Task<IEnumerable<Delegator>> GetPoolDelegatorsAsync(
         string poolId, 
         int? count = 100, 
         int? page = 1)
@@ -90,7 +86,6 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
         if (page < 1) page = 1;
 
         var poolDelegators = await _poolsService.GetDelegatorsAsync(poolId, count, page);
-
         List<Delegator> delegators = poolDelegators
                                     .Select(t => 
                                         new Delegator(t.Address, ulong.Parse(t.LiveStake)))
@@ -112,12 +107,13 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
         long epochNumber)
     {
         var result = await _accountsService.GetRewardsAsync(stakeAddress);
-
         var stakeReward = result
                         .Where(t => t.Epoch == epochNumber)
                         .FirstOrDefault();
-        
-        return new StakeAddressReward(stakeAddress, ulong.Parse(stakeReward!.Amount), (ulong)stakeReward.Epoch);
+        return new StakeAddressReward(
+            stakeAddress, 
+            long.Parse(string.IsNullOrEmpty(stakeReward?.Amount) ? "-1" : stakeReward.Amount), 
+            (ulong)(stakeReward?.Epoch ?? 0));
     }
 
     public async Task<StakeAddressAssets> GetStakeAddressAssetsAsync(string stakeAddress)

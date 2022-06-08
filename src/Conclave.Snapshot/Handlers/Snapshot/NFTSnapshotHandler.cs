@@ -61,10 +61,7 @@ public class NFTSnapshotHandler
 
             if (nftProjects is null) continue;
 
-
-            var partialNFTSnapshots = await _snapshotService.SnapshotNFTsForStakeAddressesAsync(nftProjects, delegators, epoch);
-
-            if (partialNFTSnapshots is null) continue;
+            var partialNFTSnapshots = await SnapshotInParallelAsync(nftProjects, delegators, epoch);
 
             nftSnapshots.AddRange(partialNFTSnapshots);
         }
@@ -75,5 +72,44 @@ public class NFTSnapshotHandler
         // Update status to Completed
         epoch.NFTSnapshotStatus = SnapshotStatus.Completed;
         await _epochsService.UpdateAsync(epoch.Id, epoch);
+    }
+
+    private async Task<IEnumerable<NFTSnapshot>> SnapshotInParallelAsync(IEnumerable<NFTProject> nftProjects,
+                                                                    IEnumerable<DelegatorSnapshot> delegators,
+                                                                    ConclaveEpoch epoch,
+                                                                    int threadCount = 50)
+    {
+        int delegatorCountPerThread = (int)Math.Ceiling((double)delegators.Count() / threadCount);
+
+        if (delegators.Count() < 20)
+            return await _snapshotService.SnapshotNFTsForStakeAddressesAsync(nftProjects, delegators, epoch);
+
+        // divide data set
+        var partialDelegators = Enumerable.Range(0, threadCount).Aggregate(new List<List<DelegatorSnapshot>>(), (list, i) =>
+        {
+            if (i == 0) list.Add(delegators.Take(delegatorCountPerThread).ToList());
+            else list.Add(delegators.Skip(delegatorCountPerThread * i).Take(delegatorCountPerThread).ToList());
+
+            return list;
+        });
+
+        // process tasks in parallel
+        var partialNFTSnapshots = Enumerable.Range(0, threadCount).Aggregate(new List<Task<IEnumerable<NFTSnapshot>>>(), (current, i) =>
+        {
+            current.Add(_snapshotService.SnapshotNFTsForStakeAddressesAsync(nftProjects, partialDelegators[i], epoch));
+            return current;
+        });
+
+        // wait for all tasks to complete
+        var partialSnapshots = await Task.WhenAll(partialNFTSnapshots);
+
+        // flatten results
+        var nftSnapshots = partialSnapshots.Aggregate(new List<NFTSnapshot>(), (current, partialSnapshot) =>
+        {
+            current.AddRange(partialSnapshot);
+            return current;
+        });
+
+        return nftSnapshots;
     }
 }

@@ -1,6 +1,7 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
 using Conclave.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Conclave.Api.Services;
 
@@ -37,9 +38,35 @@ public class OperatorRewardService : IOperatorRewardService
         return _context.OperatorRewards.ToList();
     }
 
+    public IEnumerable<OperatorReward>? GetAllByEpochNumber(ulong epochNumber)
+    {
+
+        var result = _context.OperatorRewards.Include(o => o.OperatorSnapshot)
+                                             .ThenInclude(s => s.ConclaveEpoch)
+                                             .Where(n => n.OperatorSnapshot.ConclaveEpoch.EpochNumber == epochNumber)
+                                             .ToList();
+
+        return result;
+    }
+
+    public IEnumerable<OperatorReward>? GetAllByStakeAddress(string stakeAddress)
+    {
+        var result = _context.OperatorRewards.Include(o => o.OperatorSnapshot)
+                                             .ThenInclude(os => os.ConclaveEpoch)
+                                             .Where(n => n.OperatorSnapshot.StakeAddress == stakeAddress)
+                                             .ToList();
+
+        return result;
+    }
+
     public OperatorReward? GetById(Guid id)
     {
         return _context.OperatorRewards.Find(id);
+    }
+
+    public OperatorReward? GetByStakeAddressAndEpochNumber(string stakeAddress, ulong epochNumber)
+    {
+        throw new NotImplementedException();
     }
 
     public async Task<OperatorReward?> UpdateAsync(Guid id, OperatorReward entity)

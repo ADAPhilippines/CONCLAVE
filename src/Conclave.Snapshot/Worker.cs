@@ -14,7 +14,6 @@ public class Worker : BackgroundService
     private ConclaveEpoch? SeedEpoch { get; set; }
     private ConclaveEpoch? CurrentConclaveEpoch { get; set; }
     private ConclaveEpoch? NewConclaveEpoch { get; set; }
-    private IServiceProvider _scopedProvider;
 
     // services
 
@@ -62,40 +61,45 @@ public class Worker : BackgroundService
 
         //options
         SnapshotOptions = scopedProvider.GetService<IOptions<SnapshotOptions>>()!;
+
     }
-    
     protected async override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
+                // TODO: check for blockfrost health status before proceeding
+
                 // prepare snapshot
                 await ExecuteSeedEpochGetterOrSetterAsync();
                 await ExecuteCurrentEpochGetterOrSetterAsync();
-                // await ExecuteSnapshotSchedulerAsync(); // skipped for testing
+                // await ExecuteSnapshotSchedulerAsync();
                 await ExecuteNewEpochGetterOrSetterAsync();
 
-                if (NewConclaveEpoch is not null)
+                if (NewConclaveEpoch is null)
                 {
-                    // snapshot
-                    await DelegatorSnapshotHandler.HandleAsync(NewConclaveEpoch);
-                    await OperatorSnapshotHandler.HandleAsync(NewConclaveEpoch);
-                    await NftSnapshotHandler.HandleAsync(NewConclaveEpoch);
-                    await OwnerSnapshotHandler.HandleAsync(NewConclaveEpoch);
+                    await Task.Delay(60 * 5 * 1000, stoppingToken);
+                    return;
+                } // 5 minutes
 
-                    // reward
-                    await DelegatorRewardHandler.HandleAsync(NewConclaveEpoch);
-                    await OperatorRewardHandler.HandleAsync(NewConclaveEpoch);
-                    await NftRewardHandler.HandleAsync(NewConclaveEpoch);
-                    await ConcalveOwnerRewardHandler.HandleAsync(NewConclaveEpoch, CurrentConclaveEpoch!);
-                }
+                // snapshot
+                await DelegatorSnapshotHandler.HandleAsync(NewConclaveEpoch);
+                await OperatorSnapshotHandler.HandleAsync(NewConclaveEpoch);
+                await NftSnapshotHandler.HandleAsync(NewConclaveEpoch);
+                await OwnerSnapshotHandler.HandleAsync(NewConclaveEpoch);
 
-                // reward calculation
+                // reward
+                await DelegatorRewardHandler.HandleAsync(NewConclaveEpoch);
+                await OperatorRewardHandler.HandleAsync(NewConclaveEpoch);
+                await NftRewardHandler.HandleAsync(NewConclaveEpoch);
 
 
-                // end epoch cycle
-                await ExecuteSnapshotEndSchedulerAsync();
+                // end conclave epoch cycle
+                await ExecuteSnapshotEndSchedulerAsync(); // Curren = Newepoch NewCOn = null 
+
+                // TODO: calculate conclave owner rewards without blocking the worker
+                ConcalveOwnerRewardHandler.HandleAsync(CurrentConclaveEpoch);
 
             }
             catch (Exception e)
@@ -126,6 +130,10 @@ public class Worker : BackgroundService
             DelegatorSnapshotStatus = SnapshotStatus.Skip,
             OperatorSnapshotStatus = SnapshotStatus.Skip,
             NFTSnapshotStatus = SnapshotStatus.Skip,
+            DelegatorRewardStatus = RewardStatus.Skip,
+            OperatorRewardStatus = RewardStatus.Skip,
+            NFTRewardStatus = RewardStatus.Skip,
+            ConclaveOwnerRewardStatus = RewardStatus.Skip
         });
 
         _logger.LogInformation("Exiting SeedEpochGetterOrSetterAsync");
@@ -204,9 +212,11 @@ public class Worker : BackgroundService
             NewConclaveEpoch.StartTime = currentEpoch.StartTime;
             NewConclaveEpoch.EndTime = currentEpoch.EndTime;
             NewConclaveEpoch.EpochStatus = EpochStatus.Current;
+            NewConclaveEpoch.TotalConclaveReward = ConcalveOwnerRewardHandler.CalculateTotalConclaveReward(NewConclaveEpoch.EpochNumber - SeedEpoch!.EpochNumber);
+
             await EpochsService!.UpdateAsync(NewConclaveEpoch.Id, NewConclaveEpoch);
 
-
+            //should be on top of new epoch instead of below
             if (CurrentConclaveEpoch!.EpochStatus != EpochStatus.Seed)
             {
                 // Update epoch status to Old

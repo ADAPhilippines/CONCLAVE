@@ -35,7 +35,7 @@ public class DelegatorRewardHandler
         if (epoch.DelegatorRewardStatus == RewardStatus.Completed) return;
 
         // Fetch all snapshots
-        var delegatorSnapshots = _delegatorSnapshotService.GetAllByEpochNumber(epoch.EpochNumber);
+        var delegatorSnapshots = _delegatorSnapshotService.GetAllByEpochNumber(epoch.EpochNumber) ?? new List<DelegatorSnapshot>();
 
         // Update reward status
         epoch.DelegatorRewardStatus = RewardStatus.InProgress;
@@ -45,7 +45,7 @@ public class DelegatorRewardHandler
         var totalEpochReward = _options.Value.ConclaveTokenAirdropSupply / _options.Value.ConclaveAirdropEpochsCount;
         var delegatorShare = totalEpochReward * (_options.Value.DelegatorPercentage / 100.0);
 
-        // Calculate delegator rewards
+        // Calculate delegator rewars
         var delegatorRewards = _rewardService.CalculateDelegatorRewardsAsync(delegatorSnapshots, delegatorShare);
 
         foreach (var delegatorReward in delegatorRewards) await _delegatorRewardService.CreateAsync(delegatorReward);
@@ -53,10 +53,5 @@ public class DelegatorRewardHandler
         // Update reward status
         epoch.DelegatorRewardStatus = RewardStatus.Completed;
         await _epochService.UpdateAsync(epoch.Id, epoch);
-    }
-
-    private async Task PrepareAirdrop()
-    {
-
     }
 }

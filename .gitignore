@@ -3,4 +3,6 @@
 **/obj
 *.db
 **/.DS_Store
+**/.vscode
+**/.code-workspace
 **/volumes

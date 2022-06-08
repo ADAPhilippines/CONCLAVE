@@ -1,6 +1,7 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
 using Conclave.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Conclave.Api.Services;
 
@@ -35,6 +36,36 @@ public class ConclaveOwnerRewardService : IConclaveOwnerRewardService
     public IEnumerable<ConclaveOwnerReward>? GetAll()
     {
         return _context.ConclaveOwnerRewards.ToList();
+    }
+
+    public IEnumerable<ConclaveOwnerReward>? GetAllByEpochNumber(ulong epochNumber)
+    {
+        var result = _context.ConclaveOwnerRewards.Include(c => c.ConclaveOwnerSnapshot)
+                                                  .ThenInclude(d => d.ConclaveEpoch)
+                                                  .Where(c => c.ConclaveOwnerSnapshot.ConclaveEpoch.EpochNumber == epochNumber)
+                                                  .ToList();
+
+        return result;
+    }
+
+    public IEnumerable<ConclaveOwnerReward>? GetAllByStakeAddress(string stakeAddress)
+    {
+        var result = _context.ConclaveOwnerRewards.Include(c => c.ConclaveOwnerSnapshot)
+                                                  .Where(c => c.ConclaveOwnerSnapshot.DelegatorSnapshot.StakeAddress == stakeAddress)
+                                                  .ToList();
+
+        return result;
+    }
+
+    public ConclaveOwnerReward? GetByStakeAddressAndEpochNumber(string stakeAddress, ulong epochNumber)
+    {
+        var result = _context.ConclaveOwnerRewards.Include(c => c.ConclaveOwnerSnapshot)
+                                                  .ThenInclude(cs => cs.ConclaveEpoch)
+                                                  .Where(c => c.ConclaveOwnerSnapshot.ConclaveEpoch.EpochNumber == epochNumber)
+                                                  .Where(c => c.ConclaveOwnerSnapshot.DelegatorSnapshot.StakeAddress == stakeAddress)
+                                                  .FirstOrDefault();
+
+        return result;
     }
 
     public ConclaveOwnerReward? GetById(Guid id)
