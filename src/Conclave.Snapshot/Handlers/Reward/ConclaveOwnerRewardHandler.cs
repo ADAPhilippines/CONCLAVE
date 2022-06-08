@@ -83,7 +83,7 @@ public class ConclaveOwnerRewardHandler
 
         var delayInMilliseconds = _conclaveShchedulerService.GetPoolOwnerRewardDelayInMilliseconds(
                                     epoch,
-                                    _poolOwnerRewardOptions.Value.PoolOwnerRewardCompleteAfterMilliseconds);
+                                    _poolOwnerRewardOptions!.Value.PoolOwnerRewardCompleteAfterMilliseconds);
 
         _logger.LogInformation($"Conclave Rewards will be available after {DateUtils.GetReadableTimeFromMilliseconds((int)delayInMilliseconds)}");
 

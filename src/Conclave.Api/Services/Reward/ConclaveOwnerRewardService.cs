@@ -1,6 +1,5 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
-using Conclave.Common.Utils;
 using Conclave.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,7 +13,6 @@ public class ConclaveOwnerRewardService : IConclaveOwnerRewardService
     {
         _context = context;
     }
-
     public async Task<ConclaveOwnerReward> CreateAsync(ConclaveOwnerReward entity)
     {
         _context.Add(entity);
@@ -35,7 +33,10 @@ public class ConclaveOwnerRewardService : IConclaveOwnerRewardService
         return entity;
     }
 
-    public IEnumerable<ConclaveOwnerReward>? GetAll() => _context.ConclaveOwnerRewards.ToList();
+    public IEnumerable<ConclaveOwnerReward>? GetAll()
+    {
+        return _context.ConclaveOwnerRewards.ToList();
+    }
 
     public IEnumerable<ConclaveOwnerReward>? GetAllByEpochNumber(ulong epochNumber)
     {
@@ -78,7 +79,6 @@ public class ConclaveOwnerRewardService : IConclaveOwnerRewardService
 
         if (existing is null) return null;
 
-        entity.DateUpdated = DateUtils.DateTimeToUtc(DateTime.Now);
         _context.Update(entity);
         await _context.SaveChangesAsync();
 

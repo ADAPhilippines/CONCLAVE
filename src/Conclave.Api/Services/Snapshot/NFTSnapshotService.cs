@@ -1,6 +1,5 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
-using Conclave.Common.Utils;
 using Conclave.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,7 +13,6 @@ public class NFTSnapshotService : INFTSnapshotService
     {
         _context = context;
     }
-
     public async Task<NFTSnapshot> CreateAsync(NFTSnapshot entity)
     {
         _context.Add(entity);
@@ -35,7 +33,10 @@ public class NFTSnapshotService : INFTSnapshotService
         return entity;
     }
 
-    public IEnumerable<NFTSnapshot>? GetAll() => _context.NFTSnapshots.ToList();
+    public IEnumerable<NFTSnapshot>? GetAll()
+    {
+        return _context.NFTSnapshots.ToList();
+    }
 
     public IEnumerable<NFTSnapshot>? GetAllByEpochNumber(ulong epochNumber)
     {
@@ -48,16 +49,17 @@ public class NFTSnapshotService : INFTSnapshotService
         return nftStakers;
     }
 
-    public NFTSnapshot? GetById(Guid id) => _context.NFTSnapshots.Find(id);
-    
+    public NFTSnapshot? GetById(Guid id)
+    {
+        return _context.NFTSnapshots.Find(id);
+    }
 
     public async Task<NFTSnapshot?> UpdateAsync(Guid id, NFTSnapshot entity)
     {
         var existing = _context.NFTSnapshots.Find(id);
 
         if (existing is null) return null;
-        
-        entity.DateUpdated = DateUtils.DateTimeToUtc(DateTime.Now);
+
         _context.Update(entity);
         await _context.SaveChangesAsync();
 

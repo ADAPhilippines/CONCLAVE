@@ -16,7 +16,7 @@ public static class ConclaveCardanoServicesExtension
         services.AddScoped<IConclaveEpochsService, ConclaveEpochsService>();
         services.AddScoped<INFTGroupService, NFTGroupService>();
         services.AddScoped<INFTProjectService, NFTProjectService>();
-        services.AddScoped<IConclaveSchedulerService, ConclaveSchedulerService>();
+        services.AddScoped<IConclaveSchedulerService, ConclaveSnapshotSchedulerService>();
 
         // Snapshot
         services.AddScoped<IConclaveSnapshotService, ConclaveSnapshotService>();
