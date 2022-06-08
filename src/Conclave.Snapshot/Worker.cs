@@ -14,13 +14,12 @@ public class Worker : BackgroundService
     private ConclaveEpoch? SeedEpoch { get; set; }
     private ConclaveEpoch? CurrentConclaveEpoch { get; set; }
     private ConclaveEpoch? NewConclaveEpoch { get; set; }
-    private IServiceProvider _scopedProvider;
 
     // services
 
     private IConclaveEpochsService EpochsService { get; set; }
     private IConclaveCardanoService CardanoService { get; set; }
-    private IConclaveSchedulerService SnapshotSchedulerService { get; set; }
+    private IConclaveSnapshotSchedulerService SnapshotSchedulerService { get; set; }
 
     // Snapshot Handlers
     private DelegatorSnapshotHandler DelegatorSnapshotHandler { get; }
@@ -58,12 +57,12 @@ public class Worker : BackgroundService
         // services
         EpochsService = scopedProvider.GetService<IConclaveEpochsService>()!;
         CardanoService = scopedProvider.GetService<IConclaveCardanoService>()!;
-        SnapshotSchedulerService = scopedProvider.GetService<IConclaveSchedulerService>()!;
+        SnapshotSchedulerService = scopedProvider.GetService<IConclaveSnapshotSchedulerService>()!;
 
         //options
         SnapshotOptions = scopedProvider.GetService<IOptions<SnapshotOptions>>()!;
-    }
 
+    }
     protected async override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
@@ -95,11 +94,13 @@ public class Worker : BackgroundService
                 await OperatorRewardHandler.HandleAsync(NewConclaveEpoch);
                 await NftRewardHandler.HandleAsync(NewConclaveEpoch);
 
-                ConcalveOwnerRewardHandler.HandleAsync(CurrentConclaveEpoch);
+
                 // end conclave epoch cycle
                 await ExecuteSnapshotEndSchedulerAsync(); // Curren = Newepoch NewCOn = null 
 
                 // TODO: calculate conclave owner rewards without blocking the worker
+                // ConcalveOwnerRewardHandler.HandleAsync(CurrentConclaveEpoch);
+
             }
             catch (Exception e)
             {
@@ -196,6 +197,7 @@ public class Worker : BackgroundService
 
         while (NewConclaveEpoch is not null)
         {
+
             var currentEpoch = await CardanoService!.GetCurrentEpochAsync();
 
             if (currentEpoch.Number != NewConclaveEpoch.EpochNumber)
@@ -210,8 +212,6 @@ public class Worker : BackgroundService
             NewConclaveEpoch.StartTime = currentEpoch.StartTime;
             NewConclaveEpoch.EndTime = currentEpoch.EndTime;
             NewConclaveEpoch.EpochStatus = EpochStatus.Current;
-            NewConclaveEpoch.TotalConclaveReward = CalculateTotalConclaveReward(NewConclaveEpoch.EpochNumber - SeedEpoch!.EpochNumber);
-
             await EpochsService!.UpdateAsync(NewConclaveEpoch.Id, NewConclaveEpoch);
 
             //should be on top of new epoch instead of below
@@ -228,10 +228,5 @@ public class Worker : BackgroundService
         }
 
         _logger.LogInformation("Exiting SnapshotCycleWrapperAsync");
-    }
-
-    private ulong CalculateTotalConclaveReward(ulong epochNumber)
-    {
-        return (ulong)(3587951*(Math.Pow(0.93, epochNumber)) + 13000000);
     }
 }

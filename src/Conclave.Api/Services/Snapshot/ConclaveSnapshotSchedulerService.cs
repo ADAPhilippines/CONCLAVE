@@ -5,7 +5,7 @@ using Conclave.Common.Utils;
 namespace Conclave.Api.Services;
 
 
-public class ConclaveSchedulerService : IConclaveSchedulerService
+public class ConclaveSnapshotSchedulerService : IConclaveSnapshotSchedulerService
 {
     public long GetNewEpochCreationDelayInMilliseconds(ConclaveEpoch conclaveEpoch, long delayInMilliseconds)
     {
@@ -15,10 +15,5 @@ public class ConclaveSchedulerService : IConclaveSchedulerService
     public long GetSnapshotDelayInMilliseconds(ConclaveEpoch conclaveEpoch, long delayInMilliseconds)
     {
         return DateUtils.GetTimeDifferenceFromNowInMilliseconds(conclaveEpoch.EndTime) - delayInMilliseconds;
-    }
-    
-    public long GetPoolOwnerRewardDelayInMilliseconds(ConclaveEpoch conclaveEpoch, long delayInMilliseconds)
-    {
-        return DateUtils.GetTimeDifferenceFromNowInMilliseconds(conclaveEpoch.EndTime) + 864000000 + delayInMilliseconds;
     }
 }
