@@ -73,6 +73,7 @@ public class ConclaveEpochsService : IConclaveEpochsService
     {
         if (id != entity.Id) throw new Exception("Ids do not match");
 
+        entity.DateUpdated = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
         _context.Update(entity);
         await _context.SaveChangesAsync();
 
