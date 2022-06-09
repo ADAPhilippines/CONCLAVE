@@ -94,13 +94,11 @@ public class Worker : BackgroundService
                 await OperatorRewardHandler.HandleAsync(NewConclaveEpoch);
                 await NftRewardHandler.HandleAsync(NewConclaveEpoch);
 
-
                 // end conclave epoch cycle
                 await ExecuteSnapshotEndSchedulerAsync(); // Curren = Newepoch NewCOn = null 
-
+               
+                ConcalveOwnerRewardHandler.HandleAsync(CurrentConclaveEpoch ?? SeedEpoch!);
                 // TODO: calculate conclave owner rewards without blocking the worker
-                ConcalveOwnerRewardHandler.HandleAsync(CurrentConclaveEpoch);
-
             }
             catch (Exception e)
             {

@@ -51,6 +51,7 @@ public class ConclaveOwnerRewardHandler
     public async Task HandleAsync(ConclaveEpoch epoch)
     {
         _logger.LogInformation("Executing ConclaveOwnerCalculationsAsync");
+        
         if (epoch.ConclaveOwnerSnapshotStatus != SnapshotStatus.Completed) return;
         if (epoch.ConclaveOwnerRewardStatus == RewardStatus.Completed) return;
 
