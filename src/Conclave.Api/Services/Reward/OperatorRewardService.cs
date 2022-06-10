@@ -64,14 +64,11 @@ public class OperatorRewardService : IOperatorRewardService
     {
         return _context.OperatorRewards.Find(id);
     }
-<<<<<<< HEAD
-=======
 
     public OperatorReward? GetByStakeAddressAndEpochNumber(string stakeAddress, ulong epochNumber)
     {
         throw new NotImplementedException();
     }
->>>>>>> 7e8c810eb71d09d46257609679e16b8c825a8fea
 
     public async Task<OperatorReward?> UpdateAsync(Guid id, OperatorReward entity)
     {
