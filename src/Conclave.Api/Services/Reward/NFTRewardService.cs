@@ -34,12 +34,37 @@ public class NFTRewardService : INFTRewardService
         return entity;
     }
 
-    public IEnumerable<NFTReward> GetAll() => _context.NFTRewards.ToList() ?? new List<NFTReward>();
+    public IEnumerable<NFTReward>? GetAll()
+    {
+        return _context.NFTRewards.ToList();
+    }
 
     public IEnumerable<NFTReward>? GetAllByEpochNumber(ulong epochNumber)
     {
         var result = _context.NFTRewards.Include(n => n.NFTSnapshot)
-                                        .ThenInclude(s => s.ConclaveEpoch)
+                                        .ThenInclude(ns => ns.ConclaveEpoch)
+                                        .Where(n => n.NFTSnapshot.ConclaveEpoch.EpochNumber == epochNumber)
+                                        .ToList();
+
+        return result;
+    }
+
+    public IEnumerable<NFTReward>? GetAllByStakeAddress(string stakeAddress)
+    {
+        var result = _context.NFTRewards.Include(n => n.NFTSnapshot)
+                                        .ThenInclude(ns => ns.DelegatorSnapshot)
+                                        .Where(n => n.NFTSnapshot.DelegatorSnapshot.StakeAddress == stakeAddress)
+                                        .ToList();
+
+        return result;
+    }
+
+    public IEnumerable<NFTReward>? GetAllByStakeAddressAndEpochNumber(string stakeAddress, ulong epochNumber)
+    {
+        var result = _context.NFTRewards.Include(n => n.NFTSnapshot)
+                                        .ThenInclude(ns => ns.DelegatorSnapshot)
+                                        .ThenInclude(ds => ds.ConclaveEpoch)
+                                        .Where(n => n.NFTSnapshot.DelegatorSnapshot.StakeAddress == stakeAddress)
                                         .Where(n => n.NFTSnapshot.ConclaveEpoch.EpochNumber == epochNumber)
                                         .ToList();
 
@@ -57,7 +82,7 @@ public class NFTRewardService : INFTRewardService
 
         if (existing is null) return null;
 
-        entity.DateUpdated = DateUtils.DateTimeToUtc(DateTime.Now);
+        entity.DateUpdated = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
         _context.Update(entity);
         await _context.SaveChangesAsync();
 

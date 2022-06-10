@@ -14,7 +14,6 @@ public class ConclaveOwnerRewardService : IConclaveOwnerRewardService
     {
         _context = context;
     }
-
     public async Task<ConclaveOwnerReward> CreateAsync(ConclaveOwnerReward entity)
     {
         _context.Add(entity);
@@ -35,14 +34,37 @@ public class ConclaveOwnerRewardService : IConclaveOwnerRewardService
         return entity;
     }
 
-    public IEnumerable<ConclaveOwnerReward> GetAll() => _context.ConclaveOwnerRewards.ToList() ?? new List<ConclaveOwnerReward>();
+    public IEnumerable<ConclaveOwnerReward>? GetAll()
+    {
+        return _context.ConclaveOwnerRewards.ToList();
+    }
 
     public IEnumerable<ConclaveOwnerReward>? GetAllByEpochNumber(ulong epochNumber)
     {
-        var result = _context.ConclaveOwnerRewards.Include(c => c.DelegatorSnapshot)
+        var result = _context.ConclaveOwnerRewards.Include(c => c.ConclaveOwnerSnapshot)
                                                   .ThenInclude(d => d.ConclaveEpoch)
-                                                  .Where(c => c.DelegatorSnapshot.ConclaveEpoch.EpochNumber == epochNumber)
+                                                  .Where(c => c.ConclaveOwnerSnapshot.ConclaveEpoch.EpochNumber == epochNumber)
                                                   .ToList();
+
+        return result;
+    }
+
+    public IEnumerable<ConclaveOwnerReward>? GetAllByStakeAddress(string stakeAddress)
+    {
+        var result = _context.ConclaveOwnerRewards.Include(c => c.ConclaveOwnerSnapshot)
+                                                  .Where(c => c.ConclaveOwnerSnapshot.DelegatorSnapshot.StakeAddress == stakeAddress)
+                                                  .ToList();
+
+        return result;
+    }
+
+    public ConclaveOwnerReward? GetByStakeAddressAndEpochNumber(string stakeAddress, ulong epochNumber)
+    {
+        var result = _context.ConclaveOwnerRewards.Include(c => c.ConclaveOwnerSnapshot)
+                                                  .ThenInclude(cs => cs.ConclaveEpoch)
+                                                  .Where(c => c.ConclaveOwnerSnapshot.ConclaveEpoch.EpochNumber == epochNumber)
+                                                  .Where(c => c.ConclaveOwnerSnapshot.DelegatorSnapshot.StakeAddress == stakeAddress)
+                                                  .FirstOrDefault();
 
         return result;
     }
@@ -57,8 +79,8 @@ public class ConclaveOwnerRewardService : IConclaveOwnerRewardService
         var existing = _context.ConclaveOwnerRewards.Find(id);
 
         if (existing is null) return null;
-
-        entity.DateUpdated = DateUtils.DateTimeToUtc(DateTime.Now);
+       
+        entity.DateUpdated = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
         _context.Update(entity);
         await _context.SaveChangesAsync();
 

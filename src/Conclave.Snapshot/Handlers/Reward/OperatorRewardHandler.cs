@@ -2,7 +2,6 @@ using Conclave.Api.Interfaces;
 using Conclave.Api.Options;
 using Conclave.Common.Enums;
 using Conclave.Common.Models;
-using Conclave.Common.Utils;
 using Microsoft.Extensions.Options;
 
 namespace Conclave.Snapshot.Handlers;
@@ -37,7 +36,7 @@ public class OperatorRewardHandler
 
         var operatorSnapshots = _operatorSnapshotService.GetAllByEpochNumber(epoch.EpochNumber);
 
-        if (operatorSnapshots.Count() is 0) return;
+        if (operatorSnapshots is null) return;
 
         // Update reward status
         epoch.OperatorRewardStatus = RewardStatus.InProgress;

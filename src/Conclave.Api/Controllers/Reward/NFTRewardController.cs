@@ -1,5 +1,6 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
+using Conclave.Common.Utils;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conclave.Api.Controllers;
@@ -39,6 +40,22 @@ public class NFTRewardController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("epoch/{epochNumber}/{stakeAddress}")]
+    public IActionResult GetByEpochNumberAndStakeAddress(ulong epochNumber, string stakeAddress)
+    {
+        var result = _service.GetAllByStakeAddressAndEpochNumber(stakeAddress, epochNumber);
+
+        return Ok(result);
+    }
+
+    [HttpGet("stake/{stakeAddress}")]
+    public IActionResult GetAllByStakeAddress(string stakeAddress)
+    {
+        var result = _service.GetAllByStakeAddress(stakeAddress);
+
+        return Ok(result);
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create(NFTReward entity)
     {
@@ -58,6 +75,7 @@ public class NFTRewardController : ControllerBase
     [HttpPut]
     public async Task<IActionResult> Update(Guid id, NFTReward entity)
     {
+        entity.DateUpdated = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
         var result = await _service.UpdateAsync(id, entity);
 
         return Ok(result);

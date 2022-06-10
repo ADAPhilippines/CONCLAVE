@@ -14,7 +14,6 @@ public class DelegatorRewardService : IDelegatorRewardService
     {
         _context = context;
     }
-
     public async Task<DelegatorReward> CreateAsync(DelegatorReward entity)
     {
         _context.Add(entity);
@@ -35,7 +34,10 @@ public class DelegatorRewardService : IDelegatorRewardService
         return entity;
     }
 
-    public IEnumerable<DelegatorReward> GetAll() => _context.DelegatorRewards.ToList() ?? new List<DelegatorReward>();
+    public IEnumerable<DelegatorReward> GetAll()
+    {
+        return _context.DelegatorRewards.ToList();
+    }
 
     public IEnumerable<DelegatorReward>? GetAllByEpochNumber(ulong epochNumber)
     {
@@ -43,6 +45,26 @@ public class DelegatorRewardService : IDelegatorRewardService
                                               .ThenInclude(d => d.ConclaveEpoch)
                                               .Where(d => d.DelegatorSnapshot.ConclaveEpoch.EpochNumber == epochNumber)
                                               .ToList();
+
+        return result;
+    }
+
+    public IEnumerable<DelegatorReward>? GetAllByStakeAddress(string stakeAddress)
+    {
+        var result = _context.DelegatorRewards.Include(d => d.DelegatorSnapshot)
+                                              .Where(d => d.DelegatorSnapshot.StakeAddress == stakeAddress)
+                                              .ToList();
+
+        return result;
+    }
+
+    public DelegatorReward? GetByStakeAddressAndEpochNumber(string stakeAddress, ulong epochNumber)
+    {
+        var result = _context.DelegatorRewards.Include(d => d.DelegatorSnapshot)
+                                              .ThenInclude(d => d.ConclaveEpoch)
+                                              .Where(d => d.DelegatorSnapshot.StakeAddress == stakeAddress)
+                                              .Where(d => d.DelegatorSnapshot.ConclaveEpoch.EpochNumber == epochNumber)
+                                              .FirstOrDefault();
 
         return result;
     }
@@ -58,7 +80,7 @@ public class DelegatorRewardService : IDelegatorRewardService
 
         if (existing is null) return null;
 
-        entity.DateUpdated = DateUtils.DateTimeToUtc(DateTime.Now);
+        entity.DateUpdated = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
         _context.Update(entity);
         await _context.SaveChangesAsync();
 

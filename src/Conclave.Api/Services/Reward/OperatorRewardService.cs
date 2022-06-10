@@ -14,7 +14,6 @@ public class OperatorRewardService : IOperatorRewardService
     {
         _context = context;
     }
-
     public async Task<OperatorReward> CreateAsync(OperatorReward entity)
     {
         _context.Add(entity);
@@ -35,7 +34,10 @@ public class OperatorRewardService : IOperatorRewardService
         return entity;
     }
 
-    public IEnumerable<OperatorReward> GetAll() => _context.OperatorRewards.ToList() ?? new List<OperatorReward>();
+    public IEnumerable<OperatorReward>? GetAll()
+    {
+        return _context.OperatorRewards.ToList();
+    }
 
     public IEnumerable<OperatorReward>? GetAllByEpochNumber(ulong epochNumber)
     {
@@ -48,10 +50,28 @@ public class OperatorRewardService : IOperatorRewardService
         return result;
     }
 
+    public IEnumerable<OperatorReward>? GetAllByStakeAddress(string stakeAddress)
+    {
+        var result = _context.OperatorRewards.Include(o => o.OperatorSnapshot)
+                                             .ThenInclude(os => os.ConclaveEpoch)
+                                             .Where(n => n.OperatorSnapshot.StakeAddress == stakeAddress)
+                                             .ToList();
+
+        return result;
+    }
+
     public OperatorReward? GetById(Guid id)
     {
         return _context.OperatorRewards.Find(id);
     }
+<<<<<<< HEAD
+=======
+
+    public OperatorReward? GetByStakeAddressAndEpochNumber(string stakeAddress, ulong epochNumber)
+    {
+        throw new NotImplementedException();
+    }
+>>>>>>> 7e8c810eb71d09d46257609679e16b8c825a8fea
 
     public async Task<OperatorReward?> UpdateAsync(Guid id, OperatorReward entity)
     {
@@ -59,7 +79,7 @@ public class OperatorRewardService : IOperatorRewardService
 
         if (existing is null) return null;
 
-        entity.DateUpdated = DateUtils.DateTimeToUtc(DateTime.Now);
+        entity.DateUpdated = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
         _context.Update(entity);
         await _context.SaveChangesAsync();
 

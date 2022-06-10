@@ -1,8 +1,7 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
-using Conclave.Common.Utils;
 using Conclave.Data;
-
+using Conclave.Common.Utils;
 namespace Conclave.Api.Services;
 
 public class NFTGroupService : INFTGroupService
@@ -34,9 +33,9 @@ public class NFTGroupService : INFTGroupService
         return entity;
     }
 
-    public IEnumerable<NFTGroup> GetAll()
+    public IEnumerable<NFTGroup>? GetAll()
     {
-        return _context.NFTGroups.ToList() ?? new List<NFTGroup>();
+        return _context.NFTGroups.ToList();
     }
 
     public NFTGroup? GetById(Guid id)
@@ -50,7 +49,7 @@ public class NFTGroupService : INFTGroupService
 
         if (existing is null) return null;
 
-        entity.DateUpdated = DateUtils.DateTimeToUtc(DateTime.Now);
+        entity.DateUpdated = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
         _context.Update(entity);
         await _context.SaveChangesAsync();
 

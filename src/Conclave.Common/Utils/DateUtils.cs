@@ -12,7 +12,7 @@ public static class DateUtils
     {
         // Unix timestamp is seconds past epoch
         DateTime dateTime = new(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-        var dateoffset = DateTimeOffset.Now.Offset;
+        var dateoffset = DateTimeOffset.UtcNow.Offset;
         dateTime = dateTime.AddSeconds(unixTimeStamp + dateoffset.TotalSeconds);
         return dateTime;
     }
@@ -20,14 +20,19 @@ public static class DateUtils
     public static DateTime DateTimeToUtc(DateTime dateTime)
     {
         dateTime = DateTime.SpecifyKind(dateTime, DateTimeKind.Utc);
-        return dateTime;
+        return dateTime.AddSeconds(DateTimeOffset.UtcNow.Offset.TotalSeconds);
+    }
+
+    public static DateTime AddOffsetToUtc(DateTime dateTime)
+    {
+        return dateTime.AddSeconds(DateTimeOffset.UtcNow.Offset.TotalSeconds);
     }
 
     public static long GetTimeDifferenceFromNowInMilliseconds(DateTime? dateTime)
     {
         if (dateTime is null) return 0;
 
-        var utcNow = DateTimeToUtc(DateTime.Now);
+        var utcNow = DateTimeToUtc(DateTime.UtcNow).AddSeconds(DateTimeOffset.UtcNow.Offset.TotalSeconds);
         var difference = dateTime - utcNow;
         return (long)difference.Value.TotalMilliseconds;
     }

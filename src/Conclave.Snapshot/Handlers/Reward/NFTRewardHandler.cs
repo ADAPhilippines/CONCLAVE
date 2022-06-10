@@ -2,7 +2,6 @@ using Conclave.Api.Interfaces;
 using Conclave.Api.Options;
 using Conclave.Common.Enums;
 using Conclave.Common.Models;
-using Conclave.Common.Utils;
 using Microsoft.Extensions.Options;
 
 namespace Conclave.Snapshot.Handlers;
@@ -37,6 +36,8 @@ public class NFTRewardHandler
 
         // fetch all NFT snapshots
         var nftSnapshots = _nftSnapshotService.GetAllByEpochNumber(epoch.EpochNumber);
+
+        if (nftSnapshots is null) return;
 
         // Update reward status
         epoch.NFTRewardStatus = RewardStatus.InProgress;

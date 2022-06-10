@@ -14,7 +14,6 @@ public class NFTSnapshotService : INFTSnapshotService
     {
         _context = context;
     }
-
     public async Task<NFTSnapshot> CreateAsync(NFTSnapshot entity)
     {
         _context.Add(entity);
@@ -35,28 +34,34 @@ public class NFTSnapshotService : INFTSnapshotService
         return entity;
     }
 
-    public IEnumerable<NFTSnapshot> GetAll() => _context.NFTSnapshots.ToList() ?? new List<NFTSnapshot>();
+    public IEnumerable<NFTSnapshot>? GetAll()
+    {
+        return _context.NFTSnapshots.ToList();
+    }
 
-    public IEnumerable<NFTSnapshot> GetAllByEpochNumber(ulong epochNumber)
+    public IEnumerable<NFTSnapshot>? GetAllByEpochNumber(ulong epochNumber)
     {
         var nftStakers = _context.NFTSnapshots.Include(n => n.ConclaveEpoch)
                                               .Include(n => n.DelegatorSnapshot)
+                                              .Include(n => n.NFTProject.NFTGroup)
                                               .Where(n => n.ConclaveEpoch.EpochNumber == epochNumber)
                                               .ToList();
 
-        return nftStakers ?? new List<NFTSnapshot>();
+        return nftStakers;
     }
 
-    public NFTSnapshot? GetById(Guid id) => _context.NFTSnapshots.Find(id);
-    
+    public NFTSnapshot? GetById(Guid id)
+    {
+        return _context.NFTSnapshots.Find(id);
+    }
 
     public async Task<NFTSnapshot?> UpdateAsync(Guid id, NFTSnapshot entity)
     {
         var existing = _context.NFTSnapshots.Find(id);
 
         if (existing is null) return null;
-        
-        entity.DateUpdated = DateUtils.DateTimeToUtc(DateTime.Now);
+
+        entity.DateUpdated = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
         _context.Update(entity);
         await _context.SaveChangesAsync();
 

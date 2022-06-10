@@ -2,7 +2,6 @@ using Conclave.Api.Interfaces;
 using Conclave.Api.Options;
 using Conclave.Common.Enums;
 using Conclave.Common.Models;
-using Conclave.Common.Utils;
 using Microsoft.Extensions.Options;
 
 namespace Conclave.Snapshot.Handlers;
@@ -34,13 +33,12 @@ public class ConclaveOwnerSnapshotHandler
 
         // Update status to InProgress
         epoch.ConclaveOwnerSnapshotStatus = SnapshotStatus.InProgress;
-        epoch.DateUpdated = DateUtils.DateTimeToUtc(DateTime.Now);
         await _epochsService.UpdateAsync(epoch.Id, epoch);
 
         // Get all delegators
         var delegators = _delegatorSnapshotService.GetAllByEpochNumber(epoch.EpochNumber);
 
-        if (delegators.Count() is 0)
+        if (delegators is null)
         {
             epoch.ConclaveOwnerSnapshotStatus = SnapshotStatus.Completed;
             await _epochsService.UpdateAsync(epoch.Id, epoch);
@@ -48,7 +46,7 @@ public class ConclaveOwnerSnapshotHandler
         }
 
         // Snapshot current conclave owners for all the conclave pools
-        var conclaveOwnerSnapshots = await SnapshotInParallel(_options.Value.ConclaveAddress, delegators, epoch);
+        var conclaveOwnerSnapshots = await SnapshotInParallelAsync(_options.Value.ConclaveAddress, delegators, epoch);
 
         // Save the snapshot to database
         foreach (var conclaveOwnerSnapshot in conclaveOwnerSnapshots) await _conclaveOwnerSnapshotService.CreateAsync(conclaveOwnerSnapshot);
@@ -59,7 +57,7 @@ public class ConclaveOwnerSnapshotHandler
     }
 
 
-    private async Task<IEnumerable<ConclaveOwnerSnapshot>> SnapshotInParallel(string conclavePolicyId,
+    private async Task<IEnumerable<ConclaveOwnerSnapshot>> SnapshotInParallelAsync(string conclavePolicyId,
                                                                                IEnumerable<DelegatorSnapshot> delegators,
                                                                                ConclaveEpoch epoch,
                                                                                int threadCount = 50)

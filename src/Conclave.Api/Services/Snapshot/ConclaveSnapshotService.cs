@@ -17,12 +17,14 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
 {
     private readonly IConclaveCardanoService _service;
 
-    public ConclaveSnapshotService(IConclaveCardanoService service) { _service = service; }
+    public ConclaveSnapshotService(IConclaveCardanoService service)
+    {
+        _service = service;
+    }
 
-    public async Task<ConclaveOwnerSnapshot?> SnapshotConclaveOwner(
-        DelegatorSnapshot delegatorSnapshot,                                                         
-        string policyId,
-        ConclaveEpoch epoch)
+    public async Task<ConclaveOwnerSnapshot?> SnapshotConclaveOwner(DelegatorSnapshot delegatorSnapshot,
+                                                                    string policyId,
+                                                                    ConclaveEpoch epoch)
     {
         var assets = await _service.GetAssetDetailsForStakeAddress(delegatorSnapshot.StakeAddress, policyId);
 
@@ -41,10 +43,9 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         };
     }
 
-    public async Task<IEnumerable<ConclaveOwnerSnapshot>> SnapshotConclaveOwnersAsync(
-        string policyId,
-        IEnumerable<DelegatorSnapshot> delegatorSnapshots,
-        ConclaveEpoch epoch)
+    public async Task<IEnumerable<ConclaveOwnerSnapshot>> SnapshotConclaveOwnersAsync(string policyId,
+                                                                                      IEnumerable<DelegatorSnapshot> delegatorSnapshots,
+                                                                                      ConclaveEpoch epoch)
     {
         var conclaveOwners = new List<ConclaveOwnerSnapshot>();
 
@@ -73,9 +74,10 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
             foreach (var delegator in delegators)
             {
                 if (uniqueDelegatorIds.Contains(delegator.StakeId!)) continue;
-                uniqueDelegatorIds.Add(delegator.StakeId!);
 
+                uniqueDelegatorIds.Add(delegator.StakeId!);
                 var walletAddress = await _service.GetAssociatedWalletAddressAsync(delegator.StakeId!);
+
                 delegatorSnapshots.Add(new DelegatorSnapshot
                 {
                     ConclaveEpoch = epoch,
@@ -94,11 +96,10 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         return delegatorSnapshots;
     }
 
-    public async Task<IEnumerable<DelegatorSnapshot>> SnapshotDelegatorsAsync(
-        IEnumerable<string> poolIds, 
-        ConclaveEpoch epoch)
+    public async Task<IEnumerable<DelegatorSnapshot>> SnapshotDelegatorsAsync(IEnumerable<string> poolIds, ConclaveEpoch epoch)
     {
         var delegatorSnapshots = new List<DelegatorSnapshot>();
+
         foreach (var poolId in poolIds)
         {
             var partialSnapshots = await SnapshotDelegatorsAsync(poolId, epoch);
@@ -108,15 +109,14 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         return delegatorSnapshots;
     }
 
-    public async Task<NFTSnapshot?> SnapshotNFTsForStakeAddressAsync(
-        NFTProject nftProject, 
-        DelegatorSnapshot delegatorSnapshot, 
-        ConclaveEpoch epoch)
+    public async Task<NFTSnapshot?> SnapshotNFTsForStakeAddressAsync(NFTProject nftProject, DelegatorSnapshot delegatorSnapshot, ConclaveEpoch epoch)
     {
         var assets = await _service.GetAssetDetailsForStakeAddress(delegatorSnapshot.StakeAddress, nftProject.PolicyId);
+
         if (assets is null) return null;
 
         var conclaveNFTAssetCount = assets.Aggregate(0, (current, asset) => current + (int)asset.Quantity);
+
         if (conclaveNFTAssetCount == 0) return null;
 
         var nftSnapshot = new NFTSnapshot
@@ -124,18 +124,19 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
             ConclaveEpoch = epoch,
             DelegatorSnapshot = delegatorSnapshot,
             NFTProject = nftProject,
-            Quantity = conclaveNFTAssetCount
+            Quantity = conclaveNFTAssetCount,
+            Weight = conclaveNFTAssetCount * nftProject.Weight
         };
 
         return nftSnapshot;
     }
 
-    public async Task<IEnumerable<NFTSnapshot>> SnapshotNFTsForStakeAddressesAsync(
-        IEnumerable<NFTProject> nftProjects,
-        IEnumerable<DelegatorSnapshot> delegatorSnapshots,
-        ConclaveEpoch epoch)
+    public async Task<IEnumerable<NFTSnapshot>> SnapshotNFTsForStakeAddressesAsync(IEnumerable<NFTProject> nftProjects,
+                                                                                   IEnumerable<DelegatorSnapshot> delegatorSnapshots,
+                                                                                   ConclaveEpoch epoch)
     {
         var nftSnapshots = new List<NFTSnapshot>();
+
         foreach (var nftProject in nftProjects)
         {
             foreach (var delegatorSnapshot in delegatorSnapshots)
@@ -151,12 +152,11 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         return nftSnapshots;
     }
 
-    public async Task<OperatorSnapshot?> SnapshotOperatorAsync(string poolId, ConclaveEpoch epoch)
+    public async Task<OperatorSnapshot> SnapshotOperatorAsync(string poolId, ConclaveEpoch epoch)
     {
         var owner = await _service.GetPoolOwnerAsync(poolId);
-        if (owner is null) return null;
-
         var walletAddress = await _service.GetAssociatedWalletAddressAsync(owner.Address);
+
         var operatorSnapshot = new OperatorSnapshot
         {
             ConclaveEpoch = epoch,
@@ -169,11 +169,10 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
         return operatorSnapshot;
     }
 
-    public async Task<IEnumerable<OperatorSnapshot>> SnapshotOperatorsAsync(
-        IEnumerable<string> poolIds, 
-        ConclaveEpoch epoch)
+    public async Task<IEnumerable<OperatorSnapshot>> SnapshotOperatorsAsync(IEnumerable<string> poolIds, ConclaveEpoch epoch)
     {
         var operatosSnapshots = new List<OperatorSnapshot>();
+
         foreach (var poolId in poolIds)
         {
             var partialSnapshot = await SnapshotOperatorAsync(poolId, epoch);

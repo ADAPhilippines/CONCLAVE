@@ -89,7 +89,7 @@ public class ConclaveBlockfrostCardanoService : IConclaveCardanoService
         List<Delegator> delegators = poolDelegators
                                     .Select(t => 
                                         new Delegator(t.Address, ulong.Parse(t.LiveStake)))
-                                    .ToList() ?? new List<Delegator>();
+                                    .ToList();
 
         return delegators;
     }
