@@ -1,11 +1,21 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
 using Conclave.Common.Utils;
+using Microsoft.Extensions.Options;
 
 namespace Conclave.Api.Services;
 
 public class ConclaveRewardService : IConclaveRewardService
 {
+
+    private readonly ConclaveDistributionParameters _options;
+
+    public ConclaveRewardService(IOptions<ConclaveDistributionParameters> options)
+    {
+        _options = options.Value;
+    }
+
+
     public IEnumerable<ConclaveOwnerReward> CalculateConclaveOwnerRewardsAsync(IEnumerable<ConclaveOwnerSnapshot> conclaveOwnerSnapshots, double totalReward)
     {
         var totalQuantity = conclaveOwnerSnapshots.Aggregate(0.0, (acc, cur) => acc + cur.Quantity);
@@ -102,5 +112,14 @@ public class ConclaveRewardService : IConclaveRewardService
         }
 
         return operatorRewards;
+    }
+
+    public double CalculateTotalConclaveReward(ulong epochNumber)
+    {
+        var delta = _options.DeltaInitialSaturationValue;
+        var satAmount = _options.SaturationAmount;
+        var satRate = (double)_options.SaturationRate;
+
+        return delta * Math.Pow(satRate, epochNumber - 1) + satAmount;
     }
 }

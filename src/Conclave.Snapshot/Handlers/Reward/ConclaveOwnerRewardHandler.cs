@@ -10,7 +10,7 @@ namespace Conclave.Snapshot.Handlers;
 
 public class ConclaveOwnerRewardHandler
 {
-    private readonly ILogger<Worker> _logger;
+    private readonly ILogger<ConclaveOwnerRewardHandler> _logger;
     private readonly IConclaveRewardService _rewardService;
     private readonly IConclaveEpochsService _epochService;
     private readonly IConclaveOwnerRewardService _conclaveOwnerRewardService;
@@ -20,10 +20,9 @@ public class ConclaveOwnerRewardHandler
     private readonly IOperatorSnapshotService _operatorSnapshotService;
     private readonly IConclaveCardanoService _conclaveCardanoService;
     private readonly IOptions<RewardOptions> _rewardOptions;
-    private readonly IOptions<ConclaveDistributionParameters> _conclaveDistributionParameters;
 
     public ConclaveOwnerRewardHandler(
-        ILogger<Worker> logger,
+        ILogger<ConclaveOwnerRewardHandler> logger,
         IConclaveRewardService rewardService,
         IConclaveEpochsService epochsService,
         IConclaveOwnerRewardService conclaveOwnerRewardService,
@@ -32,7 +31,6 @@ public class ConclaveOwnerRewardHandler
         IConclaveCardanoService conclaveCardanoService,
         IConclaveSchedulerService conclaveSchedulerService,
         IOptions<PoolOwnerRewardOptions> poolOwnerRewardOptions,
-        IOptions<ConclaveDistributionParameters> conclaveDistributionParameters,
         IOptions<RewardOptions> rewardOptions)
     {
         _rewardService = rewardService;
@@ -45,7 +43,6 @@ public class ConclaveOwnerRewardHandler
         _operatorSnapshotService = operatorSnapshotService;
         _conclaveCardanoService = conclaveCardanoService;
         _conclaveShchedulerService = conclaveSchedulerService;
-        _conclaveDistributionParameters = conclaveDistributionParameters;
     }
 
     public async Task HandleAsync(ConclaveEpoch epoch)
@@ -55,7 +52,7 @@ public class ConclaveOwnerRewardHandler
         if (epoch.ConclaveOwnerSnapshotStatus != SnapshotStatus.Completed) return;
         if (epoch.ConclaveOwnerRewardStatus == RewardStatus.Completed) return;
 
-        // TODO: Need to set schedule here
+        // get calculation schedule 
         await ExecuteConclaveOwnerRewardSchedulerAsync(epoch);
 
         var conclaveOwnerSnapshots = _conclaveOwnerSnapshotService.GetAllByEpochNumber(epoch.EpochNumber);
@@ -65,7 +62,7 @@ public class ConclaveOwnerRewardHandler
         epoch.ConclaveOwnerRewardStatus = RewardStatus.InProgress;
         await _epochService.UpdateAsync(epoch.Id, epoch);
 
-        // TODO: calculate reward here
+        // get total reward for this epoch
         var stakeAddresses = _operatorSnapshotService.GetAllByEpochNumber(epoch.EpochNumber)?.Select(e => e.StakeAddress).ToList() ?? new List<string>();
         var totalPoolOwnerReward = await CalculateTotalPoolOwnerReward(stakeAddresses, epoch);
 
@@ -94,7 +91,7 @@ public class ConclaveOwnerRewardHandler
     }
 
     public async Task<ulong> CalculateTotalPoolOwnerReward(
-        IEnumerable<string> stakeAddresses, 
+        IEnumerable<string> stakeAddresses,
         ConclaveEpoch newEpoch)
     {
         ulong totalReward = 0;
@@ -116,14 +113,5 @@ public class ConclaveOwnerRewardHandler
         }
 
         return totalReward;
-    }
-
-    public ulong CalculateTotalConclaveReward(ulong epochNumber)
-    {
-        var delta = _conclaveDistributionParameters.Value.DeltaInitialSaturationValue;
-        var satAmount = _conclaveDistributionParameters.Value.SaturationAmount;
-        var satRate = _conclaveDistributionParameters.Value.SaturationRate;
-
-        return (ulong)(delta*((decimal)Math.Pow((double)satRate, epochNumber-1)) + satAmount);
     }
 }
