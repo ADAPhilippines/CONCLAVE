@@ -39,3 +39,11 @@ export const getTransactionBuilder = (config: ProtocolParametersResponse): Trans
 
     return CardanoWasm.TransactionBuilder.new(txBuilderConfig);
 };
+
+// TODO: function to add UTXO outputs & inputs
+
+// TODO: function to check if within 16kb
+
+// TODO: function to check if transaction was successful
+
+// TODO: function to send transaction
