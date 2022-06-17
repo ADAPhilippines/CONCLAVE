@@ -2,10 +2,20 @@
   "name": "javascript",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
+    "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@blockfrost/blockfrost-js": "^4.1.0",
+    "@emurgo/cardano-serialization-lib-nodejs": "^10.2.0",
+    "axiom": "^0.1.6",
+    "axios": "^0.27.2",
+    "i": "^0.3.7",
+    "node-fetch": "^3.2.5",
+    "npm": "^8.12.1"
+  }
 }
