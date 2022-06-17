@@ -3,7 +3,7 @@ import { ProtocolParametersResponse } from '../types/response_types';
 import { getCurrentEpochsAsync, getProtocolParametersAsync } from './epoch_utils';
 import CardanoWasm, { TransactionBuilder } from '@emurgo/cardano-serialization-lib-nodejs';
 
-export const getLatestTransactionConfigAsync = async (
+export const getLatestProtocolParametersAsync = async (
     blockfrostAPI: BlockFrostAPI
 ): Promise<ProtocolParametersResponse> => {
     const protocolParams = await getProtocolParametersAsync(
