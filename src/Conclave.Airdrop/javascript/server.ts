@@ -2,6 +2,7 @@ import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
 import CardanoWasm from "@emurgo/cardano-serialization-lib-nodejs";
 import axios from "axios";
 import fetch from "node-fetch";
+import { fromHex } from "./utils/string_utils";
 
 function harden(num: number): number {
   return 0x80000000 + num;
