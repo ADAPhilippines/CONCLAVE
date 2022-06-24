@@ -37,7 +37,41 @@ export const updateRewardListStatusAsync = async (rewards: Reward[], airdropStat
 
 const getUnpaidRewardAsync = async (table: string) => {
     const params = {
-        query: `SELECT * FROM "${table}" WHERE "AirdropStatus" = $1 OR "AirdropStatus" = $2`,
+        query: `SELECT d."Id", d."DelegatorSnapshotId", d."RewardAmount", s."WalletAddress" 
+        FROM ${
+            table === 'DelegatorRewards'
+                ? `"${table}"`
+                : `(SELECT x."${
+                      table === 'NFTRewards'
+                          ? 'NFTSnapshotId'
+                          : table === 'OperatorRewards'
+                          ? 'OperatorSnapshotId'
+                          : 'ConclaveOwnerSnapshotId'
+                  }", y."DelegatorSnapshotId", x."Id", x."RewardAmount", x."AirdropStatus"
+                  FROM "${table}" as x 
+                  INNER JOIN "${
+                      table === 'NFTRewards' ? 'NFTSnapshots' : table === 'OperatorRewards' ? 'OperatorSnapshots' : 'ConclaveOwnerSnapshots'
+                  }" as y ON (x."${
+                      table === 'NFTRewards'
+                          ? 'NFTSnapshotId'
+                          : table === 'OperatorRewards'
+                          ? 'OperatorSnapshotId'
+                          : 'ConclaveOwnerSnapshotId'
+                  }" = y."Id"))`
+        } as d
+        INNER JOIN ${
+            table === 'DelegatorRewards'
+                ? `"${'DelegatorSnapshots'}"`
+                : `(SELECT x."DelegatorSnapshotId", xd."Id", xd."WalletAddress" FROM ${
+                      table === 'NFTRewards'
+                          ? `"${'NFTSnapshots'}" as x`
+                          : table === 'OperatorRewards'
+                          ? `"${'OperatorSnapshots'}" as x`
+                          : `"${'ConclaveOwnerSnapshots'}" as x`
+                  } INNER JOIN "DelegatorSnapshots" as xd ON (x."DelegatorSnapshotId" = xd."Id"))`
+        } as s 
+        ON (d."DelegatorSnapshotId" = s."Id") 
+        WHERE d."AirdropStatus"=$1 OR d."AirdropStatus"=$2`,
         values: [AirdropStatus.Failed, AirdropStatus.New],
     };
 
@@ -51,7 +85,7 @@ const mapToReward = (rewards: QueryResult<any>, rewardType: number): Reward[] =>
             id: reward.Id,
             rewardType: rewardType,
             rewardAmount: reward.RewardAmount,
-            walletAddress: reward.WalletAddress
+            walletAddress: reward.WalletAddress,
         });
     });
 

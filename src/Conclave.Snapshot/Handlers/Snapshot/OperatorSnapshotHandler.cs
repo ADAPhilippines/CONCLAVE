@@ -42,7 +42,7 @@ public class OperatorSnapshotHandler
         foreach (var operatorSnapshot in operatorSnapshots)
         {
             await _operatorSnapshotService.CreateAsync(operatorSnapshot);
-            await _delegatorSnapshotService.CreateAsync(new DelegatorSnapshot()
+            var delegatorSnapshot = await _delegatorSnapshotService.CreateAsync(new DelegatorSnapshot()
             {
                 ConclaveEpoch = epoch,
                 StakeAddress = operatorSnapshot.StakeAddress,
@@ -50,6 +50,9 @@ public class OperatorSnapshotHandler
                 PoolAddress = operatorSnapshot.PoolAddress,
                 Quantity = operatorSnapshot.Pledge,
             });
+
+            operatorSnapshot.DelegatorSnapshot = delegatorSnapshot;
+            await _operatorSnapshotService.UpdateAsync(operatorSnapshot.Id, operatorSnapshot);
         }
 
         // Update status to Completed
