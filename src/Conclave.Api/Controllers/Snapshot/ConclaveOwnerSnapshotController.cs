@@ -1,5 +1,6 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
+using Conclave.Common.Utils;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conclave.Api.Controllers;
@@ -17,9 +18,9 @@ public class ConclaveOwnerSnapshotController : ControllerBase
     }
 
     [HttpPost("create")]
-    public async Task<IActionResult> CreateAsync(ConclaveOwnerSnapshot conclaveOwnerSnapshot)
+    public async Task<IActionResult> CreateAsync(ConclaveOwnerSnapshot entity)
     {
-        var result = await _conclaveOwnerSnapshotService.CreateAsync(conclaveOwnerSnapshot);
+        var result = await _conclaveOwnerSnapshotService.CreateAsync(entity);
         return Ok(result);
     }
 
@@ -45,9 +46,10 @@ public class ConclaveOwnerSnapshotController : ControllerBase
     }
 
     [HttpPut("update")]
-    public async Task<IActionResult> UpdateAsync(ConclaveOwnerSnapshot conclaveOwnerSnapshot)
+    public async Task<IActionResult> UpdateAsync(ConclaveOwnerSnapshot entity)
     {   
-        var result = await _conclaveOwnerSnapshotService.UpdateAsync(conclaveOwnerSnapshot.Id, conclaveOwnerSnapshot);
+        entity.DateUpdated = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
+        var result = await _conclaveOwnerSnapshotService.UpdateAsync(entity.Id, entity);
         return Ok(result);
     }
 
