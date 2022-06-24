@@ -7,13 +7,13 @@ import {
     TxBodyInput,
     TxBodyOutput,
     UTXO,
-} from '../types/response_types';
+} from '../types/response-types';
 import { getCurrentEpochsAsync, getProtocolParametersAsync } from './epoch-utils';
 
 import CardanoWasm, { TransactionBuilder } from '@emurgo/cardano-serialization-lib-nodejs';
 import cbor from 'cbor';
-import { fromHex } from './string_utils';
-import { queryAllUTXOsAsync } from './utxo_utils';
+import { fromHex } from './string-utils';
+import { queryAllUTXOsAsync } from './utxo-utils';
 
 export const getLatestProtocolParametersAsync = async (blockfrostAPI: BlockFrostAPI): Promise<ProtocolParametersResponse> => {
     const protocolParams = await getProtocolParametersAsync(blockfrostAPI, (await getCurrentEpochsAsync(blockfrostAPI)).epoch);
