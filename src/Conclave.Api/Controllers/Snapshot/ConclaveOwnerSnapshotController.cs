@@ -48,6 +48,7 @@ public class ConclaveOwnerSnapshotController : ControllerBase
     [HttpPut("update")]
     public async Task<IActionResult> UpdateAsync(ConclaveOwnerSnapshot entity)
     {   
+
         entity.DateUpdated = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
         var result = await _conclaveOwnerSnapshotService.UpdateAsync(entity.Id, entity);
         return Ok(result);

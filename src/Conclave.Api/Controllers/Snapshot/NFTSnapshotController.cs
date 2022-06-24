@@ -47,6 +47,7 @@ public class NFTSnapshotController : ControllerBase
     [HttpPut]
     public async Task<IActionResult> UpdateAsync(NFTSnapshot entity)
     {
+
         entity.DateUpdated = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
         var result = await _nftSnapshotService.UpdateAsync(entity.Id, entity);
         return Ok(result);

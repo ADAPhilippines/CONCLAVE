@@ -1,7 +1,7 @@
-import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
+import { BlockFrostAPI, BlockfrostServerError } from '@blockfrost/blockfrost-js';
 import CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
 import { fromHex } from './string_utils';
-import { CardanoAssetResponse } from '../types/response_types';
+import { CardanoAssetResponse, UTXO } from '../types/response_types';
 
 export const getUtxosAsync = async (blockfrostApi: BlockFrostAPI, publicAddr: string) => {
     const utxosResults = await blockfrostApi.addressesUtxosAll(publicAddr);
@@ -58,3 +58,25 @@ export const assetValue = (
     value.set_multiasset(ma);
     return value;
 };
+
+export const queryAllUTXOsAsync = async (blockfrostApi: BlockFrostAPI, address: string): Promise<UTXO> => {
+    let utxos: UTXO = [];
+    try {
+        utxos = await blockfrostApi.addressesUtxosAll(address);
+    } catch (error) {
+        if (error instanceof BlockfrostServerError && error.status_code === 404) {
+            utxos = [];
+        } else {
+            throw error;
+        }
+    }
+
+    if (utxos.length === 0) {
+        console.log();
+        console.log(
+            `You should send ADA to ${address} to have enough funds to sent a transaction`,
+        );
+        console.log();
+    }
+    return utxos;
+}
