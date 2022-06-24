@@ -41,12 +41,7 @@ export const amountToValue = (amount: CardanoAssetResponse[]) => {
     return val;
 };
 
-export const assetValue = (
-    lovelaceAmt: CardanoWasm.BigNum,
-    policyIdHex: string,
-    assetNameHex: string,
-    amount: CardanoWasm.BigNum
-) => {
+export const assetValue = (lovelaceAmt: CardanoWasm.BigNum, policyIdHex: string, assetNameHex: string, amount: CardanoWasm.BigNum) => {
     const value = CardanoWasm.Value.new(lovelaceAmt);
     const ma = CardanoWasm.MultiAsset.new();
     const assets = CardanoWasm.Assets.new();
@@ -73,10 +68,8 @@ export const queryAllUTXOsAsync = async (blockfrostApi: BlockFrostAPI, address: 
 
     if (utxos.length === 0) {
         console.log();
-        console.log(
-            `You should send ADA to ${address} to have enough funds to sent a transaction`,
-        );
+        console.log(`You should send ADA to ${address} to have enough funds to sent a transaction`);
         console.log();
     }
     return utxos;
-}
+};
