@@ -4,7 +4,7 @@ import axios from "axios";
 import fetch from "node-fetch";
 import { fromHex } from "./utils/string_utils";
 import {
-    OutputAccounts,
+    OutputAccount,
     TxBodyDetails,
     UTXO,
     TxBodyOutput,
