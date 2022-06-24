@@ -75,9 +75,9 @@ public class NFTSnapshotHandler
     }
 
     private async Task<IEnumerable<NFTSnapshot>> SnapshotInParallelAsync(IEnumerable<NFTProject> nftProjects,
-                                                                    IEnumerable<DelegatorSnapshot> delegators,
-                                                                    ConclaveEpoch epoch,
-                                                                    int threadCount = 50)
+                                                                         IEnumerable<DelegatorSnapshot> delegators,
+                                                                         ConclaveEpoch epoch,
+                                                                         int threadCount = 50)
     {
         int delegatorCountPerThread = (int)Math.Ceiling((double)delegators.Count() / threadCount);
 
