@@ -13,4 +13,5 @@ export type Reward = {
     id: string;
     rewardType: number;
     rewardAmount: number;
+    walletAddress: string;
 };
