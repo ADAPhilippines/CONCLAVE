@@ -23,6 +23,6 @@ const airDropTransaction = async () => {
     await handleTransactionAsync();
 }
 
-// main();
+main();
 
-airDropTransaction()
+// airDropTransaction()
