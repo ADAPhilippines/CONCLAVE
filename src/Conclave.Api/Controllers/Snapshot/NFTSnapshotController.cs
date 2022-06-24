@@ -1,6 +1,5 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
-using Conclave.Common.Utils;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conclave.Api.Controllers;
@@ -47,7 +46,6 @@ public class NFTSnapshotController : ControllerBase
     [HttpPut]
     public async Task<IActionResult> UpdateAsync(NFTSnapshot entity)
     {
-        entity.DateUpdated = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
         var result = await _nftSnapshotService.UpdateAsync(entity.Id, entity);
         return Ok(result);
     }

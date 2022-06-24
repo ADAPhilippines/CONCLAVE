@@ -1,6 +1,5 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
-using Conclave.Common.Utils;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conclave.Api.Controllers;
@@ -48,7 +47,6 @@ public class DelegatorSnapshotController : ControllerBase
     [HttpPut]
     public async Task<IActionResult> UpdateAsync(DelegatorSnapshot entity)
     {
-        entity.DateUpdated = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
         var result = await _delegatorSnapshotService.UpdateAsync(entity.Id, entity);
         return Ok(result);
     }

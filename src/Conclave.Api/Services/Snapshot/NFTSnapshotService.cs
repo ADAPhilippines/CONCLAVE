@@ -1,6 +1,5 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
-using Conclave.Common.Utils;
 using Conclave.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -61,7 +60,6 @@ public class NFTSnapshotService : INFTSnapshotService
 
         if (existing is null) return null;
 
-        entity.DateUpdated = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
         _context.Update(entity);
         await _context.SaveChangesAsync();
 

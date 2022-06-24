@@ -1,7 +1,6 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
 using Conclave.Data;
-using Conclave.Common.Utils;
 namespace Conclave.Api.Services;
 
 public class NFTGroupService : INFTGroupService
@@ -49,7 +48,6 @@ public class NFTGroupService : INFTGroupService
 
         if (existing is null) return null;
 
-        entity.DateUpdated = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
         _context.Update(entity);
         await _context.SaveChangesAsync();
 

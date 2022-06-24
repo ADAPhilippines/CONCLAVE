@@ -1,6 +1,5 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
-using Conclave.Common.Utils;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conclave.Api.Controllers;
@@ -75,7 +74,6 @@ public class DelegatorRewardController : ControllerBase
     [HttpPut]
     public async Task<IActionResult> Update(Guid id, DelegatorReward entity)
     {
-        entity.DateUpdated = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
         var result = await _service.UpdateAsync(id, entity);
 
         return Ok(result);
