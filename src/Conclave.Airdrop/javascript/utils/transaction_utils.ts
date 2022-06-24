@@ -1,6 +1,6 @@
 import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
 import { ProtocolParametersResponse } from '../types/response_types';
-import { getCurrentEpochsAsync, getProtocolParametersAsync } from './epoch_utils';
+import { getCurrentEpochsAsync, getProtocolParametersAsync } from './epoch-utils';
 import CardanoWasm, { TransactionBuilder } from '@emurgo/cardano-serialization-lib-nodejs';
 
 export const getLatestProtocolParametersAsync = async (
@@ -38,6 +38,10 @@ export const getTransactionBuilder = (config: ProtocolParametersResponse): Trans
         .build();
 
     return CardanoWasm.TransactionBuilder.new(txBuilderConfig);
+};
+
+export const harden = (num: number): number => {
+    return 0x80000000 + num;
 };
 
 // TODO: function to add UTXO outputs & inputs
