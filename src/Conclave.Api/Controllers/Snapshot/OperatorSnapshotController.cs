@@ -1,5 +1,6 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
+using Conclave.Common.Utils;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conclave.Api.Controllers;
@@ -46,6 +47,7 @@ public class OperatorSnapshotController : ControllerBase
     [HttpPut]
     public async Task<IActionResult> UpdateAsync(OperatorSnapshot entity)
     {
+        entity.DateUpdated = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
         var result = await _operatorSnapshotService.UpdateAsync(entity.Id, entity);
         return Ok(result);
     }
