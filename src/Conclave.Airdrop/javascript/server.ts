@@ -1,3 +1,4 @@
+
 import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
 import CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
 import axios from 'axios';
@@ -6,6 +7,7 @@ import { getAllUnpaidAdaRewardsAsync, getAllUnpaidConclaveTokenRewardsAsync } fr
 
 const blockfrostAPI = new BlockFrostAPI({
     projectId: process.env.PROJECT_ID as string,
+    isTestnet: true
 });
 
 const main = async () => {

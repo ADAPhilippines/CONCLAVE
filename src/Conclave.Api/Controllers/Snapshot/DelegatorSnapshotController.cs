@@ -1,5 +1,6 @@
 using Conclave.Api.Interfaces;
 using Conclave.Common.Models;
+using Conclave.Common.Utils;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conclave.Api.Controllers;
@@ -17,9 +18,9 @@ public class DelegatorSnapshotController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateAsync(DelegatorSnapshot delegatorSnapshot)
+    public async Task<IActionResult> CreateAsync(DelegatorSnapshot entity)
     {
-        var result = await _delegatorSnapshotService.CreateAsync(delegatorSnapshot);
+        var result = await _delegatorSnapshotService.CreateAsync(entity);
         return Ok(result);
     }
 
@@ -45,9 +46,10 @@ public class DelegatorSnapshotController : ControllerBase
     }
 
     [HttpPut]
-    public async Task<IActionResult> UpdateAsync(DelegatorSnapshot delegatorSnapshot)
+    public async Task<IActionResult> UpdateAsync(DelegatorSnapshot entity)
     {
-        var result = await _delegatorSnapshotService.UpdateAsync(delegatorSnapshot.Id, delegatorSnapshot);
+        entity.DateUpdated = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
+        var result = await _delegatorSnapshotService.UpdateAsync(entity.Id, entity);
         return Ok(result);
     }
 
