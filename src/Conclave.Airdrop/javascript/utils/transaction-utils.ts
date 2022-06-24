@@ -7,13 +7,13 @@ import {
     TxBodyInput,
     TxBodyOutput,
     UTXO,
-} from '../types/response_types';
+} from '../types/response-types';
 import { getCurrentEpochsAsync, getProtocolParametersAsync } from './epoch-utils';
 
 import CardanoWasm, { TransactionBuilder } from '@emurgo/cardano-serialization-lib-nodejs';
 import cbor from 'cbor';
-import { fromHex } from './string_utils';
-import { queryAllUTXOsAsync } from './utxo_utils';
+import { fromHex } from './string-utils';
+import { queryAllUTXOsAsync } from './utxo-utils';
 
 export const getLatestProtocolParametersAsync = async (blockfrostAPI: BlockFrostAPI): Promise<ProtocolParametersResponse> => {
     const protocolParams = await getProtocolParametersAsync(blockfrostAPI, (await getCurrentEpochsAsync(blockfrostAPI)).epoch);
@@ -56,13 +56,7 @@ const unhex = fromHex(cbor_hex_key);
 const decode = cbor.decode(unhex);
 const privKey = CardanoWasm.PrivateKey.from_normal_bytes(decode);
 
-const shelleyOutputAddress = CardanoWasm.Address.from_bech32(
-    'addr_test1qrmrn6y4z846x38aj7rvusd8m58kw79k5yuqnje9kzvcllrjn3xacmz2j4j7qmtkw6z0hkxuuh06jd8actmgwgkhwf4qmlvcpr'
-);
 const shelleyChangeAddress = CardanoWasm.Address.from_bech32('addr_test1vrhcq70gslwqchcerumm0uqu08zy68qg2mdmh95ar5t545c7avx8t');
-const shelleyOutputAddress2 = CardanoWasm.Address.from_bech32(
-    'addr_test1qrzx30tju0gvsmcvnn48zc3pe5qc49npydky6qd2huh4640h7m58dq0yf0uule4fq0cun04cxgh9n8nuk6dwdxnahmhs8dxnz8'
-);
 
 const convertRawUTXO = async (): Promise<Array<TxBodyInput>> => {
     let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
@@ -102,6 +96,36 @@ const getAllTxOutput = (): Array<OutputAccount> => {
 
         txBodyOutputs.push(txBodyOutput);
     }
+
+    // for (let i = 0; i < 500; i++) {
+    //     const asset: CardanoAssetResponse = {
+    //         unit: 'Lovelace',
+    //         quantity: '2000000',
+    //     };
+
+    //     const txBodyOutput: OutputAccount = {
+    //         account: 'addr_test1qrzx30tju0gvsmcvnn48zc3pe5qc49npydky6qd2huh4640h7m58dq0yf0uule4fq0cun04cxgh9n8nuk6dwdxnahmhs8dxnz8',
+    //         asset: asset,
+    //         airdropStatus: 'new',
+    //     };
+
+    //     txBodyOutputs.push(txBodyOutput);
+    // }
+
+    // for (let i = 0; i < 12; i++) {
+    //     const asset: CardanoAssetResponse = {
+    //         unit: 'Lovelace',
+    //         quantity: '6000000000',
+    //     };
+
+    //     const txBodyOutput: OutputAccount = {
+    //         account: 'addr_test1qrzx30tju0gvsmcvnn48zc3pe5qc49npydky6qd2huh4640h7m58dq0yf0uule4fq0cun04cxgh9n8nuk6dwdxnahmhs8dxnz8',
+    //         asset: asset,
+    //         airdropStatus: 'new',
+    //     };
+
+    //     txBodyOutputs.push(txBodyOutput);
+    // }
 
     // for (let i = 0; i < 1000; i++) {
     //     const asset1: CardanoAssetResponse = {
@@ -170,10 +194,11 @@ const selectTxInputOutputAsync = async (
 
         while (partialUTXOSum < partialOutputsSum) {
             if (currentOutputsBatch.length > 0) _txBodyOutputs.unshift(currentOutputsBatch.pop()!);
-
             partialUTXOSum = getInputUTXOSum(currentUTXOsBatch);
             partialOutputsSum = getOutputAmountSum(currentOutputsBatch);
         }
+
+        if (partialOutputsSum === 0 || partialOutputsSum === null || partialOutputsSum === undefined) break;
 
         while (partialUTXOSum < partialOutputsSum) {
             if (currentOutputsBatch.length > 0) _txBodyOutputs.unshift(currentOutputsBatch.pop()!);
@@ -193,7 +218,7 @@ const selectTxInputOutputAsync = async (
             currentUTXOsBatch.push(_txBodyInputs.shift()!);
         }
 
-        if (partialOutputsSum > 0) {
+        if (partialOutputsSum > 0 && partialOutputsSum !== null && partialOutputsSum !== undefined) {
             const newTxBodyDetails: TxBodyDetails = {
                 txInputs: currentUTXOsBatch,
                 txOutputs: currentOutputsBatch,
@@ -385,6 +410,7 @@ const getOutputAmountSum = (currentOutputBatch: Array<OutputAccount>): number =>
 };
 
 const getInputUTXOSum = (currentUTXOs: Array<TxBodyInput>): number => {
+    if (currentUTXOs === null || currentUTXOs === undefined) return 0;
     let _partialSum = 0;
 
     currentUTXOs.forEach((utxo) => {
@@ -405,9 +431,9 @@ const awaitChangeInUTXOAsync = async (txInputs: Array<TxBodyInput>, txHash: Card
     var CheckUTX0 = setInterval(async () => {
         console.log(
             'Waiting for utxo to update after Tx ' +
-                txHash.to_bech32('tx_test').toString() +
-                ' at random Interval ' +
-                (randomInterval + 12000)
+            txHash.to_bech32('tx_test').toString() +
+            ' at random Interval ' +
+            (randomInterval + 12000)
         );
         let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
         let commonHash = utxos.filter((v) => txHashArray.includes(v.tx_hash));
@@ -595,7 +621,8 @@ export const handleTransactionAsync = async () => {
     let outputAccounts = getAllTxOutput();
     let txinputoutputs = await selectTxInputOutputAsync(utxosInWallet, outputAccounts);
 
-    if (txinputoutputs == null) {
+    if (txinputoutputs == null || txinputoutputs.length === 0 || txinputoutputs === undefined) 
+    {
         console.log('no transaction');
         return;
     }
@@ -624,7 +651,7 @@ export const handleTransactionAsync = async () => {
         //Submit Transaction
         await submitTransactionAsync(transaction.transaction, transaction.txHash);
 
-        updateAirdropStatus(txItem.txOutputs, 'submitted');
+        // updateAirdropStatus(txItem.txOutputs, 'submitted');
         console.log(' ');
         awaitChangeInUTXOAsync(txItem.txInputs, transaction.txHash);
     }

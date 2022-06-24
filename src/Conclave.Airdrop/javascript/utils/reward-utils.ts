@@ -51,6 +51,7 @@ const mapToReward = (rewards: QueryResult<any>, rewardType: number): Reward[] =>
             id: reward.Id,
             rewardType: rewardType,
             rewardAmount: reward.RewardAmount,
+            walletAddress: reward.WalletAddress
         });
     });
 
