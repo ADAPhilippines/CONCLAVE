@@ -119,27 +119,27 @@ const convertRawUTXO = async (): Promise<Array<TxBodyInput>> => {
 const getAllTxOutput = (): Array<Reward> => {
     let txBodyOutputs: Array<Reward> = [];
 
-    // for (let i = 0; i < 300; i++) {
-    //     const txBodyOutput: Reward = {
-    //         walletAddress: shelleyOutputAddress.to_bech32(),
-    //         rewardAmount: 20000000,
-    //         rewardType: 2,
-    //         id: "sampleId"
-    //     };
-
-    //     txBodyOutputs.push(txBodyOutput);
-    // }
-
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 10000; i++) {
         const txBodyOutput: Reward = {
             walletAddress: shelleyOutputAddress.to_bech32(),
-            rewardAmount: 500000000000,
+            rewardAmount: 2000000,
             rewardType: 2,
             id: "sampleId"
         };
 
         txBodyOutputs.push(txBodyOutput);
     }
+
+    // for (let i = 0; i < 1000; i++) {
+    //     const txBodyOutput: Reward = {
+    //         walletAddress: shelleyOutputAddress.to_bech32(),
+    //         rewardAmount: 500000000000,
+    //         rewardType: 2,
+    //         id: "sampleId"
+    //     };
+
+    //     txBodyOutputs.push(txBodyOutput);
+    // }
 
     // for (let i = 0; i < 1000; i++) {
     //     const asset1: CardanoAssetResponse = {
@@ -192,7 +192,6 @@ const selectTxInputOutputAsync = async (
     let partialOutputsSum = getOutputAmountSum(currentOutputsBatch);
 
     while (currentOutputsBatch.length > 0 && currentUTXOsBatch.length > 0) {
-        //Get 250
         while (currentUTXOsBatch.length + currentOutputsBatch.length > 249) {
             if (partialOutputsSum > partialUTXOSum) {
                 if (currentOutputsBatch.length > 0) _txBodyOutputs.unshift(currentOutputsBatch.pop()!);
@@ -531,30 +530,40 @@ const getSmallUTXOs = (utxos: UTXO): {
 export const divideLargeUTXOsAsync = async () => {
     console.log('Dividing UTXOs');
     let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
-    let txInputSent: Array<TxBodyInput> = [];
-    let txOutputSent: Array<TxBodyOutput> = [];
+    let txInputsSent: Array<TxBodyInput> = [];
+    let txOutputsSent: Array<TxBodyOutput> = [];
 
-    let result = getLargeUTXOs(utxos);
-    if (result?.txInputs == null || result?.txOutputs === null || result === null) return;
-    let txinputoutputs = await selectTxInputOutputAsync(result.txInputs, result.txOutputs);
-    if (txinputoutputs == null || txinputoutputs.length === 0 || txinputoutputs === undefined) return;
+    let rewards = getLargeUTXOs(utxos);
+    if (rewards?.txInputs === null || rewards?.txOutputs === null || rewards === null) return;
+
+    let txinputoutputs = await selectTxInputOutputAsync(rewards.txInputs, rewards.txOutputs);
+    if (txinputoutputs == null || txinputoutputs.length == 0 || txinputoutputs === undefined) return;
+
+    if (rewards === null) {
+        return;
+    }
 
     for (let txItem of txinputoutputs) {
         let transaction = await createAndSignTxAsync(txItem);
         if (transaction == null) return;
 
-        console.log('Combining Small UTXOs');
+        console.log('Dividing Large UTXOs');
         console.log(
             'Transaction ' + transaction.txHash.to_bech32('tx_test').toString() + ' fee ' + transaction.transaction.body().fee().to_str()
         );
 
         let txResult = await submitTransactionAsync(transaction.transaction, transaction.txHash, txItem);
+        //Submit Transaction
+        // let txResult = await submitTransactionAsync(transaction.transaction, transaction.txHash, txItem);
+        // if (txResult !== null) {
+        //     txInputsSent = txInputsSent.concat(txInputsSent, txResult.txInputs);
+        //     txOutputSent = txOutputSent.concat(txOutputSent, txResult.txOutputs);
+        //     console.log("Update Status to Completed");
+        // }
 
-        console.log('');
-
-        // await awaitChangeInUTXOAsync(txItem.txInputs, transaction.txHash);
+        console.log(' ');
     }
-    console.log('Finished');
+    await awaitChangeInUTXOAsync(txInputsSent);
 };
 
 export const combineSmallUTXOsAsync = async () => {
@@ -563,16 +572,15 @@ export const combineSmallUTXOsAsync = async () => {
     let txInputsSent: Array<TxBodyInput> = [];
     let txOutputsSent: Array<TxBodyOutput> = [];
 
-    let result = getSmallUTXOs(utxos);
-    if (result?.txInputs === null || result?.txOutputs === null || result === null) return;
+    let rewards = getSmallUTXOs(utxos);
+    if (rewards?.txInputs === null || rewards?.txOutputs === null || rewards === null) return;
 
-    let txinputoutputs = await selectTxInputOutputAsync(result.txInputs, result.txOutputs);
+    let txinputoutputs = await selectTxInputOutputAsync(rewards.txInputs, rewards.txOutputs);
     if (txinputoutputs == null || txinputoutputs.length == 0 || txinputoutputs === undefined) return;
 
-    // if (rewards.length == 0 || utxosInWallet.length == 0) {
-    //     console.log('no transaction');
-    //     return;
-    // }
+    if (rewards === null) {
+        return;
+    }
 
     for (let txItem of txinputoutputs) {
         let transaction = await createAndSignTxAsync(txItem);
@@ -590,7 +598,6 @@ export const combineSmallUTXOsAsync = async () => {
         //     txInputsSent = txInputsSent.concat(txInputsSent, txResult.txInputs);
         //     txOutputSent = txOutputSent.concat(txOutputSent, txResult.txOutputs);
         //     console.log("Update Status to Completed");
-
         // }
 
         console.log(' ');
@@ -600,10 +607,10 @@ export const combineSmallUTXOsAsync = async () => {
 
 const createAndSignTxAsync = async (
     txBodyDetails: TxBodyDetails
-): Promise<{
+    ): Promise<{
     transaction: CardanoWasm.Transaction;
     txHash: CardanoWasm.TransactionHash
-} | null> => {
+    } | null> => {
     let txBodyResult = await createTxBodyAsync(txBodyDetails);
     if (txBodyResult == null) return null;
 
@@ -638,8 +645,8 @@ export const handleTransactionAsync = async () => {
             console.log('Txinput ' + e.txHash + ' ' + e.asset.quantity);
         });
 
-        console.log('Txinput sum' + ' ' + getInputUTXOSum(element.txInputs));
-        console.log('Txoutput sum' + ' ' + getOutputAmountSum(element.txOutputs));
+        console.log('Txinput sum ' + getInputUTXOSum(element.txInputs));
+        console.log('Txoutput sum ' + getOutputAmountSum(element.txOutputs));
         console.log('TxOutput count: ' + element.txOutputs.length);
     });
 
