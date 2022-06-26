@@ -1,28 +1,26 @@
 import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
 import CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
 import axios from 'axios';
+import { mnemonicToEntropy } from 'bip39';
 import fetch from 'node-fetch';
 import { getAllUnpaidAdaRewardsAsync, getAllUnpaidConclaveTokenRewardsAsync } from './utils/reward-utils';
-import { combineSmallUTXOsAsync, divideLargeUTXOsAsync, handleTransactionAsync } from './utils/transaction-utils';
+import { fromHex } from './utils/string-utils';
+import { handleTransactionAsync , divideLargeUTXOsAsync, combineSmallUTXOsAsync } from './utils/transaction-utils';
+import cbor from 'cbor';
 
 const blockfrostAPI = new BlockFrostAPI({
     projectId: process.env.PROJECT_ID as string,
-    isTestnet: true
+    isTestnet: false
 });
 
 const main = async () => {
-    const unpaidList = await getAllUnpaidConclaveTokenRewardsAsync();
-    unpaidList.forEach((reward) => {
-        console.log(reward);
-    });
+    // const unpaidList = await getAllUnpaidConclaveTokenRewardsAsync();
+    // unpaidList.forEach((reward) => {
+    //     console.log(reward);
+    // });
+    // await handleTransactionAsync(unpaidList);
+    await handleTransactionAsync();
 };
 
-const airDropTransaction = async () => {
-    await divideLargeUTXOsAsync();
-    await combineSmallUTXOsAsync();
-    await handleTransactionAsync();
-}
-
 main();
-
-// airDropTransaction()
+// handleTransactionAsync();
