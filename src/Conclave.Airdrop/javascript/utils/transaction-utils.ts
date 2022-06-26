@@ -119,7 +119,7 @@ const convertRawUTXO = async (): Promise<Array<TxBodyInput>> => {
 const getAllTxOutput = (): Array<Reward> => {
     let txBodyOutputs: Array<Reward> = [];
 
-    for (let i = 0; i < 10000; i++) {
+    for (let i = 0; i < 100; i++) {
         const txBodyOutput: Reward = {
             walletAddress: shelleyOutputAddress.to_bech32(),
             rewardAmount: 2000000,
