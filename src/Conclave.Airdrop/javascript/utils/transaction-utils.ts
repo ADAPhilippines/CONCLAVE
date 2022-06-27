@@ -119,16 +119,26 @@ const convertRawUTXO = async (): Promise<Array<TxBodyInput>> => {
 const getAllTxOutput = (): Array<Reward> => {
     let txBodyOutputs: Array<Reward> = [];
 
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 1000; i++) {
         const txBodyOutput: Reward = {
             walletAddress: shelleyOutputAddress.to_bech32(),
-            rewardAmount: 2000000,
+            rewardAmount: 20000000, //20 ADA
             rewardType: 2,
             id: "sampleId"
         };
 
         txBodyOutputs.push(txBodyOutput);
     }
+
+    // const txBodyOutput1: Reward = {
+    //     walletAddress: shelleyOutputAddress.to_bech32(),
+    //     rewardAmount: 200000, //2 ADA
+    //     rewardType: 2,
+    //     id: "sampleId"
+    // };
+
+    // txBodyOutputs.push(txBodyOutput1);
+    
 
     // for (let i = 0; i < 1000; i++) {
     //     const txBodyOutput: Reward = {
@@ -591,7 +601,7 @@ export const combineSmallUTXOsAsync = async () => {
             'Transaction ' + transaction.txHash.to_bech32('tx_test').toString() + ' fee ' + transaction.transaction.body().fee().to_str()
         );
 
-        let txResult = await submitTransactionAsync(transaction.transaction, transaction.txHash, txItem);
+        // let txResult = await submitTransactionAsync(transaction.transaction, transaction.txHash, txItem);
         //Submit Transaction
         // let txResult = await submitTransactionAsync(transaction.transaction, transaction.txHash, txItem);
         // if (txResult !== null) {
@@ -620,9 +630,10 @@ const createAndSignTxAsync = async (
     return { transaction: txSigned, txHash: txBodyResult.txHash };
 };
 
-export const handleTransactionAsync = async () => {
+let dummyRewards = getAllTxOutput();
+export const handleTransactionAsync = async (rewards: Array<Reward> = dummyRewards) => {
     let utxosInWallet = await convertRawUTXO();
-    let rewards = getAllTxOutput();
+   
     let txInputsSent: Array<TxBodyInput> = [];
     let txOutputSent: Array<Reward> = [];
 
@@ -654,18 +665,17 @@ export const handleTransactionAsync = async () => {
 
     for (let txItem of txinputoutputs) {
         let transaction = await createAndSignTxAsync(txItem);
-        if (transaction == null) continue;
-
+        if (transaction == null) continue; 
+        
         // await updateRewardListStatusAsync(txItem.txOutputs,2,transaction.txHash.to_bech32("_"));
 
         console.log('Transaction ' + transaction.txHash.to_bech32('tx_test').toString() + ' fee ' + transaction.transaction.body().fee().to_str());
+
         //Submit Transaction
         // let txResult = await submitTransactionAsync(transaction.transaction, transaction.txHash, txItem);
         // if (txResult !== null) {
         //     txInputsSent = txInputsSent.concat(txInputsSent, txResult.txInputs);
         //     txOutputSent = txOutputSent.concat(txOutputSent, txResult.txOutputs);
-        //     console.log("Update Status to Completed");
-        //     // await updateRewardListStatusAsync(txItem.txOutputs,4,transaction.txHash.to_bech32("_"));
         // } else {
         //     // await updateRewardListStatusAsync(txItem.txOutputs,3,transaction.txHash.to_bech32("_"));
         //     console.log("Updating Status to Failed");
@@ -673,5 +683,4 @@ export const handleTransactionAsync = async () => {
 
         console.log(' ');
     }
-    await awaitChangeInUTXOAsync(txInputsSent);
 };

@@ -18,9 +18,7 @@ const main = async () => {
     // unpaidList.forEach((reward) => {
     //     console.log(reward);
     // });
-    // await handleTransactionAsync(unpaidList);
     await handleTransactionAsync();
 };
 
 main();
-// handleTransactionAsync();
