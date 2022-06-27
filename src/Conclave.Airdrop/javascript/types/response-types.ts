@@ -1,5 +1,6 @@
 import { BigNum, LinearFee } from '@emurgo/cardano-serialization-lib-nodejs';
 import { Responses } from '@blockfrost/blockfrost-js';
+import { Reward } from './database-types';
 
 export type UTXO = Responses['address_utxo_content'];
 
@@ -36,10 +37,11 @@ export type OutputAccount = {
 
 export type TxBodyDetails = {
     txInputs: Array<TxBodyInput>,
-    txOutputs: Array<OutputAccount>
+    txOutputs: Array<Reward>
     fee: string,
     txOutputSum: number
 }
+
 // const txBuilderCfg = CardanoWasm.TransactionBuilderConfigBuilder.new()
 //     .fee_algo(linearFee)
 //     .pool_deposit(CardanoWasm.BigNum.from_str('500000000'))
