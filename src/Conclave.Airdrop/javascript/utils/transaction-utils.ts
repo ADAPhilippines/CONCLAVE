@@ -549,9 +549,7 @@ export const divideLargeUTXOsAsync = async () => {
     let txinputoutputs = await selectTxInputOutputAsync(rewards.txInputs, rewards.txOutputs);
     if (txinputoutputs == null || txinputoutputs.length == 0 || txinputoutputs === undefined) return;
 
-    if (rewards === null) {
-        return;
-    }
+    if (rewards === null) return;
 
     for (let txItem of txinputoutputs) {
         let transaction = await createAndSignTxAsync(txItem);
@@ -562,7 +560,6 @@ export const divideLargeUTXOsAsync = async () => {
             'Transaction ' + transaction.txHash.to_bech32('tx_test').toString() + ' fee ' + transaction.transaction.body().fee().to_str()
         );
 
-        let txResult = await submitTransactionAsync(transaction.transaction, transaction.txHash, txItem);
         //Submit Transaction
         // let txResult = await submitTransactionAsync(transaction.transaction, transaction.txHash, txItem);
         // if (txResult !== null) {
@@ -588,10 +585,8 @@ export const combineSmallUTXOsAsync = async () => {
     let txinputoutputs = await selectTxInputOutputAsync(rewards.txInputs, rewards.txOutputs);
     if (txinputoutputs == null || txinputoutputs.length == 0 || txinputoutputs === undefined) return;
 
-    if (rewards === null) {
-        return;
-    }
-
+    if (rewards === null) return;
+    
     for (let txItem of txinputoutputs) {
         let transaction = await createAndSignTxAsync(txItem);
         if (transaction == null) return;
@@ -601,13 +596,11 @@ export const combineSmallUTXOsAsync = async () => {
             'Transaction ' + transaction.txHash.to_bech32('tx_test').toString() + ' fee ' + transaction.transaction.body().fee().to_str()
         );
 
-        // let txResult = await submitTransactionAsync(transaction.transaction, transaction.txHash, txItem);
         //Submit Transaction
         // let txResult = await submitTransactionAsync(transaction.transaction, transaction.txHash, txItem);
         // if (txResult !== null) {
         //     txInputsSent = txInputsSent.concat(txInputsSent, txResult.txInputs);
         //     txOutputSent = txOutputSent.concat(txOutputSent, txResult.txOutputs);
-        //     console.log("Update Status to Completed");
         // }
 
         console.log(' ');
