@@ -1,4 +1,4 @@
-import { BlockFrostAPI, BlockfrostServerError } from '@blockfrost/blockfrost-js';
+import { BlockFrostAPI, BlockfrostServerError, Responses } from '@blockfrost/blockfrost-js';
 import CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
 import { fromHex } from './string-utils';
 import { CardanoAssetResponse, UTXO } from '../types/response-types';
@@ -72,4 +72,21 @@ export const queryAllUTXOsAsync = async (blockfrostApi: BlockFrostAPI, address: 
         console.log();
     }
     return utxos;
+};
+
+export const getUtxosWithAsset = async (blockfrostApi: BlockFrostAPI, address: string, unit: string): Promise<UTXO> => {
+    let utxos: UTXO = await blockfrostApi.addressesUtxosAll(address);
+    let utxosWithAsset: UTXO = [];
+
+    if (utxos.length < 0) return utxos;
+
+    for (let utxo of utxos) {
+        for (let amount of utxo.amount) {
+            if (amount.unit !== unit) continue;
+            utxosWithAsset.push(utxo);
+            break;
+        }
+    }
+
+    return utxosWithAsset;
 };
