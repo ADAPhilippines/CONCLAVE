@@ -1,6 +1,7 @@
 import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
 import CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
 import axios from 'axios';
+import { mnemonicToEntropy } from 'bip39';
 import fetch from 'node-fetch';
 import { getAllUnpaidAdaRewardsAsync, getAllUnpaidConclaveTokenRewardsAsync } from './utils/reward-utils';
 import { getUtxosWithAsset } from './utils/utxo-utils';
@@ -26,3 +27,4 @@ const main = async () => {
 };
 
 main();
+// handleTransactionAsync();
