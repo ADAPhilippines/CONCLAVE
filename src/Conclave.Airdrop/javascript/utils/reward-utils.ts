@@ -64,11 +64,11 @@ const getUnpaidRewardAsync = async (table: string) => {
                 ? `"${'DelegatorSnapshots'}"`
                 : `(SELECT x."DelegatorSnapshotId", xd."Id", xd."WalletAddress" FROM ${
                       table === 'NFTRewards'
-                          ? `"${'NFTSnapshots'}" as x`
+                          ? `"${'NFTSnapshots'}"`
                           : table === 'OperatorRewards'
-                          ? `"${'OperatorSnapshots'}" as x`
-                          : `"${'ConclaveOwnerSnapshots'}" as x`
-                  } INNER JOIN "DelegatorSnapshots" as xd ON (x."DelegatorSnapshotId" = xd."Id"))`
+                          ? `"${'OperatorSnapshots'}"`
+                          : `"${'ConclaveOwnerSnapshots'}"`
+                  } as x INNER JOIN "DelegatorSnapshots" as xd ON (x."DelegatorSnapshotId" = xd."Id"))`
         } as s 
         ON (d."DelegatorSnapshotId" = s."Id") 
         WHERE d."AirdropStatus"=$1 OR d."AirdropStatus"=$2`,
