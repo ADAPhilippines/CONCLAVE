@@ -10,7 +10,7 @@ import {
 } from '../types/response-types';
 import { getCurrentEpochsAsync, getProtocolParametersAsync } from './epoch-utils';
 
-import CardanoWasm, { TransactionBuilder } from '@emurgo/cardano-serialization-lib-nodejs';
+import CardanoWasm, { AssetName, Assets, BigNum, MultiAsset, ScriptHash, TransactionBuilder, TransactionOutputBuilder } from '@emurgo/cardano-serialization-lib-nodejs';
 import cbor from 'cbor';
 import { fromHex } from './string-utils';
 import { queryAllUTXOsAsync } from './utxo-utils';
@@ -180,13 +180,6 @@ const getAllTxOutput = (): Array<Reward> => {
     return txBodyOutputs;
 };
 
-// function updateAirdropStatus(txOutputs: Array<Reward>, newStatus: string) {
-//     txOutputs.forEach((reward) => {
-//         reward.airdropStatus = newStatus;
-//     });
-//     console.log('Updated airdrop status to ' + newStatus);
-// }
-
 const selectTxInputOutputAsync = async (
     txBodyInputs: Array<TxBodyInput>,
     txBodyOutputs: Array<Reward>
@@ -344,6 +337,7 @@ const setTxBodyDetailsAsync = async (txBodyDetails: TxBodyDetails): Promise<Card
             )
         );
     });
+
     return txBuilder;
 };
 
@@ -385,8 +379,7 @@ const submitTransactionAsync = async (
     transaction: CardanoWasm.Transaction,
     txHash: CardanoWasm.TransactionHash,
     txItem: TxBodyDetails): Promise<TxBodyDetails | null> => {
-    // let utxos  = await queryAllUTXOs("addr_test1vrhcq70gslwqchcerumm0uqu08zy68qg2mdmh95ar5t545c7avx8t");
-    // console.log("Transaction Submitted successfully");
+
     try {
         const res = await blockfrostAPI.txSubmit(transaction!.to_bytes());
         if (res) {
@@ -677,3 +670,88 @@ export const handleTransactionAsync = async (rewards: Array<Reward> = dummyRewar
         console.log(' ');
     }
 };
+
+
+let policyId = "b7f89333a361e0c467a4c149c9bc283c2472de5640dbd821320eca18"
+let assetName = "53616d706c65546f6b656e4a0a"
+
+export const sendTokenTransactionAsync = async () => {
+    let protocolParameter = await getLatestProtocolParametersAsync(blockfrostAPI);
+    let txBuilder = getTransactionBuilder(protocolParameter);
+    let multiAssetInput = CardanoWasm.MultiAsset.new();
+    let assetsInput = CardanoWasm.Assets.new();
+    let multiAssetOutput = CardanoWasm.MultiAsset.new();
+    let assetsOutput = CardanoWasm.Assets.new();
+
+    assetsInput.insert(
+        CardanoWasm.AssetName.new(Buffer.from(assetName, 'hex')),
+        CardanoWasm.BigNum.from_str("999999995")
+    );
+    multiAssetInput.insert(
+        CardanoWasm.ScriptHash.from_bytes(Buffer.from(policyId, 'hex')),
+        assetsInput
+    );
+
+    assetsOutput.insert(
+        CardanoWasm.AssetName.new(Buffer.from(assetName, 'hex')),
+        CardanoWasm.BigNum.from_str("3")
+    );
+    multiAssetOutput.insert(
+        CardanoWasm.ScriptHash.from_bytes(Buffer.from(policyId, 'hex')),
+        assetsOutput
+    );
+    
+    const inputValue = CardanoWasm.Value.new(
+        CardanoWasm.BigNum.from_str("875456458")
+    );
+    const outputValue = CardanoWasm.Value.new(
+        CardanoWasm.BigNum.from_str("2000000")
+    );
+
+    inputValue.set_multiasset(multiAssetInput);
+    outputValue.set_multiasset(multiAssetOutput);
+
+    txBuilder.add_key_input(
+        privKey.to_public().hash(),
+        CardanoWasm.TransactionInput.new(
+            CardanoWasm.TransactionHash.from_bytes(Buffer.from("1b717f70e232f70cae50fa53da6aa0bcf379f50c591506c5964c363ae9b21a79", 'hex')), // tx hash
+            1 // index
+        ),
+        inputValue
+    );
+
+    txBuilder.add_output(
+        CardanoWasm.TransactionOutput.new(
+            CardanoWasm.Address.from_bech32(shelleyOutputAddress.to_bech32()),
+            outputValue
+        )
+    );
+    
+    let ttl = await setTTLAsync();
+
+    txBuilder.set_ttl(ttl);
+    txBuilder.add_change_if_needed(shelleyChangeAddress);
+
+    const txBody = txBuilder.build();
+    const txHash = CardanoWasm.hash_transaction(txBody);
+
+    const witnesses = CardanoWasm.TransactionWitnessSet.new();
+    const vkeyWitnesses = CardanoWasm.Vkeywitnesses.new();
+    const vkeyWitness = CardanoWasm.make_vkey_witness(txHash, privKey);
+    vkeyWitnesses.add(vkeyWitness);
+    witnesses.set_vkeys(vkeyWitnesses);
+
+    const transaction = finalizeTxBody(txBody, witnesses);
+
+    try {
+        const res = await blockfrostAPI.txSubmit(transaction!.to_bytes());
+        if (res) {
+            console.log(`Transaction successfully submitted for Tx ` + txHash.to_bech32('tx_test').toString());
+        }
+    } catch (error) {
+        if (error instanceof BlockfrostServerError && error.status_code === 400) {
+            console.log(`Transaction rejected for Tx ` + txHash.to_bech32('tx_test').toString());
+            console.log(error.message);
+        } 
+    }
+}

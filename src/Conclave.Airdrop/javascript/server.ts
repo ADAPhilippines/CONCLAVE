@@ -21,4 +21,15 @@ const main = async () => {
     await handleTransactionAsync();
 };
 
+const multiAsset = CardanoWasm.MultiAsset.new();
+const assets = CardanoWasm.Assets.new();
+const policyString = "sampleString";
+const assetString = "sampleAsset";
+const assetName = CardanoWasm.AssetName.new(Buffer.from(assetString,"hex"));
+
+const assetValue = CardanoWasm.Value.new(CardanoWasm.BigNum.from_str("2000000"));
+
+//native token
+assets.insert(assetName, CardanoWasm.BigNum.from_str("1000000"));
+multiAsset.insert(CardanoWasm.ScriptHash.from_bytes(Buffer.from(policyString, "hex")) ,assets);
 main();
