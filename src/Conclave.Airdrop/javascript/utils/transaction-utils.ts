@@ -284,14 +284,12 @@ const getAllConclaveAmountOutput = (): Array<ConclaveAmount> => {
     return txBodyOutputs;
 };
 
-const removeLastItemFromCurrentBatch = (batchArray: Array<any>, reserveArray: Array<any>): Array<any> => {
+const removeLastItemFromCurrentBatch = (batchArray: Array<any>, reserveArray: Array<any>) => {
     if (batchArray.length > 0) reserveArray.unshift(batchArray.pop()!);
-    return batchArray;
 };
 
-const addItemToCurrentBatch = (batchArray: Array<any>, reserveArray: Array<any>): Array<any> => {
+const addItemToCurrentBatch = (batchArray: Array<any>, reserveArray: Array<any>) => {
     if (reserveArray.length > 0) batchArray.push(reserveArray.shift()!);
-    return batchArray;
 }
 
 const sortRewardAscending = (array: Array<Reward>): Array<Reward> => {
@@ -308,29 +306,30 @@ const sortInputDescending = (array: Array<TxBodyInput>, unit: string = "lovelace
 
 const getArrayBatch = (batchSize: number, array: Array<any>): Array<any> => array.splice(0, batchSize - 1);
 
-const isWithinTxLimit = (array1: Array<any>, array2: Array<any>, maxTxSize: number ): boolean => array1.length + array2.length <= maxTxSize;
+const isWithinTxLimit = (array1: Array<any>, array2: Array<any>, maxTxSize: number): boolean => array1.length + array2.length <= maxTxSize;
 
-const isOutputSumLarger = (outputSum: number, inputSum: number ): boolean => inputSum < outputSum;
+const isOutputSumLarger = (outputSum: number, inputSum: number): boolean => inputSum < outputSum;
 
-const isZero = (sum: number) : boolean=>
-{
+const isZero = (sum: number): boolean => {
     if (sum <= 0) return true;
     else return false;
 }
 
-const isInputSumLarger = (inputSum: number, outputSum: number ): boolean => outputSum <= inputSum;
+const isInputSumLarger = (inputSum: number, outputSum: number): boolean => outputSum <= inputSum;
 
-const updateSum = (rewardArray: Array<Reward> | null = null, inputArray: Array<TxBodyInput> | null = null , unit: string = "lovelace") : number => {
-
+const updateSum = (
+    rewardArray: Array<Reward> | null = null,
+    inputArray: Array<TxBodyInput> | null = null,
+    unit: string = "lovelace"): number => {
     if (rewardArray != null && rewardArray.length !== 0) return getOutputAmountSum(rewardArray);
     if (inputArray != null && inputArray.length !== 0) return getInputAssetUTXOSum(inputArray, unit);
     else return 0;
 }
 
 const initRewardTxBodyDetails = (
-    inputs: Array<TxBodyInput>, 
-    outputSum: number, 
-    fee : string = "0", 
+    inputs: Array<TxBodyInput>,
+    outputSum: number,
+    fee: string = "0",
     outputs: Array<Reward> = []): RewardTxBodyDetails => {
     const newTxBodyDetails: RewardTxBodyDetails = {
         txInputs: inputs,
@@ -352,7 +351,7 @@ const initReward = (id: string, rewardAmount: number, rewardType: number, wallet
     return _reward;
 }
 
-const createTxBodyDetailswithFee = async (inputs: Array<TxBodyInput>, outputs: Array<Reward>, outputSum: number) : Promise<RewardTxBodyDetails | null> => {
+const createTxBodyDetailswithFee = async (inputs: Array<TxBodyInput>, outputs: Array<Reward>, outputSum: number): Promise<RewardTxBodyDetails | null> => {
     const newTxBodyDetails: RewardTxBodyDetails = initRewardTxBodyDetails(inputs, outputSum, "0", outputs);
     let fees = await calculateRewardFeesAsync(newTxBodyDetails);
 
@@ -364,17 +363,17 @@ const createTxBodyDetailswithFee = async (inputs: Array<TxBodyInput>, outputs: A
     return newTxBodyDetails;
 }
 
-const isNull = (item: any | null) : boolean => {
+const isNull = (item: any | null): boolean => {
     if (item === null) return true;
     else return false;
 }
 
-const isUndefined = (item: any | undefined) : boolean => {
+const isUndefined = (item: any | undefined): boolean => {
     if (item === undefined) return true;
     else return false;
 }
 
-const isBatchEmpty = (batch: Array<any>) : boolean => {
+const isBatchEmpty = (batch: Array<any>): boolean => {
     if (batch.length === 0) return true;
     else return false;
 }
@@ -382,14 +381,14 @@ const isBatchEmpty = (batch: Array<any>) : boolean => {
 const rewardCoinSelection = async (
     txBodyInputs: Array<TxBodyInput>,
     txBodyOutputs: Array<Reward>
-    ): Promise<Array<RewardTxBodyDetails> | null> => {
-    let _txBodyInputs = sortInputDescending(txBodyInputs);
-    let _txBodyOutputs = sortRewardAscending(txBodyOutputs);
+): Promise<Array<RewardTxBodyDetails> | null> => {
+    let reservedBodyInputs = sortInputDescending(txBodyInputs);
+    let reservedBodyOutputs = sortRewardAscending(txBodyOutputs);
 
     let maxUTXO = 249;
     let txBodyDetailsArray: Array<RewardTxBodyDetails> = [];
-    let currentUTXOsBatch: Array<TxBodyInput> = getArrayBatch(maxUTXO, _txBodyInputs);
-    let currentOutputsBatch: Array<Reward> = getArrayBatch(maxUTXO, _txBodyOutputs);
+    let currentUTXOsBatch: Array<TxBodyInput> = getArrayBatch(maxUTXO, reservedBodyInputs);
+    let currentOutputsBatch: Array<Reward> = getArrayBatch(maxUTXO, reservedBodyOutputs);
 
     let partialUTXOSum = getInputAssetUTXOSum(currentUTXOsBatch);
     let partialOutputsSum = getOutputAmountSum(currentOutputsBatch);
@@ -397,34 +396,34 @@ const rewardCoinSelection = async (
     while (!isBatchEmpty(currentOutputsBatch) && !isBatchEmpty(currentUTXOsBatch)) {
         while (!isWithinTxLimit(currentUTXOsBatch, currentOutputsBatch, maxUTXO)) {
             if (isInputSumLarger(partialUTXOSum, partialOutputsSum)) {
-                currentUTXOsBatch = removeLastItemFromCurrentBatch(currentUTXOsBatch, _txBodyInputs);
+                removeLastItemFromCurrentBatch(currentUTXOsBatch, reservedBodyInputs);
             } else {
-                currentOutputsBatch = removeLastItemFromCurrentBatch(currentOutputsBatch, _txBodyOutputs);
+                removeLastItemFromCurrentBatch(currentOutputsBatch, reservedBodyOutputs);
             }
             partialOutputsSum = updateSum(currentOutputsBatch);
             partialUTXOSum = updateSum(null, currentUTXOsBatch);
         }
 
         while (isOutputSumLarger(partialOutputsSum, partialUTXOSum)) {
-            currentUTXOsBatch = removeLastItemFromCurrentBatch(currentUTXOsBatch, _txBodyInputs);
+            removeLastItemFromCurrentBatch(currentUTXOsBatch, reservedBodyInputs);
             partialOutputsSum = updateSum(currentOutputsBatch);
         }
         if (isZero(partialOutputsSum)) break;
 
         while (isInputSumLarger(partialUTXOSum, partialOutputsSum)) {
-            currentUTXOsBatch = removeLastItemFromCurrentBatch(currentUTXOsBatch, _txBodyInputs);
+            removeLastItemFromCurrentBatch(currentUTXOsBatch, reservedBodyInputs);
             partialUTXOSum = updateSum(null, currentUTXOsBatch);
         }
-        currentUTXOsBatch = addItemToCurrentBatch(currentUTXOsBatch, _txBodyInputs);
+        addItemToCurrentBatch(currentUTXOsBatch, reservedBodyInputs);
         partialUTXOSum = updateSum(null, currentUTXOsBatch);
 
         if (!isZero(partialOutputsSum) && isInputSumLarger(partialUTXOSum, partialOutputsSum)) {
-            let newTxBodyDetails: RewardTxBodyDetails | null = await createTxBodyDetailswithFee(currentUTXOsBatch, currentOutputsBatch, partialOutputsSum);
+            let newTxBodyDetails = await createTxBodyDetailswithFee(currentUTXOsBatch, currentOutputsBatch, partialOutputsSum);
 
             if (!isNull(newTxBodyDetails) && !isUndefined(newTxBodyDetails)) txBodyDetailsArray.push(newTxBodyDetails!);
-            
-            currentUTXOsBatch = getArrayBatch(maxUTXO, _txBodyInputs);
-            currentOutputsBatch = getArrayBatch(maxUTXO, _txBodyOutputs);
+
+            currentUTXOsBatch = getArrayBatch(maxUTXO, reservedBodyInputs);
+            currentOutputsBatch = getArrayBatch(maxUTXO, reservedBodyOutputs);
         } else break;
     }
 
@@ -596,7 +595,7 @@ const calculateConclaveFeesAsync = async (newTxBodyDetails: ConclaveTxBodyDetail
     return _result.txBody.fee().to_str();
 };
 
-const deductRewardFees = (txBodyDetailsArray: Array<RewardTxBodyDetails>)=> {
+const deductRewardFees = (txBodyDetailsArray: Array<RewardTxBodyDetails>) => {
     txBodyDetailsArray.forEach((element) => {
         let newFee = parseInt(element.fee) + 200;
         element.txOutputs.forEach((e) => {
@@ -751,7 +750,7 @@ const setConclaveTxBodyDetailsAsync = async (txBodyDetails: ConclaveTxBodyDetail
     let protocolParameter = await getLatestProtocolParametersAsync(blockfrostAPI);
     let txBuilder = getTransactionBuilder(protocolParameter);
 
-    setTxInputs(txBuilder,txBodyDetails.txInputs);
+    setTxInputs(txBuilder, txBodyDetails.txInputs);
     setConclaveTxOutputs(txBuilder, txBodyDetails.txOutputs);
 
     return txBuilder;
@@ -781,7 +780,7 @@ const signTxBody = (
 const finalizeTxBody = (
     txBody: CardanoWasm.TransactionBody,
     witnesses: CardanoWasm.TransactionWitnessSet
-    ): CardanoWasm.Transaction | null => {
+): CardanoWasm.Transaction | null => {
     try {
         const transaction = CardanoWasm.Transaction.new(txBody, witnesses);
         return transaction;
