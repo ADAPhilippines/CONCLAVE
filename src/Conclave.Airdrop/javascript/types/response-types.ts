@@ -24,17 +24,6 @@ export type TxBodyInput = {
     asset: Array<CardanoAssetResponse>
 }
 
-export type TxBodyOutput = {
-    account: string,
-    asset: CardanoAssetResponse
-}
-
-export type OutputAccount = {
-    account: string,
-    asset: CardanoAssetResponse,
-    airdropStatus: string
-}
-
 export type RewardTxBodyDetails = {
     txInputs: Array<TxBodyInput>,
     txOutputs: Array<Reward>
