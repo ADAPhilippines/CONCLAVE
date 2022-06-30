@@ -16,3 +16,10 @@ export type Reward = {
     rewardAmount: number;
     walletAddress: string;
 };
+
+export type ConclaveAmount = {
+    id: string;
+    collateralAmount: number;
+    conclaveAmount: number;
+    walletAddress: string;
+}
