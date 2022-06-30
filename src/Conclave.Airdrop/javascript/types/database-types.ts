@@ -7,6 +7,7 @@ export type DelegatorReward = {
     rewardAmount: number;
     airdropStatus: number;
     transactionHash: string;
+    walletAddress: string
 };
 
 export type Reward = {
@@ -15,3 +16,10 @@ export type Reward = {
     rewardAmount: number;
     walletAddress: string;
 };
+
+export type ConclaveAmount = {
+    id: string;
+    collateralAmount: number;
+    conclaveAmount: number;
+    walletAddress: string;
+}

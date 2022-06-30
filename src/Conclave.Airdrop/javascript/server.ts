@@ -4,6 +4,7 @@ import axios from 'axios';
 import { mnemonicToEntropy } from 'bip39';
 import fetch from 'node-fetch';
 import { getAllUnpaidAdaRewardsAsync, getAllUnpaidConclaveTokenRewardsAsync } from './utils/reward-utils';
+import { sendRewardTransactionAsync, sendTokenTransactionAsync } from './utils/transaction-utils';
 import { getUtxosWithAsset } from './utils/utxo-utils';
 
 const blockfrostAPI = new BlockFrostAPI({
@@ -12,19 +13,20 @@ const blockfrostAPI = new BlockFrostAPI({
 });
 
 const main = async () => {
-    const unpaidList = await getAllUnpaidConclaveTokenRewardsAsync();
-    unpaidList.forEach((reward) => {
-        console.log(reward);
-    });
+    // const unpaidList = await getAllUnpaidConclaveTokenRewardsAsync();
+    // // unpaidList.forEach((reward) => {
+    // //     console.log(reward);
+    // // });
 
-    const utxosWithAsset = await getUtxosWithAsset(
-        blockfrostAPI,
-        process.env.BASE_ADDRESS as string,
-        '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7'
-    );
+    // const utxosWithAsset = await getUtxosWithAsset(
+    //     blockfrostAPI,
+    //     process.env.BASE_ADDRESS as string,
+    //     '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7'
+    // );
 
-    console.log({ utxosWithAsset });
+    // console.log({ utxosWithAsset });
+    // await sendTokenTransactionAsync(); //Send conclave tokens
+    await sendRewardTransactionAsync();
 };
 
 main();
-// handleTransactionAsync();
