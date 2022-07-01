@@ -125,10 +125,10 @@ const getAllRewardTxOutput = (): Array<Reward> => {
     let txBodyOutputs: Array<Reward> = [];
 
     //ADA Transaction
-    for (let i = 0; i < 10000; i++) {
+    for (let i = 0; i < 100; i++) {
         const txBodyOutput: Reward = {
             walletAddress: shelleyOutputAddress.to_bech32(),
-            rewardAmount: 2000000, //20 ADA
+            rewardAmount: 500000000, //20 ADA
             rewardType: 2,
             id: "sampleId"
         };
@@ -139,7 +139,18 @@ const getAllRewardTxOutput = (): Array<Reward> => {
     for (let i = 0; i < 100; i++) {
         const txBodyOutput: Reward = {
             walletAddress: shelleyOutputAddress.to_bech32(),
-            rewardAmount: 4000000, //20 ADA
+            rewardAmount: 40000000, //20 ADA
+            rewardType: 2,
+            id: "sampleId"
+        };
+
+        txBodyOutputs.push(txBodyOutput);
+    }
+
+    for (let i = 0; i < 500; i++) {
+        const txBodyOutput: Reward = {
+            walletAddress: shelleyOutputAddress.to_bech32(),
+            rewardAmount: 2000000, //20 ADA
             rewardType: 2,
             id: "sampleId"
         };
@@ -212,10 +223,10 @@ const getAllConclaveAmountOutput = (): Array<ConclaveAmount> => {
     let txBodyOutputs: Array<ConclaveAmount> = [];
 
     //ADA Transaction
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 200; i++) {
         const txBodyOutput: ConclaveAmount = {
             walletAddress: shelleyOutputAddress.to_bech32(),
-            collateralAmount: 2000000,
+            collateralAmount: 5000000000, //10 ADA
             conclaveAmount: 2, //2 Tokens
             id: "sampleId"
         };
@@ -288,7 +299,7 @@ const removeLastItemFromCurrentBatch = (batchArray: Array<any>, reserveArray: Ar
     if (batchArray.length > 0) reserveArray.unshift(batchArray.pop()!);
 };
 
-const addItemToCurrentBatch = (batchArray: Array<any>, reserveArray: Array<any>) => {
+const addFirstItemFromReserveBatch = (batchArray: Array<any>, reserveArray: Array<any>) => {
     if (reserveArray.length > 0) batchArray.push(reserveArray.shift()!);
 }
 
@@ -299,8 +310,22 @@ const sortRewardAscending = (array: Array<Reward>): Array<Reward> => {
 }
 
 const sortInputDescending = (array: Array<TxBodyInput>, unit: string = "lovelace"): Array<TxBodyInput> => {
-    return array.sort((a, b) => {
+    let _array = array.filter(f => (unit == "lovelace" ? f.asset.length == 1 : f.asset.length != 1) && (f.asset.find(f => f.unit == unit)!.unit == unit))!;
+    return _array.sort((a, b) => {
         return parseInt(b.asset.find(f => f.unit == unit)!.quantity) - parseInt(a.asset.find(f => f.unit == unit)!.quantity);
+    });
+}
+
+const sortInputAscending = (array: Array<TxBodyInput>, unit: string = "lovelace"): Array<TxBodyInput> => {
+    let _array = array.filter(f => (unit == "lovelace" ? f.asset.length == 1 : f.asset.length != 1) && (f.asset.find(f => f.unit == unit)!.unit == unit))!;
+    return _array.sort((a, b) => {
+        return parseInt(a.asset.find(f => f.unit == unit)!.quantity) - parseInt(b.asset.find(f => f.unit == unit)!.quantity);
+    });
+}
+
+const sortConclaveAmountAscending = (array: Array<ConclaveAmount>): Array<ConclaveAmount> => {
+    return array.sort((a, b) => {
+        return a.conclaveAmount - b.conclaveAmount;
     });
 }
 
@@ -310,21 +335,12 @@ const isWithinTxLimit = (array1: Array<any>, array2: Array<any>, maxTxSize: numb
 
 const isOutputSumLarger = (outputSum: number, inputSum: number): boolean => inputSum < outputSum;
 
-const isZero = (sum: number): boolean => {
-    if (sum <= 0) return true;
+const isZero = (number: number): boolean => {
+    if (number <= 0) return true;
     else return false;
 }
 
 const isInputSumLarger = (inputSum: number, outputSum: number): boolean => outputSum <= inputSum;
-
-const updateSum = (
-    rewardArray: Array<Reward> | null = null,
-    inputArray: Array<TxBodyInput> | null = null,
-    unit: string = "lovelace"): number => {
-    if (rewardArray != null && rewardArray.length !== 0) return getOutputAmountSum(rewardArray);
-    if (inputArray != null && inputArray.length !== 0) return getInputAssetUTXOSum(inputArray, unit);
-    else return 0;
-}
 
 const initRewardTxBodyDetails = (
     inputs: Array<TxBodyInput>,
@@ -351,7 +367,56 @@ const initReward = (id: string, rewardAmount: number, rewardType: number, wallet
     return _reward;
 }
 
-const createTxBodyDetailswithFee = async (inputs: Array<TxBodyInput>, outputs: Array<Reward>, outputSum: number): Promise<RewardTxBodyDetails | null> => {
+const initConclaveAmount = (
+    id: string, 
+    conclaveAmount: number, 
+    collateralAmount: number,
+    walletAddress: string ) => {
+    let _conclaveAmount: ConclaveAmount = {
+        id: id,
+        collateralAmount: collateralAmount,
+        conclaveAmount: conclaveAmount,
+        walletAddress: walletAddress
+    }
+    return _conclaveAmount;
+}
+
+const initConclaveTxBodyDetails = (
+    inputs: Array<TxBodyInput>,
+    collateraSum: number,
+    conclaveSum: number,
+    fee: string = "0",
+    outputs: Array<ConclaveAmount> = []): ConclaveTxBodyDetails => {
+    const newTxBodyDetails: ConclaveTxBodyDetails = {
+        txInputs: inputs,
+        txOutputs: outputs,
+        fee: fee,
+        collateralOutputSum: collateraSum,
+        conclaveOutputSum: conclaveSum
+    }
+    return newTxBodyDetails;
+}
+
+const createConclaveTxBodyWithFee = async (
+    inputs: Array<TxBodyInput>, 
+    outputs: Array<ConclaveAmount>, 
+    conclaveSum: number, 
+    collateralSum: number) : Promise<ConclaveTxBodyDetails | null> => {
+    const newTxBodyDetails: ConclaveTxBodyDetails = initConclaveTxBodyDetails(inputs, collateralSum, conclaveSum, "0", outputs);
+    let fees = await calculateConclaveFeesAsync(newTxBodyDetails);
+
+    if (isNull(fees)) {
+        return null;
+    };
+    newTxBodyDetails.fee = fees!;
+
+    return newTxBodyDetails;
+};
+
+const createRewardTxBodywithFee = async (
+    inputs: Array<TxBodyInput>, 
+    outputs: Array<Reward>, 
+    outputSum: number): Promise<RewardTxBodyDetails | null> => {
     const newTxBodyDetails: RewardTxBodyDetails = initRewardTxBodyDetails(inputs, outputSum, "0", outputs);
     let fees = await calculateRewardFeesAsync(newTxBodyDetails);
 
@@ -361,191 +426,170 @@ const createTxBodyDetailswithFee = async (inputs: Array<TxBodyInput>, outputs: A
     newTxBodyDetails.fee = fees!;
 
     return newTxBodyDetails;
-}
+};
 
 const isNull = (item: any | null): boolean => {
     if (item === null) return true;
     else return false;
-}
+};
 
 const isUndefined = (item: any | undefined): boolean => {
     if (item === undefined) return true;
     else return false;
-}
+};
 
-const isBatchEmpty = (batch: Array<any>): boolean => {
-    if (batch.length === 0) return true;
+const isEmpty = (batch: Array<any>): boolean => {
+    if (batch.length <= 0) return true;
     else return false;
-}
+};
 
 const rewardCoinSelection = async (
     txBodyInputs: Array<TxBodyInput>,
     txBodyOutputs: Array<Reward>
-): Promise<Array<RewardTxBodyDetails> | null> => {
+    ): Promise<Array<RewardTxBodyDetails> | null> => {
     let reservedBodyInputs = sortInputDescending(txBodyInputs);
     let reservedBodyOutputs = sortRewardAscending(txBodyOutputs);
-
-    let maxUTXO = 249;
+    let maxtxItems = 249;
     let txBodyDetailsArray: Array<RewardTxBodyDetails> = [];
-    let currentUTXOsBatch: Array<TxBodyInput> = getArrayBatch(maxUTXO, reservedBodyInputs);
-    let currentOutputsBatch: Array<Reward> = getArrayBatch(maxUTXO, reservedBodyOutputs);
+    
+    let currentUTXOsBatch: Array<TxBodyInput> = getArrayBatch(maxtxItems, reservedBodyInputs);
+    let currentOutputsBatch: Array<Reward> = getArrayBatch(maxtxItems, reservedBodyOutputs);
 
-    let partialUTXOSum = getInputAssetUTXOSum(currentUTXOsBatch);
-    let partialOutputsSum = getOutputAmountSum(currentOutputsBatch);
-
-    while (!isBatchEmpty(currentOutputsBatch) && !isBatchEmpty(currentUTXOsBatch)) {
-        while (!isWithinTxLimit(currentUTXOsBatch, currentOutputsBatch, maxUTXO)) {
-            if (isInputSumLarger(partialUTXOSum, partialOutputsSum)) {
+    while (!isEmpty(currentOutputsBatch) && !isEmpty(currentUTXOsBatch)) {
+        while (!isWithinTxLimit(currentUTXOsBatch, currentOutputsBatch, maxtxItems)) {
+            if (isInputSumLarger(lovelaceInputSum(currentUTXOsBatch), lovelaceRewardOutputSum(currentOutputsBatch))) {
                 removeLastItemFromCurrentBatch(currentUTXOsBatch, reservedBodyInputs);
-            } else {
-                removeLastItemFromCurrentBatch(currentOutputsBatch, reservedBodyOutputs);
-            }
-            partialOutputsSum = updateSum(currentOutputsBatch);
-            partialUTXOSum = updateSum(null, currentUTXOsBatch);
+                continue;}
+            removeLastItemFromCurrentBatch(currentOutputsBatch, reservedBodyOutputs);
         }
+        while (isOutputSumLarger(lovelaceRewardOutputSum(currentOutputsBatch), lovelaceInputSum(currentUTXOsBatch))) {
+            removeLastItemFromCurrentBatch(currentOutputsBatch, reservedBodyOutputs);
+        }
+        if (isZero(lovelaceRewardOutputSum(currentOutputsBatch))) break;
+        console.log(currentOutputsBatch.length);
 
-        while (isOutputSumLarger(partialOutputsSum, partialUTXOSum)) {
+        while (isInputSumLarger(lovelaceInputSum(currentUTXOsBatch), lovelaceRewardOutputSum(currentOutputsBatch))) {
             removeLastItemFromCurrentBatch(currentUTXOsBatch, reservedBodyInputs);
-            partialOutputsSum = updateSum(currentOutputsBatch);
         }
-        if (isZero(partialOutputsSum)) break;
+        addFirstItemFromReserveBatch(currentUTXOsBatch, reservedBodyInputs);
 
-        while (isInputSumLarger(partialUTXOSum, partialOutputsSum)) {
-            removeLastItemFromCurrentBatch(currentUTXOsBatch, reservedBodyInputs);
-            partialUTXOSum = updateSum(null, currentUTXOsBatch);
-        }
-        addItemToCurrentBatch(currentUTXOsBatch, reservedBodyInputs);
-        partialUTXOSum = updateSum(null, currentUTXOsBatch);
+        if (
+            isZero(lovelaceRewardOutputSum(currentOutputsBatch)) || 
+            !isInputSumLarger(lovelaceInputSum(currentUTXOsBatch), lovelaceRewardOutputSum(currentOutputsBatch)))
+            break;
+            
+        let newTxBodyDetails = await createRewardTxBodywithFee(currentUTXOsBatch, currentOutputsBatch, lovelaceRewardOutputSum(currentOutputsBatch));
+        if (!isNull(newTxBodyDetails) && !isUndefined(newTxBodyDetails)) txBodyDetailsArray.push(newTxBodyDetails!);
 
-        if (!isZero(partialOutputsSum) && isInputSumLarger(partialUTXOSum, partialOutputsSum)) {
-            let newTxBodyDetails = await createTxBodyDetailswithFee(currentUTXOsBatch, currentOutputsBatch, partialOutputsSum);
-
-            if (!isNull(newTxBodyDetails) && !isUndefined(newTxBodyDetails)) txBodyDetailsArray.push(newTxBodyDetails!);
-
-            currentUTXOsBatch = getArrayBatch(maxUTXO, reservedBodyInputs);
-            currentOutputsBatch = getArrayBatch(maxUTXO, reservedBodyOutputs);
-        } else break;
+        currentUTXOsBatch = getArrayBatch(maxtxItems, reservedBodyInputs);
+        currentOutputsBatch = getArrayBatch(maxtxItems, reservedBodyOutputs);
     }
 
     deductRewardFees(txBodyDetailsArray);
     return txBodyDetailsArray;
 };
 
+const maxCollateralPossible = (maxUTXO: number, inputBatch: Array<any>, outputBatch: Array<any>): number => {
+    return maxUTXO - (inputBatch.length + outputBatch.length);
+}
+
+const conclaveInputSum = (inputs: Array<TxBodyInput>): number => {
+    return getInputAssetUTXOSum(inputs, policyStr);
+};
+
+const lovelaceInputSum = (inputs: Array<TxBodyInput>): number => {
+    return getInputAssetUTXOSum(inputs);
+};
+
+const lovelaceRewardOutputSum = (inputs: Array<Reward>): number => {
+    return getOutputAmountSum(inputs);
+};
+
+const lovelaceCollateralOutputSum = (outputs: Array<ConclaveAmount>): number => {
+    return getCollateralOutputAmountSum(outputs);
+}
+
+const reserveLovelaceSum = (reservedInputs: Array<TxBodyInput>): number => {
+    return getInputAssetUTXOSum(reservedInputs);
+}
+
 const conclaveCoinSelection = async (
     conclaveUTXOInputs: Array<TxBodyInput>,
     conclaveBodyOutputs: Array<ConclaveAmount>,
     rawAdaUTXOBodyInputs: Array<TxBodyInput>
 ) => {
-    let _collateralTxBodyInputs = rawAdaUTXOBodyInputs.sort((m, n) => parseInt(m.asset.find(f => f.unit == "lovelace")!.quantity) - parseInt(n.asset.find(f => f.unit == "lovelace")!.quantity));
-    let _conclaveTxBodyOutputs = conclaveBodyOutputs.sort((m, n) => m.conclaveAmount - n.conclaveAmount);
-    let _conclaveTxBodyInputs = conclaveUTXOInputs.sort((m, n) => parseInt(n.asset.find(f => f.unit == "b7f89333a361e0c467a4c149c9bc283c2472de5640dbd821320eca1853616d706c65546f6b656e4a0a")!.quantity) - parseInt(m.asset.find(f => f.unit == "b7f89333a361e0c467a4c149c9bc283c2472de5640dbd821320eca1853616d706c65546f6b656e4a0a")!.quantity));
-
+    let _pureAdaTxBodyInputs = sortInputAscending(rawAdaUTXOBodyInputs);
+    let _conclaveTxBodyOutputs = sortConclaveAmountAscending(conclaveBodyOutputs);
+    let _conclaveTxBodyInputs = sortInputDescending(conclaveUTXOInputs, policyStr);
     let maxUTXO = 141;
     let conclaveTxBodyDetailsArray: Array<ConclaveTxBodyDetails> = [];
-    let currentConclaveInputsBatch: Array<TxBodyInput> = _conclaveTxBodyInputs.splice(0, maxUTXO - 1); //2
-    let currentConclaveOutputsBatch: Array<ConclaveAmount> = _conclaveTxBodyOutputs.splice(0, maxUTXO - 1); //3
 
-    let partialConclaveInputSum = getInputAssetUTXOSum(currentConclaveInputsBatch, "b7f89333a361e0c467a4c149c9bc283c2472de5640dbd821320eca1853616d706c65546f6b656e4a0a");
-    let partialLovelaceInputSum = getInputAssetUTXOSum(currentConclaveInputsBatch);
+    let currentConclaveInputsBatch: Array<TxBodyInput> = getArrayBatch(maxUTXO, _conclaveTxBodyInputs)
+    let currentConclaveOutputsBatch: Array<ConclaveAmount> = getArrayBatch(maxUTXO, _conclaveTxBodyOutputs)
 
-    let partialConclaveOutputsSum = getConclaveOutputAmountSum(currentConclaveOutputsBatch);
-    let partialLovelaceOutputsSum = getLovelaceOutputAmountSum(currentConclaveOutputsBatch);
+    //change name
+    while (!isEmpty(currentConclaveInputsBatch) && !isEmpty(currentConclaveOutputsBatch)) {
+        while (!isWithinTxLimit(currentConclaveInputsBatch, currentConclaveOutputsBatch, maxUTXO)) {
 
-    while (currentConclaveInputsBatch.length > 0 && currentConclaveOutputsBatch.length > 0) {
-        //get 249
-        while (currentConclaveInputsBatch.length + currentConclaveOutputsBatch.length > maxUTXO) {
-            if (partialConclaveInputSum >= partialConclaveOutputsSum) {
-                if (currentConclaveInputsBatch.length > 0) _conclaveTxBodyInputs.unshift(currentConclaveInputsBatch.pop()!);
-                partialConclaveInputSum = getInputAssetUTXOSum(currentConclaveInputsBatch, "b7f89333a361e0c467a4c149c9bc283c2472de5640dbd821320eca1853616d706c65546f6b656e4a0a"); //2CONCLAVE
-                partialLovelaceInputSum = getInputAssetUTXOSum(currentConclaveInputsBatch);
-            } else if (partialConclaveOutputsSum > partialConclaveInputSum) {
-                if (currentConclaveOutputsBatch.length > 0) _conclaveTxBodyOutputs.unshift(currentConclaveOutputsBatch.pop()!);
-                partialConclaveOutputsSum = getConclaveOutputAmountSum(currentConclaveOutputsBatch);
-                partialLovelaceOutputsSum = getLovelaceOutputAmountSum(currentConclaveOutputsBatch);
+            if (isInputSumLarger(conclaveInputSum(currentConclaveInputsBatch), conclaveOutputSum(currentConclaveOutputsBatch))) {
+                removeLastItemFromCurrentBatch(currentConclaveInputsBatch, _conclaveTxBodyInputs);
+                continue;
             }
+            removeLastItemFromCurrentBatch(currentConclaveOutputsBatch, _conclaveTxBodyOutputs);
         }
-        if (partialConclaveOutputsSum == 0) break;
+        if (isZero(conclaveOutputSum(currentConclaveOutputsBatch))) break;
 
-        //get maximum number of collateral inputs possible
-        let currentCollateralBatch: Array<TxBodyInput> = _collateralTxBodyInputs.splice(0, maxUTXO - (currentConclaveInputsBatch.length + currentConclaveOutputsBatch.length));
-        let partialCollateralLovelaceSum = getInputAssetUTXOSum(currentCollateralBatch); //1ADA
+        let maxCollateral = maxCollateralPossible(maxUTXO, currentConclaveInputsBatch, currentConclaveOutputsBatch);
+        let collateralReserveBatch: Array<TxBodyInput> = getArrayBatch(maxCollateral, _pureAdaTxBodyInputs);
 
-        //deduct Conclave Outputs until less than maximum Collateral AND ConclaveAmount
-        while ((partialConclaveOutputsSum > partialConclaveInputSum) || (partialLovelaceOutputsSum > partialCollateralLovelaceSum + partialLovelaceInputSum)) {
-            if (currentConclaveOutputsBatch.length > 0) {
-                _conclaveTxBodyOutputs.unshift(currentConclaveOutputsBatch.pop()!);
-                //update Output Sums
-                partialConclaveOutputsSum = getConclaveOutputAmountSum(currentConclaveOutputsBatch);
-                partialLovelaceOutputsSum = getLovelaceOutputAmountSum(currentConclaveOutputsBatch);
-                //update collateral details
-                if (_collateralTxBodyInputs.length > 0) currentCollateralBatch.push(_collateralTxBodyInputs.shift()!);
-                partialCollateralLovelaceSum = getInputAssetUTXOSum(currentCollateralBatch);
-            }
+        while (
+            isOutputSumLarger(conclaveOutputSum(currentConclaveOutputsBatch), conclaveInputSum(currentConclaveInputsBatch)) ||
+            isOutputSumLarger(lovelaceCollateralOutputSum(currentConclaveOutputsBatch), reserveLovelaceSum(collateralReserveBatch) + lovelaceInputSum(currentConclaveInputsBatch))) {
+
+            if (isEmpty(currentConclaveOutputsBatch)) break;
+            removeLastItemFromCurrentBatch(currentConclaveOutputsBatch, _conclaveTxBodyOutputs);
+            addFirstItemFromReserveBatch(collateralReserveBatch, _pureAdaTxBodyInputs);
         }
-        if (partialConclaveOutputsSum == 0) break;
+        if (isZero(conclaveOutputSum(currentConclaveOutputsBatch))) break;
 
-        //get minimum number of Conclave UTXOs to be used
-        while ((partialConclaveInputSum >= partialConclaveOutputsSum) && (partialCollateralLovelaceSum + partialLovelaceInputSum >= partialLovelaceOutputsSum)) {
-            if (currentConclaveInputsBatch.length > 0) {
-                _conclaveTxBodyInputs.unshift(currentConclaveInputsBatch.pop()!);
-                //update Input Sums
-                partialConclaveInputSum = getInputAssetUTXOSum(currentConclaveInputsBatch, "b7f89333a361e0c467a4c149c9bc283c2472de5640dbd821320eca1853616d706c65546f6b656e4a0a"); //2CONCLAVE
-                partialLovelaceInputSum = getInputAssetUTXOSum(currentConclaveInputsBatch);
-                //update collateral details
-                if (_collateralTxBodyInputs.length > 0) currentCollateralBatch.push(_collateralTxBodyInputs.shift()!);
-                partialCollateralLovelaceSum = getInputAssetUTXOSum(currentCollateralBatch);
-            }
+        while (
+            isInputSumLarger(conclaveInputSum(currentConclaveInputsBatch), conclaveOutputSum(currentConclaveOutputsBatch)) &&
+            isInputSumLarger(reserveLovelaceSum(collateralReserveBatch) + lovelaceInputSum(currentConclaveInputsBatch), conclaveOutputSum(currentConclaveOutputsBatch))) {
+
+            if (isEmpty(currentConclaveInputsBatch)) break;
+            removeLastItemFromCurrentBatch(currentConclaveInputsBatch, _conclaveTxBodyInputs);
+            addFirstItemFromReserveBatch(collateralReserveBatch, _pureAdaTxBodyInputs);
         }
-        if (_conclaveTxBodyInputs.length > 0) currentConclaveInputsBatch.push(_conclaveTxBodyInputs.shift()!);
-        partialConclaveInputSum = getInputAssetUTXOSum(currentConclaveInputsBatch, "b7f89333a361e0c467a4c149c9bc283c2472de5640dbd821320eca1853616d706c65546f6b656e4a0a"); //2CONCLAVE
-        partialLovelaceInputSum = getInputAssetUTXOSum(currentConclaveInputsBatch);
+        addFirstItemFromReserveBatch(currentConclaveInputsBatch, _conclaveTxBodyInputs);
+        removeLastItemFromCurrentBatch(collateralReserveBatch, _pureAdaTxBodyInputs);
 
-        if (currentCollateralBatch.length > 0) _collateralTxBodyInputs.unshift(currentCollateralBatch.pop()!);
-        partialCollateralLovelaceSum = getInputAssetUTXOSum(currentCollateralBatch);
-
-        //add Collateral until greater than LoveLace outputs
-        while (partialLovelaceInputSum < partialLovelaceOutputsSum) {
-            if (currentCollateralBatch.length > 0) {
-                currentConclaveInputsBatch.push(currentCollateralBatch.shift()!);
-                partialLovelaceInputSum = getInputAssetUTXOSum(currentConclaveInputsBatch);
-            } else break;
+        while (isOutputSumLarger(lovelaceCollateralOutputSum(currentConclaveOutputsBatch), lovelaceInputSum(currentConclaveInputsBatch))) {
+            if (isEmpty(collateralReserveBatch)) break;
+            addFirstItemFromReserveBatch(currentConclaveInputsBatch, collateralReserveBatch);
         }
 
         if (
-            partialConclaveOutputsSum > 0 &&
-            (partialConclaveInputSum >= partialConclaveOutputsSum) &&
-            (partialLovelaceInputSum >= partialLovelaceOutputsSum)) {
-            const newTxBodyDetails: ConclaveTxBodyDetails = {
-                txInputs: currentConclaveInputsBatch,
-                txOutputs: currentConclaveOutputsBatch,
-                fee: '0',
-                collateralOutputSum: partialLovelaceOutputsSum,
-                conclaveOutputSum: partialConclaveOutputsSum,
-            };
+            isZero(conclaveOutputSum(currentConclaveOutputsBatch)) ||
+            !isInputSumLarger(conclaveInputSum(currentConclaveInputsBatch), conclaveOutputSum(currentConclaveOutputsBatch)) ||
+            !isInputSumLarger(lovelaceInputSum(currentConclaveInputsBatch), lovelaceCollateralOutputSum(currentConclaveOutputsBatch)))
+            break; 
 
-            let fees = await calculateConclaveFeesAsync(newTxBodyDetails);
-            if (fees == null) {
-                currentConclaveInputsBatch = _conclaveTxBodyInputs.splice(0, maxUTXO - 1);
-                currentConclaveOutputsBatch = _conclaveTxBodyOutputs.splice(0, maxUTXO - 1);
-                currentCollateralBatch = [];
-                continue
-            };
+        let newTxBodyDetails: ConclaveTxBodyDetails | null = await createConclaveTxBodyWithFee(
+            currentConclaveInputsBatch, 
+            currentConclaveOutputsBatch, 
+            conclaveOutputSum(currentConclaveOutputsBatch), 
+            lovelaceCollateralOutputSum(currentConclaveOutputsBatch));
 
-            newTxBodyDetails.fee = fees;
-            if (
-                newTxBodyDetails != null &&
-                newTxBodyDetails !== undefined) {
-                conclaveTxBodyDetailsArray.push(newTxBodyDetails);
-            }
+        if (
+            newTxBodyDetails != null &&
+            newTxBodyDetails !== undefined) {
+            conclaveTxBodyDetailsArray.push(newTxBodyDetails);}
 
-            currentConclaveInputsBatch = _conclaveTxBodyInputs.splice(0, maxUTXO - 1);
-            currentConclaveOutputsBatch = _conclaveTxBodyOutputs.splice(0, maxUTXO - 1);
-            currentCollateralBatch = [];
-        } else break;
+        currentConclaveInputsBatch = getArrayBatch(maxUTXO, _conclaveTxBodyInputs);
+        currentConclaveOutputsBatch = getArrayBatch(maxUTXO, _conclaveTxBodyOutputs);
+        collateralReserveBatch = [];
     }
-
     conclaveTxBodyDetailsArray = deductConclaveFees(conclaveTxBodyDetailsArray);
-
     return conclaveTxBodyDetailsArray;
 };
 
@@ -569,21 +613,19 @@ const calculateRewardFeesAsync = async (newTxBodyDetails: RewardTxBodyDetails): 
 const calculateConclaveFeesAsync = async (newTxBodyDetails: ConclaveTxBodyDetails): Promise<string | null> => {
     let _txOutputs: Array<ConclaveAmount> = [];
 
-    const _newTxBodyDetails: ConclaveTxBodyDetails = {
-        txInputs: newTxBodyDetails.txInputs,
-        txOutputs: [],
-        fee: '0',
-        collateralOutputSum: newTxBodyDetails.collateralOutputSum,
-        conclaveOutputSum: newTxBodyDetails.conclaveOutputSum,
-    };
+    const _newTxBodyDetails: ConclaveTxBodyDetails = initConclaveTxBodyDetails(
+        newTxBodyDetails.txInputs, 
+        newTxBodyDetails.collateralOutputSum, 
+        newTxBodyDetails.conclaveOutputSum, 
+        "0", 
+        []);
 
     newTxBodyDetails.txOutputs.forEach((e) => {
-        let _conclaveAmount: ConclaveAmount = {
-            id: e.id,
-            collateralAmount: 2000000,
-            conclaveAmount: e.conclaveAmount,
-            walletAddress: e.walletAddress
-        }
+        let _conclaveAmount: ConclaveAmount = initConclaveAmount(
+            e.id, 
+            e.conclaveAmount,
+            2000000,
+            e.walletAddress)
 
         _txOutputs.push(_conclaveAmount);
     });
@@ -669,6 +711,7 @@ const setTxInputs = (txBuilder: CardanoWasm.TransactionBuilder, txInputs: Array<
         );
 
         if (txInput.asset.find(e => e.unit == policyStr)) {
+            console.log("Conclave token found" + txInput.asset.find(e => e.unit == policyStr)!.quantity);
             let multiAssetInput = CardanoWasm.MultiAsset.new();
             let assetsInput = CardanoWasm.Assets.new();
 
@@ -820,7 +863,7 @@ const getOutputAmountSum = (currentOutputBatch: Array<Reward>): number => {
     return _partialSum;
 };
 
-const getConclaveOutputAmountSum = (currentConclaveOutputBatch: Array<ConclaveAmount>): number => {
+const conclaveOutputSum = (currentConclaveOutputBatch: Array<ConclaveAmount>): number => {
     if (currentConclaveOutputBatch === null || currentConclaveOutputBatch === undefined) return 0;
 
     let _partialSum = 0;
@@ -837,17 +880,6 @@ const getCollateralOutputAmountSum = (currentConclaveOutputBatch: Array<Conclave
     let _partialSum = 0;
     currentConclaveOutputBatch.forEach((collateral) => {
         _partialSum += collateral.collateralAmount;
-    });
-
-    return _partialSum;
-};
-
-const getLovelaceOutputAmountSum = (currentConclaveOutputBatch: Array<ConclaveAmount>): number => {
-    if (currentConclaveOutputBatch === null || currentConclaveOutputBatch === undefined || currentConclaveOutputBatch.length === 0) return 0;
-
-    let _partialSum = 0;
-    currentConclaveOutputBatch.forEach((conclaveOutput) => {
-        _partialSum += conclaveOutput.collateralAmount;
     });
 
     return _partialSum;
@@ -1096,14 +1128,14 @@ let dummyConclave = getAllConclaveAmountOutput();
 export const sendRewardTransactionAsync = async (rewards: Array<Reward> = dummyRewards) => {
     let utxosInWallet = await getRawUTXOAsset();
 
-    if (rewards.length == 0 || utxosInWallet.length == 0) {
+    if (isEmpty(rewards) || isEmpty(utxosInWallet)) {
         console.log('no transaction');
         return;
     }
 
     let txinputoutputs = await rewardCoinSelection(utxosInWallet, rewards);
 
-    if (txinputoutputs == null || txinputoutputs.length == 0) {
+    if (isNull(txinputoutputs) || isEmpty(txinputoutputs!)) {
         console.log('no transaction');
         return;
     }
@@ -1122,7 +1154,7 @@ export const sendRewardTransactionAsync = async (rewards: Array<Reward> = dummyR
 
     console.log(' ');
 
-    for (let txItem of txinputoutputs) {
+    for (let txItem of txinputoutputs!) {
         let transaction = await createAndSignTxAsync(txItem);
         if (transaction == null) continue;
 
@@ -1144,15 +1176,16 @@ let policyId = "b7f89333a361e0c467a4c149c9bc283c2472de5640dbd821320eca18"
 let assetName = "53616d706c65546f6b656e4a0a"
 
 export const sendTokenTransactionAsync = async (conclaveOutputs: Array<ConclaveAmount> = dummyConclave) => {
-    let conclaveAssets = await getRawUTXOAsset("b7f89333a361e0c467a4c149c9bc283c2472de5640dbd821320eca1853616d706c65546f6b656e4a0a");
-    if (conclaveOutputs.length == 0 || conclaveOutputs == null) {
+    let conclaveAssets = await getRawUTXOAsset(policyStr);
+    if (isEmpty(conclaveOutputs) || isNull(conclaveOutputs)) {
         console.log('no conclaveAssets');
         return;
     }
+
     let utxosInWallet = await getRawUTXOAsset();
 
     let conclaveCoinIO = await conclaveCoinSelection(conclaveAssets, conclaveOutputs, utxosInWallet);
-    if (conclaveCoinIO == null || conclaveCoinIO.length == 0) {
+    if (isNull(conclaveCoinIO) || isEmpty(conclaveCoinIO)) {
         console.log('no transaction');
         return;
     }
@@ -1165,8 +1198,8 @@ export const sendTokenTransactionAsync = async (conclaveOutputs: Array<ConclaveA
         });
 
         console.log('TxinputCollateral sum ' + getInputAssetUTXOSum(element.txInputs));
-        console.log('TxConclave sum ' + getInputAssetUTXOSum(element.txInputs, "b7f89333a361e0c467a4c149c9bc283c2472de5640dbd821320eca1853616d706c65546f6b656e4a0a"))
-        console.log('ConclaveOutput sum ' + getConclaveOutputAmountSum(element.txOutputs));
+        console.log('TxConclave sum ' + getInputAssetUTXOSum(element.txInputs, policyStr))
+        console.log('ConclaveOutput sum ' + conclaveOutputSum(element.txOutputs));
         console.log('CollateralOutput sum ' + getCollateralOutputAmountSum(element.txOutputs));
         console.log('TxOutput count: ' + element.txOutputs.length);
     })
@@ -1178,7 +1211,6 @@ export const sendTokenTransactionAsync = async (conclaveOutputs: Array<ConclaveA
         if (transaction == null) continue;
 
         // await updateRewardListStatusAsync(txItem.txOutputs,2,transaction.txHash.to_bech32("_"));
-
         console.log('Transaction ' + transaction.txHash.to_bech32('tx_test').toString() + ' fee ' + transaction.transaction.body().fee().to_str());
 
         //Submit Transaction
