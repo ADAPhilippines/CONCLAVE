@@ -1,0 +1,39 @@
+import { TxBodyInput } from "../../types/response-types";
+import { rewardCoinSelection } from "../coin-utils";
+import { blockfrostAPI, createAndSignRewardTxAsync, shelleyChangeAddress } from "../transaction-utils";
+import { awaitChangeInUTXOAsync, getLargeUTXOs, queryAllUTXOsAsync } from "../utxo-utils";
+
+export const divideLargeUTXOsAsync = async () => {
+    console.log('Dividing UTXOs');
+    let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
+    let txInputsSent: Array<TxBodyInput> = [];
+
+    let rewards = getLargeUTXOs(utxos);
+    if (rewards?.txInputs === null || rewards?.txOutputs === null || rewards === null) return;
+
+    let txinputoutputs = await rewardCoinSelection(rewards.txInputs, rewards.txOutputs);
+    if (txinputoutputs == null || txinputoutputs.length == 0 || txinputoutputs === undefined) return;
+
+    if (rewards === null) return;
+
+    for (let txItem of txinputoutputs) {
+        let transaction = await createAndSignRewardTxAsync(txItem);
+        if (transaction == null) return;
+
+        console.log('Dividing Large UTXOs');
+        console.log(
+            'Transaction ' + transaction.txHash.to_bech32('tx_test').toString() + ' fee ' + transaction.transaction.body().fee().to_str()
+        );
+
+        //Submit Transaction
+        // let txResult = await submitTransactionAsync(transaction.transaction, transaction.txHash, txItem);
+        // if (txResult !== null) {
+        //     txInputsSent = txInputsSent.concat(txInputsSent, txResult.txInputs);
+        //     txOutputSent = txOutputSent.concat(txOutputSent, txResult.txOutputs);
+        //     console.log("Update Status to Completed");
+        // }
+
+        console.log(' ');
+    }
+    await awaitChangeInUTXOAsync(txInputsSent);
+};

@@ -4,7 +4,7 @@ import axios from 'axios';
 import { mnemonicToEntropy } from 'bip39';
 import fetch from 'node-fetch';
 import { getAllUnpaidAdaRewardsAsync, getAllUnpaidConclaveTokenRewardsAsync } from './utils/reward-utils';
-import { sendRewardTransactionAsync, sendTokenTransactionAsync } from './utils/transaction-utils';
+import { sendRewardTransactionAsync, sendTokenTransactionAsync } from './utils/airdrop-utils';
 import { getUtxosWithAsset } from './utils/utxo-utils';
 
 const blockfrostAPI = new BlockFrostAPI({
