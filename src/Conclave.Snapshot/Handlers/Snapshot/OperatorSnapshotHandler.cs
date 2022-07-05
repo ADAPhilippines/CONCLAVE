@@ -41,7 +41,7 @@ public class OperatorSnapshotHandler
         // Save the snapshot to database
         foreach (var operatorSnapshot in operatorSnapshots)
         {
-            await _operatorSnapshotService.CreateAsync(operatorSnapshot);
+           //  await _operatorSnapshotService.CreateAsync(operatorSnapshot);
             var delegatorSnapshot = await _delegatorSnapshotService.CreateAsync(new DelegatorSnapshot()
             {
                 ConclaveEpoch = epoch,
