@@ -6,5 +6,6 @@ public interface IConclaveOwnerRewardService : IRepository<ConclaveOwnerReward, 
 {
     IEnumerable<ConclaveOwnerReward>? GetAllByEpochNumber(ulong epochNumber);
     IEnumerable<ConclaveOwnerReward>? GetAllByStakeAddress(string stakeAddress);
+    PendingReward GetPendingRewardsAsync(string stakeAddress);
     ConclaveOwnerReward? GetByStakeAddressAndEpochNumber(string stakeAddress, ulong epochNumber);
 }

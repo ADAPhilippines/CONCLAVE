@@ -1,4 +1,5 @@
 using Conclave.Api.Interfaces;
+using Conclave.Common.Enums;
 using Conclave.Common.Models;
 using Conclave.Common.Utils;
 using Conclave.Data;
@@ -85,5 +86,28 @@ public class ConclaveOwnerRewardService : IConclaveOwnerRewardService
         await _context.SaveChangesAsync();
 
         return entity;
+    }
+
+    public PendingReward GetPendingRewardsAsync(string stakeAddress){
+        var pendingDelegatorRewards = _context.DelegatorRewards.Include(d => d.DelegatorSnapshot)
+                                                               .Where(d => d.DelegatorSnapshot.StakeAddress == stakeAddress)
+                                                               .Where(d => d.AirdropStatus == AirdropStatus.New)
+                                                               .Select(d => d.RewardAmount)
+                                                               .Sum();
+
+        var pendingNftRewards = _context.NFTRewards.Include(n => n.NFTSnapshot)
+                                                     .ThenInclude(s => s.DelegatorSnapshot)
+                                                     .Where(n => n.NFTSnapshot.DelegatorSnapshot.StakeAddress == stakeAddress)
+                                                     .Where(n => n.AirdropStatus == AirdropStatus.New)
+                                                     .Select(n => n.RewardAmount)
+                                                     .Sum();
+
+        var pendingOwnerRewards = _context.ConclaveOwnerRewards.Include(o => o.ConclaveOwnerSnapshot)
+                                                               .ThenInclude(s => s.DelegatorSnapshot)
+                                                               .Where(o => o.ConclaveOwnerSnapshot.DelegatorSnapshot.StakeAddress == stakeAddress)
+                                                               .Select(o => o.RewardAmount)
+                                                               .Sum();
+
+        return new PendingReward(stakeAddress, (pendingDelegatorRewards + pendingNftRewards + pendingOwnerRewards));
     }
 }
