@@ -49,11 +49,11 @@ public class ConclaveOwnerRewardHandler
     {
         _logger.LogInformation("Executing ConclaveOwnerCalculationsAsync");
         
-        if (epoch.ConclaveOwnerSnapshotStatus != SnapshotStatus.Completed) return;
-        if (epoch.ConclaveOwnerRewardStatus == RewardStatus.Completed) return;
+        // if (epoch.ConclaveOwnerSnapshotStatus != SnapshotStatus.Completed) return;
+        // if (epoch.ConclaveOwnerRewardStatus == RewardStatus.Completed) return;
 
         // get calculation schedule 
-        await ExecuteConclaveOwnerRewardSchedulerAsync(epoch);
+       //  await ExecuteConclaveOwnerRewardSchedulerAsync(epoch);
 
         var conclaveOwnerSnapshots = _conclaveOwnerSnapshotService.GetAllByEpochNumber(epoch.EpochNumber);
 
@@ -63,8 +63,9 @@ public class ConclaveOwnerRewardHandler
         await _epochService.UpdateAsync(epoch.Id, epoch);
 
         // get total reward for this epoch
-        var stakeAddresses = _operatorSnapshotService.GetAllByEpochNumber(epoch.EpochNumber)?.Select(e => e.StakeAddress).ToList() ?? new List<string>();
-        var totalPoolOwnerReward = await CalculateTotalPoolOwnerReward(stakeAddresses, epoch);
+        // var stakeAddresses = _operatorSnapshotService.GetAllByEpochNumber(epoch.EpochNumber)?.Select(e => e.StakeAddress).ToList() ?? new List<string>();
+        // var totalPoolOwnerReward = await CalculateTotalPoolOwnerReward(stakeAddresses, epoch);
+        var totalPoolOwnerReward = 10000;
 
         var conclaveOwnerRewards = _rewardService.CalculateConclaveOwnerRewardsAsync(
             conclaveOwnerSnapshots, totalPoolOwnerReward * (_rewardOptions.Value.ConclaveOwnerRewardSharePercentage / 100.0));
