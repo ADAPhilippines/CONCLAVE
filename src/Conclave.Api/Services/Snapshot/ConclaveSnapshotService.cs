@@ -16,10 +16,12 @@ namespace Conclave.Api.Services;
 public class ConclaveSnapshotService : IConclaveSnapshotService
 {
     private readonly IConclaveCardanoService _service;
+    private readonly IConclaveOwnerRewardService _ownerRewardService;
 
-    public ConclaveSnapshotService(IConclaveCardanoService service)
+    public ConclaveSnapshotService(IConclaveCardanoService service, IConclaveOwnerRewardService ownerRewardService)
     {
         _service = service;
+        _ownerRewardService = ownerRewardService;
     }
 
     public async Task<ConclaveOwnerSnapshot?> SnapshotConclaveOwner(DelegatorSnapshot delegatorSnapshot,
@@ -27,19 +29,20 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
                                                                     ConclaveEpoch epoch)
     {
         var assets = await _service.GetAssetDetailsForStakeAddress(delegatorSnapshot.StakeAddress, policyId);
+        var pendingReward = _ownerRewardService.GetPendingRewardsAsync(delegatorSnapshot.StakeAddress);
 
-        if (assets is null) return null;
+        var walletAssetAmount = assets?.FirstOrDefault()?.Quantity ?? 0;
+        var pendingAssetAmount = pendingReward.Amount;
 
-        var conclaveOwner = assets.FirstOrDefault();
+        var totalAssetAmount = walletAssetAmount + pendingAssetAmount;
 
-        if (conclaveOwner is null) return null;
-        if (conclaveOwner.Quantity == 0) return null;
+        if (totalAssetAmount <= 0) return null;
 
         return new ConclaveOwnerSnapshot
         {
             ConclaveEpoch = epoch,
             DelegatorSnapshot = delegatorSnapshot,
-            Quantity = (ulong)conclaveOwner.Quantity
+            Quantity = totalAssetAmount
         };
     }
 
