@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Threading.Tasks;
 using Conclave.Api.Interfaces;
 using Conclave.Api.Options;
 using Conclave.Common.Enums;
@@ -46,7 +48,7 @@ public class ConclaveOwnerSnapshotHandler
         }
 
         // Snapshot current conclave owners for all the conclave pools
-        var conclaveOwnerSnapshots = await SnapshotInParallelAsync(_options.Value.ConclaveAddress, delegators, epoch);
+        var conclaveOwnerSnapshots = await Snapshot(_options.Value.ConclaveAddress, delegators, epoch);
 
         // Save the snapshot to database
         foreach (var conclaveOwnerSnapshot in conclaveOwnerSnapshots) await _conclaveOwnerSnapshotService.CreateAsync(conclaveOwnerSnapshot);
@@ -54,6 +56,10 @@ public class ConclaveOwnerSnapshotHandler
         // Update status to Completed
         epoch.ConclaveOwnerSnapshotStatus = SnapshotStatus.Completed;
         await _epochsService.UpdateAsync(epoch.Id, epoch);
+    }
+
+    private async Task<IEnumerable<ConclaveOwnerSnapshot>> Snapshot(string conclavePolicyId,IEnumerable<DelegatorSnapshot> delegators, ConclaveEpoch epoch){
+        return await _snapshotService.SnapshotConclaveOwnersAsync(conclavePolicyId, delegators, epoch);
     }
 
 
