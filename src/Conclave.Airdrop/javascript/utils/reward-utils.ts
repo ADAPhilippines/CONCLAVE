@@ -37,7 +37,7 @@ export const updateRewardListStatusAsync = async (rewards: Reward[], airdropStat
 
 const getUnpaidRewardAsync = async (table: string) => {
     const params = {
-        query: `SELECT d."Id", d."DelegatorSnapshotId", d."RewardAmount", s."WalletAddress" 
+        query: `SELECT d."Id", d."DelegatorSnapshotId", d."RewardAmount", s."WalletAddress", s."StakeAddress"
         FROM ${
             table === 'DelegatorRewards'
                 ? `"${table}"`
@@ -62,7 +62,7 @@ const getUnpaidRewardAsync = async (table: string) => {
         INNER JOIN ${
             table === 'DelegatorRewards'
                 ? `"${'DelegatorSnapshots'}"`
-                : `(SELECT x."DelegatorSnapshotId", xd."Id", xd."WalletAddress" FROM ${
+                : `(SELECT x."DelegatorSnapshotId", xd."Id", xd."WalletAddress", xd."StakeAddress" FROM ${
                       table === 'NFTRewards'
                           ? `"${'NFTSnapshots'}"`
                           : table === 'OperatorRewards'
@@ -86,6 +86,7 @@ const mapToReward = (rewards: QueryResult<any>, rewardType: number): Reward[] =>
             rewardType: rewardType,
             rewardAmount: reward.RewardAmount,
             walletAddress: reward.WalletAddress,
+            stakeAddress: reward.StakeAddress
         });
     });
 
