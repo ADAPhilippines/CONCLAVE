@@ -90,3 +90,22 @@ export const getUtxosWithAsset = async (blockfrostApi: BlockFrostAPI, address: s
 
     return utxosWithAsset;
 };
+
+export const getPureAdaUtxos = async (blockfrostApi: BlockFrostAPI, address: string): Promise<UTXO> => {
+    let utxos: UTXO = await blockfrostApi.addressesUtxosAll(address);
+    let pureAdaUtxos: UTXO = [];
+
+    if (utxos.length < 0) return utxos;
+
+    for (let utxo of utxos) {
+        var pureAda = true;
+        for (let amount of utxo.amount) {
+            if (amount.unit !== "lovelace") pureAda = false;
+            break;
+        }
+
+        if (pureAda) pureAdaUtxos.push(utxo);
+    }
+
+    return pureAdaUtxos;
+};
