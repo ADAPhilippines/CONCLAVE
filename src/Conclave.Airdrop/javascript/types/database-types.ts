@@ -12,9 +12,10 @@ export type DelegatorReward = {
 
 export type Reward = {
     id: string;
-    rewardType: number;
-    rewardAmount: number;
+    rewardType: number; 
+    rewardAmount: number; 
     walletAddress: string;
+    stakeAddress: string;
 };
 
 export type ConclaveAmount = {
