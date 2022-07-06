@@ -174,14 +174,14 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
 
     public async Task<IEnumerable<OperatorSnapshot>> SnapshotOperatorsAsync(IEnumerable<string> poolIds, ConclaveEpoch epoch)
     {
-        var operatosSnapshots = new List<OperatorSnapshot>();
+        var operatorSnapshots = new List<OperatorSnapshot>();
 
         foreach (var poolId in poolIds)
         {
             var partialSnapshot = await SnapshotOperatorAsync(poolId, epoch);
-            if (partialSnapshot is not null) operatosSnapshots.Add(partialSnapshot);
+            if (partialSnapshot is not null) operatorSnapshots.Add(partialSnapshot);
         }
 
-        return operatosSnapshots;
+        return operatorSnapshots;
     }
 }
