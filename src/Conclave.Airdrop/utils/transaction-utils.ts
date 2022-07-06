@@ -176,7 +176,8 @@ const getAllRewardTxOutput = (): Array<Reward> => {
             walletAddress: shelleyOutputAddress.to_bech32(),
             rewardAmount: 2000000, //20 ADA
             rewardType: 2,
-            id: "sampleId"
+            id: "sampleId",
+            stakeAddress: ""
         };
 
         txBodyOutputs.push(txBodyOutput);
@@ -187,7 +188,8 @@ const getAllRewardTxOutput = (): Array<Reward> => {
             walletAddress: shelleyOutputAddress.to_bech32(),
             rewardAmount: 4000000, //20 ADA
             rewardType: 2,
-            id: "sampleId"
+            id: "sampleId",
+            stakeAddress: ""
         };
 
         txBodyOutputs.push(txBodyOutput);
@@ -544,7 +546,8 @@ const calculateRewardFeesAsync = async (newTxBodyDetails: RewardTxBodyDetails): 
             id: e.id,
             rewardAmount: 1000000,
             rewardType: e.rewardType,
-            walletAddress: e.walletAddress
+            walletAddress: e.walletAddress,
+            stakeAddress: ""
         }
 
         _txOutputs.push(_reward);
@@ -946,7 +949,8 @@ const getLargeUTXOs = (utxos: UTXO): {
             id: "string",
             rewardType: 1,
             rewardAmount: divider,
-            walletAddress: shelleyChangeAddress.to_bech32.toString()
+            walletAddress: shelleyChangeAddress.to_bech32.toString(),
+            stakeAddress: ""
         };
 
         txBodyOutputs.push(reward);
@@ -956,7 +960,8 @@ const getLargeUTXOs = (utxos: UTXO): {
         id: "string",
         rewardType: 1,
         rewardAmount: remainder,
-        walletAddress: shelleyChangeAddress.to_bech32.toString()
+        walletAddress: shelleyChangeAddress.to_bech32.toString(),
+        stakeAddress: ""
     };
 
     txBodyOutputs.push(reward);
@@ -1001,7 +1006,8 @@ const getSmallUTXOs = (utxos: UTXO): {
         id: "string",
         rewardType: 1,
         rewardAmount: utxoSum,
-        walletAddress: shelleyChangeAddress.to_bech32.toString()
+        walletAddress: shelleyChangeAddress.to_bech32.toString(),
+        stakeAddress: ""
     };
 
     txBodyOutputs.push(reward);

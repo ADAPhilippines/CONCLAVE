@@ -23,26 +23,40 @@ const main = async () => {
     var rewardsGroupedByStakeAddress: PendingReward[] = groupRewards(pendingConclaveTokenRewards, pendingAdaRewards);
     var eligibleRewards: PendingReward[] = filterRewards(rewardsGroupedByStakeAddress);
 
-
+    console.log({pendingConclaveTokenRewards, pendingAdaRewards, rewardsGroupedByStakeAddress, eligibleRewards});
     
     while (true) {
         // get all utxos
         var utxosWithAsset: UTXO = await getUtxosWithAsset(blockfrostAPI, process.env.BASE_ADDRESS as string, process.env.CONCLAVE_UNIT_ID as string);
         var pureAdaUtxos: UTXO = await getPureAdaUtxos(blockfrostAPI, process.env.BASE_ADDRESS as string);
 
-        // total amount of assets
-        var totalAda: number = utxosWithAsset.map(x => Number(x.amount.find(u => u.unit === "lovelace")?.quantity)).reduce((acc, val) => acc + val) + pureAdaUtxos.map(u => Number(u.amount.find(x => x.unit === "lovelace")?.quantity)).reduce((acc, val) => acc + val);
-        var totalConclaveTokenRewards: number = utxosWithAsset.map(x => Number(x.amount.find(u => u.unit === process.env.CONCLAVE_UNIT_ID as string)?.quantity)).reduce((acc, val) => acc + val);
+        console.log({utxosWithAsset, pureAdaUtxos});
 
+        // total amount of assets
+        var totalAda: number = utxosWithAsset.map(x => Number(x.amount.find(u => u.unit === "lovelace")?.quantity)).reduce((acc, val) => acc + val) 
+            + pureAdaUtxos.map(u => Number(u.amount.find(x => x.unit === "lovelace")?.quantity)).reduce((acc, val) => acc + val);
+        var totalConclaveTokens: number = utxosWithAsset.map(x => Number(x.amount.find(u => u.unit === process.env.CONCLAVE_UNIT_ID as string)?.quantity)).reduce((acc, val) => acc + val);
+
+        console.log({totalAda, totalConclaveTokens})
         // build transaction
         var currentEpoch = await getCurrentEpochsAsync(blockfrostAPI);
         var transactionParams = await getLatestProtocolParametersAsync(blockfrostAPI);
         var transacionBuilder = getTransactionBuilder(transactionParams);
+
+        // holds rewards included in the transaction
         var includedEligibleRewards: PendingReward[] = [];
 
+        // TODO: tx outputs
         for (var eligibleReward of eligibleRewards) {
-            // put transaction in the transaction builder
-        }
+            // add in the transaction builder until max output is reached
+        }    
+        
+        // TODO: tx inputs to cover rewards set 
+
+        // TODO: send transaction 
+
+        // TODO: update reward status of rewards included in the transaction
+        
     }
 };
 

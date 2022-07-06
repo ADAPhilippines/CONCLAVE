@@ -33,9 +33,10 @@ export const updateRewardListStatusAsync = async (rewards: Reward[], airdropStat
     }
 };
 
-//
+// Helpers
 
 const getUnpaidRewardAsync = async (table: string) => {
+    // convert to api
     const params = {
         query: `SELECT d."Id", d."DelegatorSnapshotId", d."RewardAmount", s."WalletAddress", s."StakeAddress"
         FROM ${
