@@ -1,4 +1,5 @@
 using Conclave.Api.Interfaces;
+using Conclave.Common.Enums;
 using Conclave.Common.Models;
 using Conclave.Common.Utils;
 using Conclave.Data;
@@ -37,6 +38,14 @@ public class NFTRewardService : INFTRewardService
     public IEnumerable<NFTReward>? GetAll()
     {
         return _context.NFTRewards.ToList();
+    }
+
+    public IEnumerable<NFTReward>? GetAllByAirdropStatus(AirdropStatus status)
+    {
+        return _context.NFTRewards.Include(n => n.NFTSnapshot)
+                                  .ThenInclude(s => s.DelegatorSnapshot)
+                                  .Where(n => n.AirdropStatus == status)
+                                  .ToList();
     }
 
     public IEnumerable<NFTReward>? GetAllByEpochNumber(ulong epochNumber)

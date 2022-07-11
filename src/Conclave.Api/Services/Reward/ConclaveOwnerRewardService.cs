@@ -80,7 +80,7 @@ public class ConclaveOwnerRewardService : IConclaveOwnerRewardService
         var existing = _context.ConclaveOwnerRewards.Find(id);
 
         if (existing is null) return null;
-       
+
         entity.DateUpdated = DateUtils.AddOffsetToUtc(DateTime.UtcNow);
         _context.Update(entity);
         await _context.SaveChangesAsync();
@@ -88,7 +88,8 @@ public class ConclaveOwnerRewardService : IConclaveOwnerRewardService
         return entity;
     }
 
-    public PendingReward GetPendingRewardsAsync(string stakeAddress){
+    public PendingReward GetPendingRewardsAsync(string stakeAddress)
+    {
         var pendingDelegatorRewards = _context.DelegatorRewards.Include(d => d.DelegatorSnapshot)
                                                                .Where(d => d.DelegatorSnapshot.StakeAddress == stakeAddress)
                                                                .Where(d => d.AirdropStatus == AirdropStatus.New)
@@ -109,5 +110,12 @@ public class ConclaveOwnerRewardService : IConclaveOwnerRewardService
                                                                .Sum();
 
         return new PendingReward(stakeAddress, (pendingDelegatorRewards + pendingNftRewards + pendingOwnerRewards));
+    }
+
+    public IEnumerable<ConclaveOwnerReward>? GetAllByAirdropStatus(AirdropStatus status)
+    {
+        return _context.ConclaveOwnerRewards.Include(c => c.ConclaveOwnerSnapshot)
+                                            .Where(c => c.AirdropStatus == status)
+                                            .ToList();
     }
 }

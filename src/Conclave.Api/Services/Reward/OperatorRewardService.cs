@@ -1,4 +1,5 @@
 using Conclave.Api.Interfaces;
+using Conclave.Common.Enums;
 using Conclave.Common.Models;
 using Conclave.Common.Utils;
 using Conclave.Data;
@@ -37,6 +38,13 @@ public class OperatorRewardService : IOperatorRewardService
     public IEnumerable<OperatorReward>? GetAll()
     {
         return _context.OperatorRewards.ToList();
+    }
+
+    public IEnumerable<OperatorReward>? GetAllByAirdropStatus(AirdropStatus status)
+    {
+        return _context.OperatorRewards.Include(o => o.OperatorSnapshot)
+                                       .Where(o => o.AirdropStatus == status)
+                                       .ToList();
     }
 
     public IEnumerable<OperatorReward>? GetAllByEpochNumber(ulong epochNumber)

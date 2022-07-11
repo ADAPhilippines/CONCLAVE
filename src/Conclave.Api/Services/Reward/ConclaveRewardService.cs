@@ -1,4 +1,5 @@
 using Conclave.Api.Interfaces;
+using Conclave.Common.Enums;
 using Conclave.Common.Models;
 using Conclave.Common.Utils;
 using Microsoft.Extensions.Options;
@@ -9,10 +10,22 @@ public class ConclaveRewardService : IConclaveRewardService
 {
 
     private readonly ConclaveDistributionParameters _options;
+    private readonly IDelegatorRewardService _delegatorRewardService;
+    private readonly INFTRewardService _nftRewardService;
+    private readonly IOperatorRewardService _opeartorRewardService;
+    private readonly IConclaveOwnerRewardService _conclaveOwnerRewardService;
 
-    public ConclaveRewardService(IOptions<ConclaveDistributionParameters> options)
+    public ConclaveRewardService(IOptions<ConclaveDistributionParameters> options,
+                                 IDelegatorRewardService delegatorRewardService,
+                                 INFTRewardService nftRewardService,
+                                 IOperatorRewardService operatorRewardService,
+                                 IConclaveOwnerRewardService conclaveOwnerRewardService)
     {
         _options = options.Value;
+        _delegatorRewardService = delegatorRewardService;
+        _nftRewardService = nftRewardService;
+        _opeartorRewardService = operatorRewardService;
+        _conclaveOwnerRewardService = conclaveOwnerRewardService;
     }
 
 
@@ -121,5 +134,52 @@ public class ConclaveRewardService : IConclaveRewardService
         var satRate = (double)_options.SaturationRate;
 
         return delta * Math.Pow(satRate, epochNumber - 1) + satAmount;
+    }
+
+    public IEnumerable<Reward> GetAllUnpaidRewards()
+    {
+        var unpaidRewards = new List<Reward>();
+        var delegatorRewards = _delegatorRewardService.GetAllByAirdropStatus(AirdropStatus.New) ?? new List<DelegatorReward>();
+        var nftRewards = _nftRewardService.GetAllByAirdropStatus(AirdropStatus.New) ?? new List<NFTReward>();
+        var operatorRewards = _opeartorRewardService.GetAllByAirdropStatus(AirdropStatus.New) ?? new List<OperatorReward>();
+        var conclaveOwnerRewards = _conclaveOwnerRewardService.GetAllByAirdropStatus(AirdropStatus.New) ?? new List<ConclaveOwnerReward>();
+
+        foreach (var delegatorReward in delegatorRewards)
+        {
+            unpaidRewards.Add(new Reward(delegatorReward.Id,
+                                         RewardType.DelegatorReward,
+                                         delegatorReward.RewardAmount,
+                                         delegatorReward.DelegatorSnapshot.WalletAddress,
+                                         delegatorReward.DelegatorSnapshot.StakeAddress));
+        }
+
+        foreach (var nftReward in nftRewards)
+        {
+            unpaidRewards.Add(new Reward(nftReward.Id,
+                                         RewardType.NFTReward,
+                                         nftReward.RewardAmount,
+                                         nftReward.NFTSnapshot.DelegatorSnapshot.WalletAddress,
+                                         nftReward.NFTSnapshot.DelegatorSnapshot.StakeAddress));
+        }
+
+        foreach (var operatorReward in operatorRewards)
+        {
+            unpaidRewards.Add(new Reward(operatorReward.Id,
+                                         RewardType.OperatorReward,
+                                         operatorReward.RewardAmount,
+                                         operatorReward.OperatorSnapshot.WalletAddress,
+                                         operatorReward.OperatorSnapshot.StakeAddress));
+        }
+
+        foreach (var conclaveOwnerReward in conclaveOwnerRewards)
+        {
+            unpaidRewards.Add(new Reward(conclaveOwnerReward.Id,
+                                         RewardType.ConclaveOwnerReward,
+                                         conclaveOwnerReward.RewardAmount,
+                                         conclaveOwnerReward.ConclaveOwnerSnapshot.DelegatorSnapshot.WalletAddress,
+                                         conclaveOwnerReward.ConclaveOwnerSnapshot.DelegatorSnapshot.StakeAddress));
+        }
+
+        return unpaidRewards;
     }
 }
