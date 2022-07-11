@@ -12,12 +12,14 @@
   "dependencies": {
     "@blockfrost/blockfrost-js": "^4.1.0",
     "@emurgo/cardano-serialization-lib-nodejs": "^10.2.0",
+    "@types/node-fetch": "^2.6.2",
     "axiom": "^0.1.6",
     "axios": "^0.27.2",
     "i": "^0.3.7",
     "node-fetch": "^3.2.5",
     "npm": "^8.12.1",
-    "pg": "^8.7.3"
+    "pg": "^8.7.3",
+    "ts-node": "^10.8.2"
   },
   "devDependencies": {
     "@types/cbor": "^6.0.0",
