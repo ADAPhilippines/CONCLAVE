@@ -1,32 +1,61 @@
-import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
-import CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
-import axios from 'axios';
-import { mnemonicToEntropy } from 'bip39';
-import fetch from 'node-fetch';
-import { getAllUnpaidAdaRewardsAsync, getAllUnpaidConclaveTokenRewardsAsync } from './utils/reward-utils';
-import { sendRewardTransactionAsync, sendTokenTransactionAsync } from './utils/airdrop-utils';
-import { getUtxosWithAsset } from './utils/utxo-utils';
+import { blockfrostAPI } from "./config/network.config";
+import { shelleyChangeAddress } from "./config/walletKeys.config";
+import { WorkerBatch } from "./types/response-types";
+import { sendTransactionAsync } from "./utils/airdrop-utils";
+import { getWorkerBatches } from "./utils/txBody/txInput-utils";
+import { queryAllUTXOsAsync } from "./utils/utxo-utils";
 
-const blockfrostAPI = new BlockFrostAPI({
-    projectId: process.env.PROJECT_ID as string,
-    isTestnet: true,
-});
+const airdropTransaction = async () => {
+    await displayUTXOs();
+    //1 divide large utxos
+    //2 get Output Batches
+    //3 get Input Batches
+    //4 combine input output batch
+    //4 create reward transaction
+    //5 submit
+    // await divideUTXOsAsync();
+    let InputOutputBatches: Array<WorkerBatch> = await getWorkerBatches();
 
-const main = async () => {
-    // const unpaidList = await getAllUnpaidConclaveTokenRewardsAsync();
-    // // unpaidList.forEach((reward) => {
-    // //     console.log(reward);
-    // // });
+    for (let batches : Array<WorkerBatch> = InputOutputBatches.splice(0,10); batches.length > 0; batches = InputOutputBatches.splice(0,10)) {
+        if (batches.length > 0) {
+            await batchesToProcess(batches);
+        }
+    }
+}
 
-    // const utxosWithAsset = await getUtxosWithAsset(
-    //     blockfrostAPI,
-    //     process.env.BASE_ADDRESS as string,
-    //     '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7'
-    // );
+const displayUTXOs = async () => {
+    console.log("Displaying All Available utxos");
+    let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
+    let displayUTXO: Array<displayUTXO> = [];
 
-    // console.log({ utxosWithAsset });
-    // await sendTokenTransactionAsync(); //Send conclave tokens
-    await sendRewardTransactionAsync();
-};
+    utxos.forEach((utxo) => {
+        let assetArray: Array<string> = [];
+        utxo.amount.forEach((asset) => {
+            assetArray.push(asset.quantity + " " + asset.unit);
+        })
 
-main();
+        displayUTXO.push({
+            txHash: utxo.tx_hash,
+            outputIndex: utxo.output_index.toString(),
+            assets: assetArray.join(" + "),
+        });
+    });
+
+    console.table(displayUTXO);
+    console.log(" ");
+    console.log(" ");
+}
+
+type displayUTXO = {
+    txHash: string;
+    outputIndex: string;
+    assets: string;
+}
+
+airdropTransaction()
+async function batchesToProcess(batches: WorkerBatch[]) {
+    batches.forEach(async (batch, index) => {
+        sendTransactionAsync(batch.txInputs, batch.txOutputs, index);
+    });
+}
+

@@ -1,19 +1,19 @@
-import { ConclaveAmount, Reward } from "../types/database-types";
+import { policyStr } from "../config/walletKeys.config";
+import { Reward } from "../types/database-types";
 import { TxBodyInput } from "../types/response-types";
-import { policyStr } from "./transaction-utils";
 
-export const getOutputAmountSum = (currentOutputBatch: Array<Reward>): number => {
+export const getOutputLovelaceSum = (currentOutputBatch: Array<Reward>): number => {
     if (currentOutputBatch === null || currentOutputBatch === undefined) return 0;
 
     let _partialSum = 0;
     currentOutputBatch.forEach((reward) => {
-        _partialSum += reward.rewardAmount;
+        _partialSum += reward.lovelaceAmount;
     });
 
     return _partialSum;
 };
 
-export const conclaveOutputSum = (currentConclaveOutputBatch: Array<ConclaveAmount>): number => {
+export const getOutputConclaveSum = (currentConclaveOutputBatch: Array<Reward>): number => {
     if (currentConclaveOutputBatch === null || currentConclaveOutputBatch === undefined) return 0;
 
     let _partialSum = 0;
@@ -24,24 +24,14 @@ export const conclaveOutputSum = (currentConclaveOutputBatch: Array<ConclaveAmou
     return _partialSum;
 };
 
-export const getCollateralOutputAmountSum = (currentConclaveOutputBatch: Array<ConclaveAmount>): number => {
-    if (currentConclaveOutputBatch === null || currentConclaveOutputBatch === undefined || currentConclaveOutputBatch.length === 0) return 0;
-
-    let _partialSum = 0;
-    currentConclaveOutputBatch.forEach((collateral) => {
-        _partialSum += collateral.collateralAmount;
-    });
-
-    return _partialSum;
-};
-
-export const getInputAssetUTXOSum = (currentUTXOs: Array<TxBodyInput>, unit: string = "lovelace"): number => {
+export const getInputAssetUTXOSum = (currentUTXOs: Array<TxBodyInput> | null | undefined, unit: string = "lovelace"): number => {
     if (currentUTXOs === null || currentUTXOs === undefined || currentUTXOs.length === 0) return 0;
 
     let _partialSum = 0;
     currentUTXOs.forEach((utxo) => {
         if (
             utxo.asset.find(f => f.unit == unit) !== undefined &&
+            utxo.asset.find(f => f.unit == unit) !== null &&
             utxo.asset.find(f => f.unit == unit)?.quantity !== undefined &&
             utxo.asset.find(f => f.unit == unit)?.quantity !== null) {
             _partialSum += parseInt(utxo.asset.find(f => f.unit == unit)!.quantity);
@@ -51,8 +41,12 @@ export const getInputAssetUTXOSum = (currentUTXOs: Array<TxBodyInput>, unit: str
     return _partialSum;
 };
 
-export const conclaveInputSum = (inputs: Array<TxBodyInput>): number => {
+export const conclaveInputSum = (inputs: Array<TxBodyInput> | null | undefined): number => {
     return getInputAssetUTXOSum(inputs, policyStr);
+};
+
+export const conclaveOutputSum = (outputs: Array<Reward>): number => {
+    return getOutputConclaveSum(outputs);
 };
 
 export const lovelaceInputSum = (inputs: Array<TxBodyInput>): number => {
@@ -60,11 +54,11 @@ export const lovelaceInputSum = (inputs: Array<TxBodyInput>): number => {
 };
 
 export const lovelaceRewardOutputSum = (inputs: Array<Reward>): number => {
-    return getOutputAmountSum(inputs);
+    return getOutputLovelaceSum(inputs);
 };
 
-export const lovelaceCollateralOutputSum = (outputs: Array<ConclaveAmount>): number => {
-    return getCollateralOutputAmountSum(outputs);
+export const lovelaceOutputSum = (outputs: Array<Reward>): number => {
+    return getOutputLovelaceSum(outputs);
 }
 
 export const reserveLovelaceSum = (reservedInputs: Array<TxBodyInput>): number => {

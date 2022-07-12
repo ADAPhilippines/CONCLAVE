@@ -80,12 +80,13 @@ const getUnpaidRewardAsync = async (table: string) => {
 
 const mapToReward = (rewards: QueryResult<any>, rewardType: number): Reward[] => {
     const rewardList: Reward[] = [];
-    rewards.rows.forEach((reward) => {
+    rewards.rows.forEach((reward: Reward) => {
         rewardList.push({
-            id: reward.Id,
+            id: reward.id,
             rewardType: rewardType,
-            rewardAmount: reward.RewardAmount,
-            walletAddress: reward.WalletAddress,
+            lovelaceAmount: reward.lovelaceAmount,
+            conclaveAmount: reward.conclaveAmount,
+            walletAddress: reward.walletAddress,
         });
     });
 

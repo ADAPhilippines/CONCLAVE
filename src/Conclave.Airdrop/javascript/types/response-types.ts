@@ -1,13 +1,13 @@
-import { BigNum, LinearFee } from '@emurgo/cardano-serialization-lib-nodejs';
+import { LinearFee } from '@dcspark/cardano-multiplatform-lib-nodejs';
 import { Responses } from '@blockfrost/blockfrost-js';
-import { ConclaveAmount, Reward } from './database-types';
+import { Reward } from './database-types';
 
 export type UTXO = Responses['address_utxo_content'];
 
 export type CardanoAssetResponse = {
     unit: string;
     quantity: string;
-};
+}
 
 export type ProtocolParametersResponse = {
     linearFee: LinearFee;
@@ -16,11 +16,11 @@ export type ProtocolParametersResponse = {
     maxValueSize: number;
     maxTxSize: number;
     coinsPerUtxoWord: string;
-};
+}
 
 export type TxBodyInput = {
     txHash: string,
-    outputIndex: number,
+    outputIndex: string,
     asset: Array<CardanoAssetResponse>
 }
 
@@ -28,15 +28,12 @@ export type RewardTxBodyDetails = {
     txInputs: Array<TxBodyInput>,
     txOutputs: Array<Reward>
     fee: string,
-    txOutputSum: number
+    txOutputSum: number,
 }
 
-export type ConclaveTxBodyDetails = {
+export type WorkerBatch = {
     txInputs: Array<TxBodyInput>,
-    txOutputs: Array<ConclaveAmount>
-    fee: string,
-    collateralOutputSum: number,
-    conclaveOutputSum: number,
+    txOutputs: Array<Reward>
 }
 
 // const txBuilderCfg = CardanoWasm.TransactionBuilderConfigBuilder.new()
