@@ -3,31 +3,36 @@ import { queryAsync } from '../db';
 import AirdropStatus from '../enums/airdrop-status';
 import RewardType from '../enums/reward-type';
 import { Reward } from '../types/database-types';
+// import fetch from 'node-fetch';
 
 // TODO: check if total reward can cover the fees
 
-export const getAllUnpaidConclaveTokenRewardsAsync = async (): Promise<Reward[]> => {
-    const unpaidList: Reward[] = [];
-    const delegatorRewards = await getUnpaidRewardAsync('DelegatorRewards');
-    const nftRewards = await getUnpaidRewardAsync('NFTRewards');
-    const operatorReward = await getUnpaidRewardAsync('OperatorRewards');
+// export const getAllUnpaidConclaveTokenRewardsAsync = async (): Promise<Reward[]> => {
+//     const unpaidList: Reward[] = [];
+//     const delegatorRewards = await getUnpaidRewardAsync('DelegatorRewards');
+//     const nftRewards = await getUnpaidRewardAsync('NFTRewards');
+//     const operatorReward = await getUnpaidRewardAsync('OperatorRewards');
 
-    unpaidList.push(
-        ...mapToReward(delegatorRewards, RewardType.DelegatorReward),
-        ...mapToReward(nftRewards, RewardType.NFTReward),
-        ...mapToReward(operatorReward, RewardType.OperatorReward)
-    );
+//     unpaidList.push(
+//         ...mapToReward(delegatorRewards, RewardType.DelegatorReward),
+//         ...mapToReward(nftRewards, RewardType.NFTReward),
+//         ...mapToReward(operatorReward, RewardType.OperatorReward)
+//     );
 
-    return unpaidList;
-};
+//     return unpaidList;
+// };
 
-export const getAllUnpaidAdaRewardsAsync = async (): Promise<Reward[]> => {
-    const adaRewards = await getUnpaidRewardAsync('ConclaveOwnerRewards');
+// export const getAllUnpaidAdaRewardsAsync = async (): Promise<Reward[]> => {
+//     const adaRewards = await getUnpaidRewardAsync('ConclaveOwnerRewards');
 
-    return mapToReward(adaRewards, RewardType.ConclaveOwnerReward);
-};
+//     return mapToReward(adaRewards, RewardType.ConclaveOwnerReward);
+// };
 
-export const updateRewardListStatusAsync = async (rewards: Reward[], airdropStatus: number, transactionHash: string): Promise<void> => {
+export const updateRewardListStatusAsync = async (
+    rewards: Reward[],
+    airdropStatus: number,
+    transactionHash: string
+): Promise<void> => {
     for (const reward of rewards) {
         await updateRewardStatusAsync(reward, airdropStatus, transactionHash);
     }
@@ -35,91 +40,76 @@ export const updateRewardListStatusAsync = async (rewards: Reward[], airdropStat
 
 // Helpers
 
-const getUnpaidRewardAsync = async (table: string) => {
-    // convert to api
-    const params = {
-        query: `SELECT d."Id", d."DelegatorSnapshotId", d."RewardAmount", s."WalletAddress", s."StakeAddress"
-        FROM ${
-            table === 'DelegatorRewards'
-                ? `"${table}"`
-                : `(SELECT x."${
-                      table === 'NFTRewards'
-                          ? 'NFTSnapshotId'
-                          : table === 'OperatorRewards'
-                          ? 'OperatorSnapshotId'
-                          : 'ConclaveOwnerSnapshotId'
-                  }", y."DelegatorSnapshotId", x."Id", x."RewardAmount", x."AirdropStatus"
-                  FROM "${table}" as x 
-                  INNER JOIN "${
-                      table === 'NFTRewards' ? 'NFTSnapshots' : table === 'OperatorRewards' ? 'OperatorSnapshots' : 'ConclaveOwnerSnapshots'
-                  }" as y ON (x."${
-                      table === 'NFTRewards'
-                          ? 'NFTSnapshotId'
-                          : table === 'OperatorRewards'
-                          ? 'OperatorSnapshotId'
-                          : 'ConclaveOwnerSnapshotId'
-                  }" = y."Id"))`
-        } as d
-        INNER JOIN ${
-            table === 'DelegatorRewards'
-                ? `"${'DelegatorSnapshots'}"`
-                : `(SELECT x."DelegatorSnapshotId", xd."Id", xd."WalletAddress", xd."StakeAddress" FROM ${
-                      table === 'NFTRewards'
-                          ? `"${'NFTSnapshots'}"`
-                          : table === 'OperatorRewards'
-                          ? `"${'OperatorSnapshots'}"`
-                          : `"${'ConclaveOwnerSnapshots'}"`
-                  } as x INNER JOIN "DelegatorSnapshots" as xd ON (x."DelegatorSnapshotId" = xd."Id"))`
-        } as s 
-        ON (d."DelegatorSnapshotId" = s."Id") 
-        WHERE d."AirdropStatus"=$1 OR d."AirdropStatus"=$2`,
-        values: [AirdropStatus.Failed, AirdropStatus.New],
-    };
-
-    return await queryAsync(params.query, params.values);
+export const getUnpaidRewardAsync = async (): Promise<Reward[]> => {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+    var res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/reward/unpaid', {});
+    var data = await res.json();
+    return res.ok ? data : [];
 };
 
-const mapToReward = (rewards: QueryResult<any>, rewardType: number): Reward[] => {
-    const rewardList: Reward[] = [];
-    rewards.rows.forEach((reward) => {
-        rewardList.push({
-            id: reward.Id,
-            rewardType: rewardType,
-            rewardAmount: reward.RewardAmount,
-            walletAddress: reward.WalletAddress,
-            stakeAddress: reward.StakeAddress
-        });
-    });
-
-    return rewardList;
+export const updateRewardStatusAsync = async (reward: Reward, airdropStatus: number, transactionHash: string) => {
+    let updatedRewardData = await getUpdatedRewardStatus(reward, airdropStatus, transactionHash);
+    await updateRewardAsync(reward, updatedRewardData);
 };
 
-const updateRewardStatusAsync = async (reward: Reward, airdropStatus: number, transactionHash: string): Promise<QueryResult<any>> => {
-    let table = '';
-
-    const params = {
-        query: '',
-        values: [airdropStatus, transactionHash],
-    };
-
+const getUpdatedRewardStatus = async (reward: Reward, airdropStatus: number, transactionHash: string) => {
+    let res;
     switch (reward.rewardType) {
         case RewardType.DelegatorReward:
-            table = 'DelegatorRewards';
+            res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/DelegatorReward/' + reward.id);
             break;
         case RewardType.OperatorReward:
-            table = 'OperatorRewards';
+            res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/OperatorReward/' + reward.id, {});
             break;
         case RewardType.NFTReward:
-            table = 'NFTRewards';
+            res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/NFTReward/' + reward.id, {});
             break;
         case RewardType.ConclaveOwnerReward:
-            table = 'ConclaveOwnerRewards';
+            res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/ConclaveOwnerReward/' + reward.id, {});
             break;
         default:
             throw new Error('Invalid Reward Type!');
     }
+    const updatedRewardData = await res.json();
+    updatedRewardData.airdropStatus = airdropStatus;
+    updatedRewardData.transactionHash = transactionHash;
 
-    params.query = `UPDATE "${table}" SET AirdropStatus=$1, TransactionHash=$1 WHERE Id = ${reward.id}`;
+    return updatedRewardData;
+};
 
-    return await queryAsync(params.query, params.values);
+const updateRewardAsync = async (reward: Reward, updatedRewardData: any): Promise<JSON> => {
+    let res;
+    switch (reward.rewardType) {
+        case RewardType.DelegatorReward:
+            res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/DelegatorReward/' + reward.id, {
+                method: 'PUT',
+                body: JSON.stringify(updatedRewardData),
+                headers: { 'Content-Type': 'application/json' },
+            });
+            break;
+        case RewardType.OperatorReward:
+            res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/OperatorReward/' + reward.id, {
+                method: 'PUT',
+                body: JSON.stringify(updatedRewardData),
+                headers: { 'Content-Type': 'application/json' },
+            });
+            break;
+        case RewardType.NFTReward:
+            res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/NFTReward/' + reward.id, {
+                method: 'PUT',
+                body: JSON.stringify(updatedRewardData),
+                headers: { 'Content-Type': 'application/json' },
+            });
+            break;
+        case RewardType.ConclaveOwnerReward:
+            res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/ConclaveOwnerReward/' + reward.id, {
+                method: 'PUT',
+                body: JSON.stringify(updatedRewardData),
+                headers: { 'Content-Type': 'application/json' },
+            });
+            break;
+        default:
+            throw new Error('Invalid Reward Type!');
+    }
+    return await res.json();
 };

@@ -9,4 +9,5 @@ public interface IConclaveRewardService
     IEnumerable<OperatorReward> CalculateOperatorRewardsAsync(IEnumerable<OperatorSnapshot> operatorSnapshots, double totalReward);
     IEnumerable<NFTReward> CalculateNFTRewardsAsync(IEnumerable<NFTSnapshot> nftSnapshots, double totalReward);
     double CalculateTotalConclaveReward(ulong epochNumber);
+    IEnumerable<Reward> GetAllUnpaidRewards();
 }

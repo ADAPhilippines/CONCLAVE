@@ -1,3 +1,4 @@
+using Conclave.Common.Enums;
 using Conclave.Common.Models;
 
 namespace Conclave.Api.Interfaces;
@@ -8,4 +9,5 @@ public interface IConclaveOwnerRewardService : IRepository<ConclaveOwnerReward, 
     IEnumerable<ConclaveOwnerReward>? GetAllByStakeAddress(string stakeAddress);
     PendingReward GetPendingRewardsAsync(string stakeAddress);
     ConclaveOwnerReward? GetByStakeAddressAndEpochNumber(string stakeAddress, ulong epochNumber);
+    IEnumerable<ConclaveOwnerReward>? GetAllByAirdropStatus(AirdropStatus status);
 }

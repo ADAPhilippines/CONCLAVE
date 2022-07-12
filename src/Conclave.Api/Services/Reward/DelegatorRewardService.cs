@@ -1,4 +1,5 @@
 using Conclave.Api.Interfaces;
+using Conclave.Common.Enums;
 using Conclave.Common.Models;
 using Conclave.Common.Utils;
 using Conclave.Data;
@@ -85,5 +86,10 @@ public class DelegatorRewardService : IDelegatorRewardService
         await _context.SaveChangesAsync();
 
         return entity;
+    }
+
+    public IEnumerable<DelegatorReward>? GetAllByAirdropStatus(AirdropStatus status)
+    {
+        return _context.DelegatorRewards.Where(d => d.AirdropStatus == status).Include(d => d.DelegatorSnapshot).ToList();
     }
 }

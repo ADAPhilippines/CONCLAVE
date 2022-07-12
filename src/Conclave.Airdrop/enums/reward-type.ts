@@ -1,8 +1,8 @@
 const RewardType = Object.freeze({
-    DelegatorReward: 1,
-    NFTReward: 2,
-    OperatorReward: 3,
-    ConclaveOwnerReward: 4,
+    DelegatorReward: 0,
+    NFTReward: 1,
+    OperatorReward: 2,
+    ConclaveOwnerReward: 3,
 });
 
 export default RewardType;
