@@ -6,6 +6,7 @@ import { Reward } from "../../types/database-types";
 import { getOutputBatch } from "./txOutput-utils";
 import { conclaveInputSum, conclaveOutputSum, lovelaceInputSum } from "../sum-utils";
 import { assetName, policyId, policyStr, privKey } from "../../config/walletKeys.config";
+import { PendingReward } from "../../types/helper-types";
 
 export const setTxInputs = (txBuilder: CardanoWasm.TransactionBuilder, txInputs: Array<TxBodyInput>) => {
     txInputs.forEach((txInput) => {
@@ -40,7 +41,7 @@ export const setTxInputs = (txBuilder: CardanoWasm.TransactionBuilder, txInputs:
 }
 
 export const getWorkerBatches = async (): Promise<Array<WorkerBatch>> => {
-    let OutputBatches: Array<Array<Reward>> = await getOutputBatch(300);
+    let OutputBatches: Array<Array<PendingReward>> = await getOutputBatch(300);
     let utxosInWallet = await getAllUTXOsAsync();
     let inputOutputBatch: Array<WorkerBatch> = [];
     if (isNull(utxosInWallet) || isEmpty(utxosInWallet!)) return inputOutputBatch;

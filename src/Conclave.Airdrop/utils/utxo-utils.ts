@@ -8,6 +8,7 @@ import { getInputAssetUTXOSum } from './sum-utils';
 import { isNull, isZero } from './boolean-utils';
 import { blockfrostAPI } from '../config/network.config';
 import { policyStr, shelleyChangeAddress } from '../config/walletKeys.config';
+import { PendingReward } from '../types/helper-types';
 
 export const getUtxosAsync = async (blockfrostApi: BlockFrostAPI, publicAddr: string) => {
     const utxosResults = await blockfrostApi.addressesUtxosAll(publicAddr);
@@ -95,8 +96,7 @@ export const getUtxosWithAsset = async (blockfrostApi: BlockFrostAPI, address: s
     }
 
     return utxosWithAsset;
-<<<<<<< HEAD:src/Conclave.Airdrop/utils/utxo-utils.ts
-};
+}
 
 export const getPureAdaUtxos = async (blockfrostApi: BlockFrostAPI, address: string): Promise<UTXO> => {
     let utxos: UTXO = await blockfrostApi.addressesUtxosAll(address);
@@ -116,8 +116,6 @@ export const getPureAdaUtxos = async (blockfrostApi: BlockFrostAPI, address: str
 
     return pureAdaUtxos;
 };
-=======
-}
 
 export const awaitChangeInUTXOAsync = async (txHash: CardanoWasm.TransactionHash) => {
     let latestBlock = await blockfrostAPI.blocksLatest();
@@ -161,10 +159,10 @@ export const getCurrentSlot = async (txHash: CardanoWasm.TransactionHash) => {
 
 export const partitionUTXOs = (utxos: UTXO): {
     txInputs: Array<TxBodyInput>;
-    txOutputs: Array<Reward>
+    txOutputs: Array<PendingReward>
     } | null => {
     let txBodyInputs: Array<TxBodyInput> = [];
-    let txBodyOutputs: Array<Reward> = [];
+    let txBodyOutputs: Array<PendingReward> = [];
     let utxoDivider = 1;
     let conclaveDivider = 1;
 
@@ -227,23 +225,29 @@ export const partitionUTXOs = (utxos: UTXO): {
     for (let i = 0; i < utxoDivider; i++) {
         const reward: Reward = {
             id: "string",
-            rewardType: 1,
-            lovelaceAmount: 251000000,
-            conclaveAmount: v > conclaveDivider ? 0 : 10000000,
-            walletAddress: shelleyChangeAddress.to_bech32()
+            rewardType: 3,
+            rewardAmount: 251000000,
+            walletAddress: shelleyChangeAddress.to_bech32(),
+            stakeAddress: " "
         };
+
+        const pendingReward: PendingReward = {
+            stakeAddress: " ",
+            rewards: [reward],
+        }
+
         v++;
-        txBodyOutputs.push(reward);
+        txBodyOutputs.push(pendingReward);
     }
     return { txInputs: txBodyInputs, txOutputs: txBodyOutputs };
 }
 
 export const getSmallUTXOs = (utxos: UTXO): {
     txInputs: Array<TxBodyInput>;
-    txOutputs: Array<Reward>;
+    txOutputs: Array<PendingReward>;
     } | null => {
     let txBodyInputs: Array<TxBodyInput> = [];
-    let txBodyOutputs: Array<Reward> = [];
+    let txBodyOutputs: Array<PendingReward> = [];
 
     utxos.forEach((utxo) => {
         if (parseInt(utxo.amount.find(f => f.unit == "lovelace")!.quantity) < 300000000) {
@@ -273,14 +277,17 @@ export const getSmallUTXOs = (utxos: UTXO): {
 
     const reward: Reward = {
         id: "string",
-        rewardType: 1,
-        lovelaceAmount: utxoSum,
-        conclaveAmount: 0,
-        walletAddress: shelleyChangeAddress.to_bech32.toString()
+        rewardType: 3,
+        rewardAmount: utxoSum,
+        walletAddress: shelleyChangeAddress.to_bech32.toString(),
+        stakeAddress: ""
     };
 
-    txBodyOutputs.push(reward);
+    const pendingReward : PendingReward = {
+        stakeAddress: "string",
+        rewards: [reward]
+    };
+    txBodyOutputs.push(pendingReward);
 
     return { txInputs: txBodyInputs, txOutputs: txBodyOutputs };
 }
->>>>>>> 686a79743f4f707f961299ef206b83356e31fda5:src/Conclave.Airdrop/javascript/utils/utxo-utils.ts

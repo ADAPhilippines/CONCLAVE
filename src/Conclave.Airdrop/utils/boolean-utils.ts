@@ -6,6 +6,7 @@ import { createRewardTxBodyAsync, createRewardTxBodywithFee, setRewardTxBodyDeta
 import { initReward, initRewardTxBodyDetails } from "./type-utils";
 import CardanoWasm from '@dcspark/cardano-multiplatform-lib-nodejs';
 import { shelleyChangeAddress } from "../config/walletKeys.config";
+import { PendingReward } from "../types/helper-types";
 
 export const isNull = (item: any | null): boolean => {
     if (item === null) return true;
@@ -24,17 +25,26 @@ export const isEmpty = (batch: Array<any>): boolean => {
 
 export const isWithinTxSizeLimit = async (
     txInputs: Array<TxBodyInput>,
-    txOutputs: Array<Reward>,
+    txOutputs: Array<PendingReward>,
     index: number): Promise<boolean> => {
     let outputSum = lovelaceOutputSum(txOutputs);
     try {
-        let _txOutputs: Array<Reward> = [];
+        let _txOutputs: Array<PendingReward> = [];
 
         const _newTxBodyDetails: RewardTxBodyDetails = initRewardTxBodyDetails(txInputs, outputSum);
 
-        txOutputs.forEach((e) => {
-            let _reward: Reward = initReward(e.id, 2000000, e.rewardType, e.walletAddress, 1)
-            _txOutputs.push(_reward);
+        _newTxBodyDetails.txOutputs.forEach((e) => {
+            let _pendingReward : PendingReward = {
+                stakeAddress: e.stakeAddress,
+                rewards: []
+            };
+
+            e.rewards.forEach((reward) => {
+                let _reward: Reward = initReward(reward.id, 2000000, reward.rewardType, reward.walletAddress, reward.stakeAddress);
+                _pendingReward.rewards.push(_reward);
+            });
+
+            _txOutputs.push(_pendingReward);
         });
         _newTxBodyDetails.txOutputs = _txOutputs;
 

@@ -11,6 +11,7 @@ import { setRewardTxOutputs } from "./txOutput-utils";
 import { shelleyChangeAddress } from "../../config/walletKeys.config";
 import { getLatestProtocolParametersAsync } from "../../config/network.config";
 import { getTransactionBuilder } from "../../config/transaction.config";
+import { PendingReward } from "../../types/helper-types";
 
 const blockfrostAPI = new BlockFrostAPI({
     projectId: "testnet4Zo3x6oMtftyJH0X0uutC1RflLn8JtWR",
@@ -19,7 +20,7 @@ const blockfrostAPI = new BlockFrostAPI({
 
 export const createRewardTxBodywithFee = async (
     inputs: Array<TxBodyInput>,
-    outputs: Array<Reward>,
+    outputs: Array<PendingReward>,
     outputSum: number): Promise<RewardTxBodyDetails | null> => {
     const newTxBodyDetails: RewardTxBodyDetails = initRewardTxBodyDetails(inputs, outputSum, "0", outputs);
 

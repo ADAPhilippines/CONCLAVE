@@ -1,6 +1,7 @@
 import { blockfrostAPI } from "../config/network.config";
 import { policyStr, shelleyChangeAddress } from "../config/walletKeys.config";
 import { Reward } from "../types/database-types";
+import { PendingReward } from "../types/helper-types";
 import { CardanoAssetResponse, TxBodyInput } from "../types/response-types";
 import { isEmpty, isNull, isUndefined } from "./boolean-utils";
 import { coinSelectionAsync } from "./coin-utils";
@@ -67,7 +68,7 @@ export const getAllUTXOsAsync = async (): Promise<Array<TxBodyInput>> => {
     return txBodyInputs;
 }
 
-export const sendTransactionAsync = async (txInputBatch: Array<TxBodyInput>, txOutputBatch: Array<Reward>, index: number) => {
+export const sendTransactionAsync = async (txInputBatch: Array<TxBodyInput>, txOutputBatch: Array<PendingReward>, index: number) => {
     console.log("<========Creating TxBody for Worker #" + index + " ========>");
     let txInputOutputs = await coinSelectionAsync(txInputBatch, txOutputBatch, index);
     if (isNull(txInputOutputs)) return;

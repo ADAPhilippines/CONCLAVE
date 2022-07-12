@@ -1,6 +1,6 @@
 import { ProtocolParametersResponse } from "../types/response-types";
 import { getCurrentEpochsAsync, getProtocolParametersAsync } from "../utils/epoch-utils";
-import CardanoWasm, { TransactionBuilder } from '@dcspark/cardano-multiplatform-lib-nodejs';
+import CardanoWasm from '@dcspark/cardano-multiplatform-lib-nodejs';
 import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
 
 export const getLatestProtocolParametersAsync = async (blockfrostAPI: BlockFrostAPI): Promise<ProtocolParametersResponse> => {
@@ -21,6 +21,5 @@ export const getLatestProtocolParametersAsync = async (blockfrostAPI: BlockFrost
 }
 
 export const blockfrostAPI = new BlockFrostAPI({
-    projectId: "testnet1fVIuBg2VhkRVBtDsAZkudFVwSfBNDtc",
-    isTestnet: true
+    projectId: "testnet1fVIuBg2VhkRVBtDsAZkudFVwSfBNDtc"
 })

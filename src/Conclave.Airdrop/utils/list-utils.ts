@@ -1,4 +1,5 @@
 import { Reward } from "../types/database-types";
+import { PendingReward } from "../types/helper-types";
 import { TxBodyInput } from "../types/response-types";
 import { isNull, isUndefined } from "./boolean-utils";
 
@@ -10,11 +11,11 @@ export const addFirstItemFromReserveBatch = (batchArray: Array<any>, reserveArra
     if (reserveArray.length > 0) batchArray.push(reserveArray.shift()!);
 }
 
-export const sortRewardAscending = (array: Array<Reward>): Array<Reward> => {
-    return array.sort((a, b) => {
-        return a.lovelaceAmount - b.lovelaceAmount;
-    });
-}
+// export const sortRewardAscending = (array: Array<Reward>): Array<Reward> => {
+//     return array.sort((a, b) => {
+//         return a.lovelaceAmount - b.lovelaceAmount;
+//     });
+// }
 
 export const sortInputDescending = (array: Array<TxBodyInput>, unit: string = "lovelace"): Array<TxBodyInput> => {
     let _array = array.filter(f => (unit == "lovelace" ? f.asset.length == 1 : f.asset.length != 1) && (f.asset.find(f => f.unit == unit)!.unit == unit))!;
@@ -30,69 +31,98 @@ export const sortInputAscending = (array: Array<TxBodyInput>, unit: string = "lo
     });
 }
 
-export const sortConclaveAmountAscending = (array: Array<Reward>): Array<Reward> => {
-    return array.sort((a, b) => {
-        return a.conclaveAmount - b.conclaveAmount;
-    });
-}
+// export const sortConclaveAmountAscending = (array: Array<Reward>): Array<Reward> => {
+//     return array.sort((a, b) => {
+//         return a.conclaveAmount - b.conclaveAmount;
+//     });
+// }
 
 export const getArrayBatch = (batchSize: number, array: Array<any>): Array<any> => array.splice(0, batchSize - 1);
 
-export const getIdxLargestLovelaceReward = (rewards: Array<Reward>): number => {
+export const getIdxLargestLovelaceReward = (rewards: Array<PendingReward>): number => {
     var i;
     var max = rewards[0];
 
     for (i = 1; i < rewards.length; i++) {
-        if (rewards[i].lovelaceAmount > max.lovelaceAmount)
+        if (rewards[i].rewards.find(e => e.rewardType == 3)!.rewardAmount > max.rewards.find(e => e.rewardType == 3)!.rewardAmount)
             max = rewards[i];
     }
 
     return rewards.indexOf(max);
 }
 
-export const getIdxSmallestLovelaceReward = (rewards: Array<Reward>): number => {
+export const getIdxSmallestLovelaceReward = (rewards: Array<PendingReward>): number => {
     var i;
-    var min = rewards.find(reward => reward.lovelaceAmount > 0);
+    var min = rewards.find(reward => reward.rewards.find(e => e.rewardType === 3)!.rewardAmount > 0);
 
-    for (i = 1; i < rewards.length; i++) {
+    for (i = 0; i < rewards.length; i++) {
         if (
-            (rewards[i].lovelaceAmount < min!.lovelaceAmount) && 
-            (rewards[i].lovelaceAmount > 0) && 
-            (rewards[i].conclaveAmount == 0))
+            (rewards[i].rewards.find(e => e.rewardType == 3)!.rewardAmount < min!.rewards.find(e => e.rewardType == 3)!.rewardAmount) && 
+            (rewards[i].rewards.find(e => e.rewardType == 3)!.rewardAmount > 0) && 
+            (rewards[i].rewards.find(e => e.rewardType == 3)!.rewardAmount == 0))
             min = rewards[i];
     }
 
     return rewards.indexOf(min!);
 }
 
-export const getIdxLargestConclaveReward = (rewards: Array<Reward>): number | null => {
+export const getIdxLargestConclaveReward = (rewards: Array<PendingReward>): number | null => {
     var i;
-    var max = rewards[0];
+    var max = rewards.find(reward => reward.rewards.find(e => e.rewardType !== 3) !== undefined);
+    var conclaveSum = 0;
 
-    for (i = 1; i < rewards.length; i++) {
-        if (rewards[i].conclaveAmount > max.conclaveAmount)
-            max = rewards[i];
-    }
-
-    return max.conclaveAmount == 0 ? null : rewards.indexOf(max);
-}
-
-export const getIdxSmallestConclaveReward = (rewards: Array<Reward>): number | null => {
-    var i;
-    var min = rewards.find((reward) => {
-        return reward.conclaveAmount > 0;
+    if (isUndefined(max)) return null;
+    max!.rewards.filter(e => e.rewardType !== 3).forEach(reward => {
+        conclaveSum += reward.rewardAmount ?? 0;
     });
-    if (isUndefined(min)) return null;
 
-    for (i = 1; i < rewards.length; i++) {
-        if ((rewards[i].conclaveAmount < min!.conclaveAmount) && (rewards[i].conclaveAmount > 0))
-            min = rewards[i];
+    for (i = 0; i < rewards.length; i++) {
+        let newSum = 0;
+        var newMax = rewards[i].rewards.find(e => e.rewardType !== 3);
+        if (isUndefined(newMax)) continue;
+
+        rewards[i]!.rewards.filter(e => e.rewardType !== 3).forEach(reward => {
+            newSum += reward.rewardAmount ?? 0;
+        });
+
+        if (newSum > conclaveSum) {
+            conclaveSum = newSum;
+            max = rewards[i];
+        }
     }
 
-    return min!.conclaveAmount == 0 ? null : rewards.indexOf(min!);
+    return conclaveSum == 0 ? null : rewards.indexOf(max!);
 }
 
-export const removeLargestConclaveReward = (rewards: Array<Reward>): Array<Reward> => {
+export const getIdxSmallestConclaveReward = (rewards: Array<PendingReward>): number | null => {
+    var i;
+    var max = rewards.find(reward => reward.rewards.find(e => e.rewardType !== 3) !== undefined);
+    var conclaveSum = 0;
+
+    if (isUndefined(max)) return null;
+    max!.rewards.filter(e => e.rewardType !== 3).forEach(reward => {
+        conclaveSum += reward.rewardAmount ?? 0;
+    });
+
+    for (i = 0; i < rewards.length; i++) {
+        let newSum = 0;
+        var newMax = rewards[i].rewards.find(e => e.rewardType !== 3);
+        if (isUndefined(newMax)) continue;
+
+        rewards[i]!.rewards.filter(e => e.rewardType !== 3).forEach(reward => {
+            newSum += reward.rewardAmount ?? 0;
+        });
+
+        if (newSum < conclaveSum) {
+            conclaveSum = newSum;
+            max = rewards[i];
+        }
+    }
+
+    return conclaveSum == 0 ? null : rewards.indexOf(max!);
+}
+
+export const removeLargestConclaveReward = (rewards: Array<PendingReward>): Array<PendingReward> => {
     var idxMax = getIdxLargestConclaveReward(rewards);
     if (idxMax == null) return rewards;
 
@@ -100,14 +130,14 @@ export const removeLargestConclaveReward = (rewards: Array<Reward>): Array<Rewar
     return rewards;
 }
 
-export const removeLargestLovelaceReward = (rewards: Array<Reward>): Array<Reward> => {
+export const removeLargestLovelaceReward = (rewards: Array<PendingReward>): Array<PendingReward> => {
     var idxMax = getIdxLargestLovelaceReward(rewards);
 
     rewards.splice(idxMax, 1);
     return rewards;
 }
 
-export const addSmallestConclaveReward = (currentBatch: Array<Reward>, reserveBatch: Array<Reward>) => {
+export const addSmallestConclaveReward = (currentBatch: Array<PendingReward>, reserveBatch: Array<PendingReward>) => {
     var idxMin = getIdxSmallestConclaveReward(reserveBatch);
     if (isNull(idxMin)) return { currentBatch, reserveBatch };
 
@@ -117,7 +147,7 @@ export const addSmallestConclaveReward = (currentBatch: Array<Reward>, reserveBa
     return { currentBatch, reserveBatch };
 }
 
-export const addSmallestLovelaceReward = (currentBatch: Array<Reward>, reserveBatch: Array<Reward>) => {
+export const addSmallestLovelaceReward = (currentBatch: Array<PendingReward>, reserveBatch: Array<PendingReward>) => {
     var idxMin = getIdxSmallestLovelaceReward(reserveBatch);
     if (isNull(idxMin)) return { currentBatch, reserveBatch };
 

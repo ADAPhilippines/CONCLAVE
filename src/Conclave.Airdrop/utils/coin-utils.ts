@@ -1,4 +1,5 @@
 import { Reward } from "../types/database-types";
+import { PendingReward } from "../types/helper-types";
 import { RewardTxBodyDetails, TxBodyInput } from "../types/response-types";
 import { isEmpty, isInputSumLarger, isNull, isOutputSumLarger, isUndefined, isWithinTxSizeLimit, isZero } from "./boolean-utils";
 import { deductRewardFees } from "./fees-utils";
@@ -8,11 +9,11 @@ import { createRewardTxBodywithFee } from "./txBody/txBody-utils";
 
 export const coinSelectionAsync = async (
     conclaveUTXOInputs: Array<TxBodyInput>,
-    conclaveBodyOutputs: Array<Reward>,
+    conclaveBodyOutputs: Array<PendingReward>,
     index: number): Promise<RewardTxBodyDetails | null> => {
 
     let currentConclaveInputsBatch: Array<TxBodyInput> = conclaveUTXOInputs;
-    let currentConclaveOutputsBatch: Array<Reward> = [];
+    let currentConclaveOutputsBatch: Array<PendingReward> = [];
 
     let isWithinLimit = await isWithinTxSizeLimit(currentConclaveInputsBatch, currentConclaveOutputsBatch, index);
 

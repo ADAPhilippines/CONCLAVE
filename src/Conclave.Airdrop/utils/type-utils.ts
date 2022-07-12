@@ -1,11 +1,12 @@
 import { Reward } from "../types/database-types";
+import { PendingReward } from "../types/helper-types";
 import { RewardTxBodyDetails, TxBodyInput } from "../types/response-types";
 
 export const initRewardTxBodyDetails = (
     inputs: Array<TxBodyInput>,
     outputSum: number,
     fee: string = "0",
-    outputs: Array<Reward> = []): RewardTxBodyDetails => {
+    outputs: Array<PendingReward> = []): RewardTxBodyDetails => {
     const newTxBodyDetails: RewardTxBodyDetails = {
         txInputs: inputs,
         txOutputs: outputs,
@@ -20,14 +21,14 @@ export const initReward = (
     id: string, 
     rewardAmount: number, 
     rewardType: number, 
-    walletAddress: string, 
-    conclaveAmount: number) => {
+    walletAddress: string,
+    stakeAddress: string) => {
     let _reward: Reward = {
         id: id,
-        lovelaceAmount: rewardAmount,
         rewardType: rewardType,
-        conclaveAmount: conclaveAmount,
-        walletAddress: walletAddress
+        walletAddress: walletAddress,
+        rewardAmount: rewardAmount,
+        stakeAddress: stakeAddress,
     }
     return _reward;
 }
