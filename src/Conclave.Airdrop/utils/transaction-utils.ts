@@ -1,14 +1,10 @@
-import { BlockFrostAPI, BlockfrostServerError } from '@blockfrost/blockfrost-js';
+import { BlockfrostServerError } from '@blockfrost/blockfrost-js';
 import {
-    CardanoAssetResponse,
-    ConclaveTxBodyDetails,
-    OutputAccount,
     ProtocolParametersResponse,
     RewardTxBodyDetails,
-    TxBodyInput,
-    TxBodyOutput,
-    UTXO,
+    TxBodyInput
 } from '../types/response-types';
+<<<<<<< HEAD:src/Conclave.Airdrop/utils/transaction-utils.ts
 import { getCurrentEpochsAsync, getProtocolParametersAsync } from './epoch-utils';
 
 import CardanoWasm, { AssetName, Assets, BigNum, MultiAsset, ScriptHash, TransactionBuilder, TransactionOutputBuilder } from '@emurgo/cardano-serialization-lib-nodejs';
@@ -613,146 +609,25 @@ const deductConclaveFees = (txBodyDetailsArray: Array<ConclaveTxBodyDetails>): A
 };
 
 const setTTLAsync = async (): Promise<number> => {
+=======
+import CardanoWasm, { TransactionBuilder } from '@dcspark/cardano-multiplatform-lib-nodejs';
+import { fromHex, toHex } from './string-utils';
+import { createRewardTxBodyAsync } from './txBody/txBody-utils';
+import { awaitChangeInUTXOAsync, queryAllUTXOsAsync } from './utxo-utils';
+import { isNull, isUndefined } from './boolean-utils';
+import { Reward } from '../types/database-types';
+import { blockfrostAPI } from '../config/network.config';
+import { privKey, shelleyChangeAddress } from '../config/walletKeys.config';
+
+export const setTTLAsync = async (): Promise<number> => {
+>>>>>>> 686a79743f4f707f961299ef206b83356e31fda5:src/Conclave.Airdrop/javascript/utils/transaction-utils.ts
     const latestBlock = await blockfrostAPI.blocksLatest();
     const currentSlot = latestBlock.slot;
 
-    return currentSlot! + 7200;
-};
+    return currentSlot! + 20 * 20; //after 20 blocks
+}
 
-const createRewardTxBodyAsync = async (
-    txBodyDetails: RewardTxBodyDetails
-): Promise<{ txHash: CardanoWasm.TransactionHash; txBody: CardanoWasm.TransactionBody } | null> => {
-    try {
-        let txBuilder = await setRewardTxBodyDetailsAsync(txBodyDetails);
-        let ttl = await setTTLAsync();
-
-        txBuilder.set_ttl(ttl);
-        txBuilder.add_change_if_needed(shelleyChangeAddress);
-
-        const txBody = txBuilder.build();
-        const txHash = CardanoWasm.hash_transaction(txBody);
-
-        return { txHash, txBody };
-    } catch (error) {
-        console.log('Error Creating Tx Body ' + error);
-        return null;
-    }
-};
-
-const createConclaveTxBodyAsync = async (
-    txBodyDetails: ConclaveTxBodyDetails
-): Promise<{ txHash: CardanoWasm.TransactionHash; txBody: CardanoWasm.TransactionBody } | null> => {
-    try {
-        let txBuilder = await setConclaveTxBodyDetailsAsync(txBodyDetails);
-        let ttl = await setTTLAsync();
-
-        txBuilder.set_ttl(ttl);
-        txBuilder.add_change_if_needed(shelleyChangeAddress);
-
-        const txBody = txBuilder.build();
-        const txHash = CardanoWasm.hash_transaction(txBody);
-
-        return { txHash, txBody };
-    } catch (error) {
-        console.log('Error Creating Tx Body ' + error);
-        return null;
-    }
-};
-
-const setRewardTxBodyDetailsAsync = async (txBodyDetails: RewardTxBodyDetails): Promise<CardanoWasm.TransactionBuilder> => {
-    let protocolParameter = await getLatestProtocolParametersAsync(blockfrostAPI);
-    let txBuilder = getTransactionBuilder(protocolParameter);
-
-    txBodyDetails.txInputs.forEach((txInput: TxBodyInput) => {
-        txBuilder.add_key_input(
-            privKey.to_public().hash(),
-            CardanoWasm.TransactionInput.new(
-                CardanoWasm.TransactionHash.from_bytes(Buffer.from(txInput.txHash, 'hex')), // tx hash
-                txInput.outputIndex // index
-            ),
-            CardanoWasm.Value.new(CardanoWasm.BigNum.from_str(txInput.asset.find(f => f.unit == "lovelace")!.quantity))
-        );
-    });
-
-    txBodyDetails.txOutputs.forEach((txOutput: Reward) => {
-        txBuilder.add_output(
-            CardanoWasm.TransactionOutput.new(
-                CardanoWasm.Address.from_bech32(txOutput.walletAddress),
-                CardanoWasm.Value.new(CardanoWasm.BigNum.from_str(txOutput.rewardAmount.toString()))
-            )
-        );
-    });
-
-    return txBuilder;
-};
-
-const setConclaveTxBodyDetailsAsync = async (txBodyDetails: ConclaveTxBodyDetails): Promise<CardanoWasm.TransactionBuilder> => {
-    let protocolParameter = await getLatestProtocolParametersAsync(blockfrostAPI);
-    let txBuilder = getTransactionBuilder(protocolParameter);
-
-    //edit below
-    txBodyDetails.txInputs.forEach((txInput: TxBodyInput) => {
-        const inputValue = CardanoWasm.Value.new(
-            CardanoWasm.BigNum.from_str(txInput.asset.find(e => e.unit == "lovelace")!.quantity)
-        );
-
-        if (txInput.asset.find(e => e.unit == "b7f89333a361e0c467a4c149c9bc283c2472de5640dbd821320eca1853616d706c65546f6b656e4a0a"))
-        {
-            let multiAssetInput = CardanoWasm.MultiAsset.new();
-            let assetsInput = CardanoWasm.Assets.new();
-
-            assetsInput.insert(
-                CardanoWasm.AssetName.new(Buffer.from(assetName, 'hex')),
-                CardanoWasm.BigNum.from_str(txInput.asset.find(e => e.unit == "b7f89333a361e0c467a4c149c9bc283c2472de5640dbd821320eca1853616d706c65546f6b656e4a0a")!.quantity)
-            );
-            multiAssetInput.insert(
-                CardanoWasm.ScriptHash.from_bytes(Buffer.from(policyId, 'hex')),
-                assetsInput
-            );
-
-            inputValue.set_multiasset(multiAssetInput);
-        }
-
-        txBuilder.add_key_input(
-            privKey.to_public().hash(),
-            CardanoWasm.TransactionInput.new(
-                CardanoWasm.TransactionHash.from_bytes(Buffer.from(txInput.txHash, 'hex')), // tx hash
-                txInput.outputIndex // index
-            ),
-            inputValue
-        );
-    });
-
-    txBodyDetails.txOutputs.forEach((txOutput: ConclaveAmount) => {
-        const outputValue = CardanoWasm.Value.new(
-            CardanoWasm.BigNum.from_str(txOutput.collateralAmount.toString())
-        );
-        let multiAssetOutput = CardanoWasm.MultiAsset.new();
-        let assetsOutput = CardanoWasm.Assets.new();
-
-        assetsOutput.insert(
-            CardanoWasm.AssetName.new(Buffer.from(assetName, 'hex')),
-            CardanoWasm.BigNum.from_str(txOutput.conclaveAmount.toString())
-        );
-        multiAssetOutput.insert(
-            CardanoWasm.ScriptHash.from_bytes(Buffer.from(policyId, 'hex')),
-            assetsOutput
-        );
-        
-        outputValue.set_multiasset(multiAssetOutput);
-        
-        txBuilder.add_output(
-            CardanoWasm.TransactionOutput.new(
-                CardanoWasm.Address.from_bech32(txOutput.walletAddress),
-                outputValue
-            )
-        );
-    });
-
-    return txBuilder;
-};
-
-const signTxBody = (
+export const signTxBody = (
     txHash: CardanoWasm.TransactionHash,
     txBody: CardanoWasm.TransactionBody,
     signKey: CardanoWasm.PrivateKey
@@ -764,16 +639,16 @@ const signTxBody = (
         vkeyWitnesses.add(vkeyWitness);
         witnesses.set_vkeys(vkeyWitnesses);
 
-        const transaction = finalizeTxBody(txBody, witnesses);
+        const transaction = createTxBody(txBody, witnesses);
 
         return transaction;
     } catch (error) {
         console.log('Error Signing Transaction body ' + error);
         return null;
     }
-};
+}
 
-const finalizeTxBody = (
+export const createTxBody = (
     txBody: CardanoWasm.TransactionBody,
     witnesses: CardanoWasm.TransactionWitnessSet
 ): CardanoWasm.Transaction | null => {
@@ -784,11 +659,12 @@ const finalizeTxBody = (
         console.log('Error Creating Transaction body ' + error);
         return null;
     }
-};
+}
 
-const submitRewardTransactionAsync = async (
+export const submitTransactionAsync = async (
     transaction: CardanoWasm.Transaction,
     txHash: CardanoWasm.TransactionHash,
+<<<<<<< HEAD:src/Conclave.Airdrop/utils/transaction-utils.ts
     txItem: RewardTxBodyDetails): Promise<RewardTxBodyDetails | null> => {
 
     try {
@@ -1044,52 +920,42 @@ export const divideLargeUTXOsAsync = async () => {
         //     txOutputSent = txOutputSent.concat(txOutputSent, txResult.txOutputs);
         //     console.log("Update Status to Completed");
         // }
+=======
+    txItem: RewardTxBodyDetails,
+    index: number) => {
+    let randomInterval = parseInt((10000 * Math.random()).toFixed());
 
-        console.log(' ');
-    }
-    await awaitChangeInUTXOAsync(txInputsSent);
-};
+    const sendTransaction = setTimeout(async () => {
+        let submittedUTXOs: Array<TxBodyInput> = [];
+        let airdroppedAccounts: Array<Reward> = [];
+        try {
+            // const res = await blockfrostAPI.blocksLatestTxsAll();
+            const res = await blockfrostAPI.txSubmit(transaction!.to_bytes());
+            if (res) {
+                console.log(`Transaction successfully submitted for Tx ` + toHex(txHash.to_bytes()) + "of index #" + index + " at random interval " + randomInterval);
+            }
+            submittedUTXOs.push(...txItem.txInputs);
+            airdroppedAccounts.push(...txItem.txOutputs);
+            //update status in database
+            await awaitChangeInUTXOAsync(txHash);
+            clearTimeout(sendTransaction);
+        } catch (error) {
+            if (error instanceof BlockfrostServerError && error.status_code === 400) {
+                console.log(`Transaction rejected for Tx ` + toHex(txHash.to_bytes()));
+                console.log(error.message);
+            }
+            clearTimeout(sendTransaction);
+        }
+    }, randomInterval);
+}
+>>>>>>> 686a79743f4f707f961299ef206b83356e31fda5:src/Conclave.Airdrop/javascript/utils/transaction-utils.ts
 
-export const combineSmallUTXOsAsync = async () => {
-    console.log('Combining UTXOs');
-    let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
-    let txInputsSent: Array<TxBodyInput> = [];
-
-    let rewards = getSmallUTXOs(utxos);
-    if (rewards?.txInputs === null || rewards?.txOutputs === null || rewards === null) return;
-
-    let txinputoutputs = await rewardCoinSelection(rewards.txInputs, rewards.txOutputs);
-    if (txinputoutputs == null || txinputoutputs.length == 0 || txinputoutputs === undefined) return;
-
-    if (rewards === null) return;
-    
-    for (let txItem of txinputoutputs) {
-        let transaction = await createAndSignTxAsync(txItem);
-        if (transaction == null) return;
-
-        console.log('Combining Small UTXOs');
-        console.log(
-            'Transaction ' + transaction.txHash.to_bech32('tx_test').toString() + ' fee ' + transaction.transaction.body().fee().to_str()
-        );
-
-        //Submit Transaction
-        // let txResult = await submitTransactionAsync(transaction.transaction, transaction.txHash, txItem);
-        // if (txResult !== null) {
-        //     txInputsSent = txInputsSent.concat(txInputsSent, txResult.txInputs);
-        //     txOutputSent = txOutputSent.concat(txOutputSent, txResult.txOutputs);
-        // }
-
-        console.log(' ');
-    }
-    await awaitChangeInUTXOAsync(txInputsSent);
-};
-
-const createAndSignTxAsync = async (
+export const createAndSignRewardTxAsync = async (
     txBodyDetails: RewardTxBodyDetails
-    ): Promise<{
+): Promise<{
     transaction: CardanoWasm.Transaction;
     txHash: CardanoWasm.TransactionHash
-    } | null> => {
+} | null> => {
     let txBodyResult = await createRewardTxBodyAsync(txBodyDetails);
     if (txBodyResult == null) return null;
 
@@ -1097,122 +963,34 @@ const createAndSignTxAsync = async (
     if (txSigned == null) return null;
 
     return { transaction: txSigned, txHash: txBodyResult.txHash };
-};
+}
 
-const createAndSignTxConclaveAsync = async (
-    txBodyDetails: ConclaveTxBodyDetails
-    ): Promise<{
-    transaction: CardanoWasm.Transaction;
-    txHash: CardanoWasm.TransactionHash
-    } | null> => {
-    let txBodyResult = await createConclaveTxBodyAsync(txBodyDetails);
-    if (txBodyResult == null) return null;
+export const waitNumberOfBlocks = async (
+    txHash: CardanoWasm.TransactionHash,
+    maxSlot: number): Promise<void> => {
+    let randomInterval = parseInt((10000 * Math.random()).toFixed());
 
-    let txSigned = signTxBody(txBodyResult.txHash, txBodyResult.txBody, privKey);
-    if (txSigned == null) return null;
+    var checkConfirmation = setInterval(async () => {
+        let latestBlock = await blockfrostAPI.blocksLatest();
+        randomInterval = parseInt((10000 * Math.random()).toFixed());
 
-    return { transaction: txSigned, txHash: txBodyResult.txHash };
-};
+        if (!isNull(latestBlock.slot)) {
+            if (((400-(maxSlot-latestBlock.slot!))/400)*100 <= 100 && ((400-(maxSlot-latestBlock.slot!))/400)*100 >= 0) {
+                console.log("Waiting for confirmation for transaction " + toHex(txHash.to_bytes()) + ' ' + "(" + (((400-(maxSlot-latestBlock.slot!))/400)*100).toFixed(2) + '%' + ")");
+            }
+            let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
+            let commonHash = utxos.find(u => u.tx_hash === toHex(txHash.to_bytes()));
+            if (isUndefined(commonHash)) {
+                console.log("Transaction Failed");
+                clearInterval(checkConfirmation);
+                return;
+            }
 
-let dummyRewards = getAllRewardTxOutput();
-let dummyConclave = getAllConclaveAmountOutput();
-
-export const sendRewardTransactionAsync = async (rewards: Array<Reward> = dummyRewards) => {
-    let utxosInWallet = await convertRawUTXO();
-
-    if (rewards.length == 0 || utxosInWallet.length == 0) {
-        console.log('no transaction');
-        return;
-    }
-
-    let txinputoutputs = await rewardCoinSelection(utxosInWallet, rewards);
-
-    if (txinputoutputs == null || txinputoutputs.length == 0) {
-        console.log('no transaction');
-        return;
-    }
-
-    txinputoutputs?.forEach((element, index) => {
-        console.log(' ');
-        console.log('Transaction ' + index);
-        element.txInputs.forEach((e) => {
-            console.log('Txinput ' + e.txHash + ' ' + e.asset.find(f => f.unit == "lovelace")!.quantity + " " + e.asset.find(f => f.unit == "lovelace")!.unit);
-        });
-
-        console.log('Txinput sum ' + getInputAssetUTXOSum(element.txInputs));
-        console.log('Txoutput sum ' + getOutputAmountSum(element.txOutputs));
-        console.log('TxOutput count: ' + element.txOutputs.length);
-    });
-
-    console.log(' ');
-
-    for (let txItem of txinputoutputs) {
-        let transaction = await createAndSignTxAsync(txItem);
-        if (transaction == null) continue; 
-        
-        // await updateRewardListStatusAsync(txItem.txOutputs,2,transaction.txHash.to_bech32("_"));
-
-        console.log('Transaction ' + transaction.txHash.to_bech32('tx_test').toString() + ' fee ' + transaction.transaction.body().fee().to_str());
-
-        // Submit Transaction
-        // let txResult = await submitRewardTransactionAsync(transaction.transaction, transaction.txHash, txItem);
-        // if (txResult == null) {
-        //     console.log("Updating Status to Failed");
-        //     // await updateRewardListStatusAsync(txItem.txOutputs,3,transaction.txHash.to_bech32("_"));
-        // }
-        // console.log(' ');
-    }
-};
-
-
-let policyId = "b7f89333a361e0c467a4c149c9bc283c2472de5640dbd821320eca18"
-let assetName = "53616d706c65546f6b656e4a0a"
-
-export const sendTokenTransactionAsync = async (conclaveOutputs: Array<ConclaveAmount> = dummyConclave) => {
-    let conclaveAssets = await convertRawUTXOAsset();
-    if (conclaveOutputs.length == 0 || conclaveOutputs == null) {
-        console.log('no conclaveAssets');
-        return;
-    }
-    let utxosInWallet = await convertRawUTXO();
-
-    let conclaveCoinIO = await conclaveCoinSelection(conclaveAssets, conclaveOutputs, utxosInWallet);
-    if (conclaveCoinIO == null || conclaveCoinIO.length == 0) {
-        console.log('no transaction');
-        return;
-    }
-
-    conclaveCoinIO?.forEach((element, index) => {
-        console.log(' ');
-        console.log('Transaction ' + index);
-        element.txInputs.forEach((e) => {
-            console.log('Txinput ' + e.txHash + ' ' + e.asset.find(f => f.unit == "lovelace")!.quantity + " " + e.asset.find(f => f.unit == "lovelace")!.unit + " " + e.asset.find(f => f.unit == "b7f89333a361e0c467a4c149c9bc283c2472de5640dbd821320eca1853616d706c65546f6b656e4a0a")?.quantity);
-        });
-
-        console.log('TxinputCollateral sum ' + getInputAssetUTXOSum(element.txInputs));
-        console.log('TxConclave sum ' + getInputAssetUTXOSum(element.txInputs, "b7f89333a361e0c467a4c149c9bc283c2472de5640dbd821320eca1853616d706c65546f6b656e4a0a"))
-        console.log('ConclaveOutput sum ' + getConclaveOutputAmountSum(element.txOutputs));
-        console.log('CollateralOutput sum ' + getCollateralOutputAmountSum(element.txOutputs));
-        console.log('TxOutput count: ' + element.txOutputs.length);
-    })
-
-    console.log(' ');
-
-    for (let txItem of conclaveCoinIO) {
-        let transaction = await createAndSignTxConclaveAsync(txItem);
-        if (transaction == null) continue; 
-        
-        // await updateRewardListStatusAsync(txItem.txOutputs,2,transaction.txHash.to_bech32("_"));
-
-        console.log('Transaction ' + transaction.txHash.to_bech32('tx_test').toString() + ' fee ' + transaction.transaction.body().fee().to_str());
-
-        //Submit Transaction
-        // let txResult = await submitConclaveTransactionAsync(transaction.transaction, transaction.txHash, txItem);
-        // if (txResult == null) {
-        //     console.log("Updating Status to Failed");
-        //     // await updateRewardListStatusAsync(txItem.txOutputs,3,transaction.txHash.to_bech32("_"));
-        // }
-
-        // console.log(' ');
-    }
+            if (latestBlock.slot! >= maxSlot) {
+                console.log("Transaction Confirmed for " + toHex(txHash.to_bytes()));
+                clearInterval(checkConfirmation);
+                return;
+            }
+        }
+    }, 40000 + randomInterval);
 }

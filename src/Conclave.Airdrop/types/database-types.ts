@@ -1,4 +1,3 @@
-import RewardType from '../enums/reward-type';
 
 export type DelegatorReward = {
     id: string;
