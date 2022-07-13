@@ -7,16 +7,23 @@ import { shuffleArray } from '../list-utils';
 export const setRewardTxOutputs = (txBuilder: CardanoWasm.TransactionBuilder, txOutputs: Array<PendingReward>) => {
     txOutputs.forEach((txOutput: PendingReward) => {
         const outputValue = CardanoWasm.Value.new(
-            CardanoWasm.BigNum.from_str(txOutput.rewards.find(e => e.rewardType == 1)!.rewardAmount.toString())
+            CardanoWasm.BigNum.from_str(txOutput.rewards.find(e => e.rewardType == 3)!.rewardAmount.toString())
         );
         
-        if (txOutput.rewards.find(e => e.rewardType == 1) && txOutput.rewards.find(e => e.rewardType == 1)!.rewardAmount > 0) {
+        if (txOutput.rewards.find(e => e.rewardType != 3)) {
+            let conclaveSum = "";
+            let sum = 0;
+            txOutput.rewards.filter(e => e.rewardType != 3).forEach((outputReward: Reward) => {
+                sum += outputReward.rewardAmount; 
+            })
+            conclaveSum = sum.toString();
+
             let multiAssetOutput = CardanoWasm.MultiAsset.new();
             let assetsOutput = CardanoWasm.Assets.new();
 
             assetsOutput.insert(
                 CardanoWasm.AssetName.new(Buffer.from(assetName, 'hex')),
-                CardanoWasm.BigNum.from_str(txOutput.rewards.find(e => e.rewardType == 1)!.rewardAmount.toString())
+                CardanoWasm.BigNum.from_str(conclaveSum)
             );
             multiAssetOutput.insert(
                 CardanoWasm.ScriptHash.from_bytes(Buffer.from(policyId, 'hex')),
@@ -43,7 +50,7 @@ export const dummyDataOutput = (): Array<PendingReward> => {
         const reward : Reward = {
             id: 'random id1',
             walletAddress: shelleyOutputAddress.to_bech32(),
-            rewardType: 2,
+            rewardType: 3,
             rewardAmount: 2000000, //2ADA
             stakeAddress: 'random stake address' + i,
         }
@@ -60,22 +67,30 @@ export const dummyDataOutput = (): Array<PendingReward> => {
         const reward : Reward = {
             id: 'random id1',
             walletAddress: shelleyOutputAddress.to_bech32(),
-            rewardType: 2,
-            rewardAmount: 2000000, //2ADA
-            stakeAddress: 'random stake address' + i + "r",
+            rewardType: 3,
+            rewardAmount: 2000000, //1ADA
+            stakeAddress: 'random stake address 0' + i + "r",
         }
 
         const reward1 : Reward = {
-            id: 'random id1',
+            id: 'random id2',
             walletAddress: shelleyOutputAddress.to_bech32(),
             rewardType: 1,
-            rewardAmount: 2000000, //2ADA
-            stakeAddress: 'random stake address' + i + "r",
+            rewardAmount: 5, //5CONCLAVE
+            stakeAddress: 'random stake address 1' + i + "r",
+        }
+
+        const reward3 : Reward = {
+            id: 'random id3',
+            walletAddress: shelleyOutputAddress.to_bech32(),
+            rewardType: 2,
+            rewardAmount: 2, //2CONCLAVE
+            stakeAddress: 'random stake address 2' + i + "r",
         }
 
         const pendingReward : PendingReward = {
             stakeAddress: 'random id1',
-            rewards: [reward],
+            rewards: [reward , reward1, reward3],
         }
         dummyData.push(pendingReward);
     }

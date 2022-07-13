@@ -1,9 +1,9 @@
 import { BlockFrostAPI, BlockfrostServerError, Responses } from '@blockfrost/blockfrost-js';
 import CardanoWasm from '@dcspark/cardano-multiplatform-lib-nodejs';
 import { fromHex, toHex } from './string-utils';
-import { CardanoAssetResponse, TxBodyInput, UTXO } from '../types/response-types';
+import { CardanoAssetResponse, RewardTxBodyDetails, TxBodyInput, UTXO } from '../types/response-types';
 import { Reward } from '../types/database-types';
-import { waitNumberOfBlocks } from './transaction-utils';
+import { submitTransactionAsync, waitNumberOfBlocks } from './transaction-utils';
 import { getInputAssetUTXOSum } from './sum-utils';
 import { isNull, isZero } from './boolean-utils';
 import { blockfrostAPI } from '../config/network.config';
@@ -117,16 +117,22 @@ export const getPureAdaUtxos = async (blockfrostApi: BlockFrostAPI, address: str
     return pureAdaUtxos;
 };
 
-export const awaitChangeInUTXOAsync = async (txHash: CardanoWasm.TransactionHash) => {
+export const awaitChangeInUTXOAsync = async (
+    txHash: CardanoWasm.TransactionHash,
+    transaction: CardanoWasm.Transaction,
+    txItem: RewardTxBodyDetails,
+    index : number) => {
     let latestBlock = await blockfrostAPI.blocksLatest();
     let currentSlot = latestBlock.slot;
     const maxSlot = currentSlot! + 20*20;
     let randomInterval = parseInt((7000 * Math.random()).toFixed());
 
-    var CheckUTX0 = setInterval(async () => {
+    var checkUTX0 = setInterval(async () => {
         latestBlock = await blockfrostAPI.blocksLatest();
         randomInterval = parseInt((7000 * Math.random()).toFixed());
+
         console.log('Waiting for utxos to update after Submissions for txhash ' + toHex(txHash.to_bytes()) + '...');
+
         let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
         let commonHash = utxos.find(u => u.tx_hash === toHex(txHash.to_bytes()));
 
@@ -135,13 +141,14 @@ export const awaitChangeInUTXOAsync = async (txHash: CardanoWasm.TransactionHash
                 latestBlock.slot != null && 
                 latestBlock.slot <= maxSlot)) {
             await getCurrentSlot(txHash);
-            clearInterval(CheckUTX0);
+            clearInterval(checkUTX0);
         } else if (
             (latestBlock.slot != null && latestBlock.slot > maxSlot) && 
             (commonHash === undefined)) {
-            clearInterval(CheckUTX0);
+            submitTransactionAsync(transaction, txHash, txItem, index);
+            clearInterval(checkUTX0);
         }
-    }, 20000 + randomInterval);
+    }, 18000 + randomInterval);
 }
 
 export const getCurrentSlot = async (txHash: CardanoWasm.TransactionHash) => {
@@ -155,6 +162,11 @@ export const getCurrentSlot = async (txHash: CardanoWasm.TransactionHash) => {
             await waitNumberOfBlocks(txHash, latestBlock.slot! + 20*20);
             clearInterval(getSlot);} 
     }, 1000 + randomInterval);
+
+    setTimeout(() => {
+        clearInterval(getSlot);
+        //update status in database to failed
+    }, 120000);
 }
 
 export const partitionUTXOs = (utxos: UTXO): {

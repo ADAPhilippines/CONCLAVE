@@ -62,9 +62,10 @@ export const submitTransactionAsync = async (
     index: number) => {
     let randomInterval = parseInt((10000 * Math.random()).toFixed());
 
-    const sendTransaction = setTimeout(async () => {
+    const sendTransaction = setInterval(async () => {
         let submittedUTXOs: Array<TxBodyInput> = [];
         let airdroppedAccounts: Array<PendingReward> = [];
+
         try {
             // const res = await blockfrostAPI.blocksLatestTxsAll();
             const res = await blockfrostAPI.txSubmit(transaction!.to_bytes());
@@ -74,16 +75,21 @@ export const submitTransactionAsync = async (
             submittedUTXOs.push(...txItem.txInputs);
             airdroppedAccounts.push(...txItem.txOutputs);
             //update status in database
-            await awaitChangeInUTXOAsync(txHash);
+            await awaitChangeInUTXOAsync(txHash, transaction, txItem, index);
             clearTimeout(sendTransaction);
         } catch (error) {
             if (error instanceof BlockfrostServerError && error.status_code === 400) {
-                console.log(`Transaction rejected for Tx ` + toHex(txHash.to_bytes()));
+                console.log(`Transaction rejected for Tx ` + toHex(txHash.to_bytes()) + "...retrying");
                 console.log(error.message);
             }
             clearTimeout(sendTransaction);
         }
     }, randomInterval);
+
+    setTimeout(() => {
+        clearInterval(sendTransaction);
+        //update status in database to failed
+    }, 180000);
 }
 
 export const createAndSignRewardTxAsync = async (
@@ -111,8 +117,8 @@ export const waitNumberOfBlocks = async (
         randomInterval = parseInt((10000 * Math.random()).toFixed());
 
         if (!isNull(latestBlock.slot)) {
-            if (((400-(maxSlot-latestBlock.slot!))/400)*100 <= 100 && ((400-(maxSlot-latestBlock.slot!))/400)*100 >= 0) {
-                console.log("Waiting for confirmation for transaction " + toHex(txHash.to_bytes()) + ' ' + "(" + (((400-(maxSlot-latestBlock.slot!))/400)*100).toFixed(2) + '%' + ")");
+            if (((400 - (maxSlot - latestBlock.slot!)) / 400) * 100 <= 100 && ((400 - (maxSlot - latestBlock.slot!)) / 400) * 100 >= 0) {
+                console.log("Waiting for confirmation for transaction " + toHex(txHash.to_bytes()) + ' ' + "(" + (((400 - (maxSlot - latestBlock.slot!)) / 400) * 100).toFixed(2) + '%' + ")");
             }
             let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
             let commonHash = utxos.find(u => u.tx_hash === toHex(txHash.to_bytes()));
@@ -128,5 +134,5 @@ export const waitNumberOfBlocks = async (
                 return;
             }
         }
-    }, 40000 + randomInterval);
+    }, 35000 + randomInterval);
 }

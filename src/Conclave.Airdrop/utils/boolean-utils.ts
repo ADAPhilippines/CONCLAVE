@@ -30,10 +30,9 @@ export const isWithinTxSizeLimit = async (
     let outputSum = lovelaceOutputSum(txOutputs);
     try {
         let _txOutputs: Array<PendingReward> = [];
+        let _newTxBodyDetails: RewardTxBodyDetails = initRewardTxBodyDetails(txInputs, outputSum);
 
-        const _newTxBodyDetails: RewardTxBodyDetails = initRewardTxBodyDetails(txInputs, outputSum);
-
-        _newTxBodyDetails.txOutputs.forEach((e) => {
+        txOutputs.forEach((e) => {
             let _pendingReward : PendingReward = {
                 stakeAddress: e.stakeAddress,
                 rewards: []
