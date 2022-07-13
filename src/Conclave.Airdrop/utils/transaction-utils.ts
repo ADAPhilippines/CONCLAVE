@@ -63,18 +63,18 @@ export const submitTransactionAsync = async (
     txItem: RewardTxBodyDetails,
     index: number,
     action: string = 'reward') => {
-    let randomInterval = parseInt((10000 * Math.random()).toFixed());
+    let randomInterval = parseInt((5000 * Math.random()).toFixed());
 
     const sendTransaction = setInterval(async () => {
         let submittedUTXOs: Array<TxBodyInput> = [];
         let airdroppedAccounts: Array<PendingReward> = [];
-        randomInterval = parseInt((10000 * Math.random()).toFixed());
+        randomInterval = parseInt((5000 * Math.random()).toFixed());
 
         try {
             // const res = await blockfrostAPI.blocksLatestTxsAll();
             const res = await blockfrostAPI.txSubmit(transaction!.to_bytes());
             if (res) {
-                console.log(`Transaction successfully submitted for Tx ` + toHex(txHash.to_bytes()) + "of index #" + index + " at random interval " + randomInterval);
+                console.log(`Transaction successfully submitted for Tx ` + toHex(txHash.to_bytes()) + " of index #" + index + " at random interval " + randomInterval);
             }
             submittedUTXOs.push(...txItem.txInputs);
             airdroppedAccounts.push(...txItem.txOutputs);
@@ -83,12 +83,12 @@ export const submitTransactionAsync = async (
             clearTimeout(sendTransaction);
         } catch (error) {
             if (error instanceof BlockfrostServerError && error.status_code === 400) {
-                console.log(`Transaction rejected for Tx ` + toHex(txHash.to_bytes()) + "...retrying");
                 console.log(error.message);
             }
+            console.log(`Transaction rejected for Tx ` + toHex(txHash.to_bytes()) + "...retrying");
             clearTimeout(sendTransaction);
         }
-    }, randomInterval);
+    }, 5000 + randomInterval);
 
     setTimeout(() => {
         clearInterval(sendTransaction);

@@ -19,7 +19,7 @@ export const coinSelectionAsync = async (
 
     while (isWithinLimit && 
         (isInputSumLarger(conclaveInputSum(currentConclaveInputsBatch), conclaveOutputSum(currentConclaveOutputsBatch)) || 
-        isInputSumLarger(lovelaceInputSum(currentConclaveInputsBatch), lovelaceOutputSum(currentConclaveOutputsBatch)))) {
+        isInputSumLarger(lovelaceInputSum(currentConclaveInputsBatch), lovelaceOutputSum(currentConclaveOutputsBatch) + 1000000))) {
         if (isEmpty(conclaveBodyOutputs)) break;
         if (
             isInputSumLarger(conclaveInputSum(currentConclaveInputsBatch), conclaveOutputSum(currentConclaveOutputsBatch)) &&
@@ -37,7 +37,8 @@ export const coinSelectionAsync = async (
     
     while (!isWithinLimit ||
         isOutputSumLarger(conclaveOutputSum(currentConclaveOutputsBatch), conclaveInputSum(currentConclaveInputsBatch)) ||
-        isOutputSumLarger(lovelaceOutputSum(currentConclaveOutputsBatch), lovelaceInputSum(currentConclaveInputsBatch))) {
+        isOutputSumLarger(lovelaceOutputSum(currentConclaveOutputsBatch) + 1000000, lovelaceInputSum(currentConclaveInputsBatch))
+        ) {
         if (isOutputSumLarger(conclaveOutputSum(currentConclaveOutputsBatch), conclaveInputSum(currentConclaveInputsBatch))) {
             removeLargestConclaveReward(currentConclaveOutputsBatch);
         } else if (isOutputSumLarger(lovelaceOutputSum(currentConclaveOutputsBatch), lovelaceInputSum(currentConclaveInputsBatch))) {
@@ -45,7 +46,6 @@ export const coinSelectionAsync = async (
             continue;
         }
         removeLastItem(currentConclaveOutputsBatch);
-        console.log(`${index}: ${currentConclaveInputsBatch.length} ${currentConclaveOutputsBatch.length}`);
         isWithinLimit = await isWithinTxSizeLimit(currentConclaveInputsBatch, currentConclaveOutputsBatch, index);
     }
     

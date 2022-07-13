@@ -60,11 +60,11 @@ export const isWithinTxSizeLimit = async (
     }
 }
 
-export const isOutputSumLarger = (outputSum: number, inputSum: number): boolean => inputSum < (outputSum + 1000000);
+export const isOutputSumLarger = (outputSum: number, inputSum: number): boolean => inputSum < (outputSum);
 
 export const isZero = (number: number): boolean => {
     if (number <= 0) return true;
     else return false;
 }
 
-export const isInputSumLarger = (inputSum: number, outputSum: number): boolean => (outputSum + 1000000) <= inputSum;
+export const isInputSumLarger = (inputSum: number, outputSum: number): boolean => (outputSum) <= inputSum;

@@ -10,13 +10,12 @@ import { partitionUTXOs, queryAllUTXOsAsync } from "../utxo-utils";
 
 export const divideUTXOsAsync = async () => {
     await displayUTXOs();
-    console.log('Dividing UTXOs');
     let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
     if (isNull(utxos)) return airdropTransaction();
 
     let rewards = partitionUTXOs(utxos);
     if (rewards?.txInputs === null || rewards?.txOutputs === null || rewards === null) return airdropTransaction();
-    console.log('rewards', rewards.txOutputs[0]);
+    
     let txInputOutputs = await coinSelectionAsync(rewards.txInputs, rewards.txOutputs, 0);
     if (txInputOutputs == null || txInputOutputs === undefined) return airdropTransaction();
 
