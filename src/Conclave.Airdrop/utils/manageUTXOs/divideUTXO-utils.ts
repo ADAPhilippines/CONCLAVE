@@ -20,11 +20,10 @@ export const divideUTXOsAsync = async () => {
     let txInputOutputs = await coinSelectionAsync(rewards.txInputs, rewards.txOutputs, 0);
     if (txInputOutputs == null || txInputOutputs === undefined) return;
 
+    console.log('<-----Details----->');
     txInputOutputs?.txInputs.forEach((e, i) => {
         console.log('Txinput #' + i + " " + e.txHash + ' ' + e.asset.find(f => f.unit == "lovelace")!.quantity + " " + e.asset.find(f => f.unit == "lovelace")!.unit);
     });
-
-    console.log('<-----Details----->');
     console.log('TxInputLovelace sum: ' + getInputAssetUTXOSum(txInputOutputs!.txInputs));
     console.log('TxInputConclave sum: ' + getInputAssetUTXOSum(txInputOutputs!.txInputs, policyStr))
     console.log('ConclaveOutput sum: ' + conclaveOutputSum(txInputOutputs!.txOutputs));
@@ -42,5 +41,5 @@ export const divideUTXOsAsync = async () => {
     let txResult = await submitTransactionAsync(transaction.transaction, transaction.txHash, txInputOutputs, 0);
     if (txResult !== null) { txInputsSent.push(...txInputOutputs.txInputs);}
 
-    await awaitChangeInUTXOAsync(transaction.txHash);
+    await submitTransactionAsync(transaction.transaction, transaction.txHash, txInputOutputs!, 0, 'divide');
 }

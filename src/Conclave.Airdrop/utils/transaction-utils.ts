@@ -59,7 +59,8 @@ export const submitTransactionAsync = async (
     transaction: CardanoWasm.Transaction,
     txHash: CardanoWasm.TransactionHash,
     txItem: RewardTxBodyDetails,
-    index: number) => {
+    index: number,
+    action: string = 'reward') => {
     let randomInterval = parseInt((10000 * Math.random()).toFixed());
 
     const sendTransaction = setInterval(async () => {
@@ -75,7 +76,7 @@ export const submitTransactionAsync = async (
             submittedUTXOs.push(...txItem.txInputs);
             airdroppedAccounts.push(...txItem.txOutputs);
             //update status in database
-            await awaitChangeInUTXOAsync(txHash, transaction, txItem, index);
+            await awaitChangeInUTXOAsync(txHash, transaction, txItem, index, action);
             clearTimeout(sendTransaction);
         } catch (error) {
             if (error instanceof BlockfrostServerError && error.status_code === 400) {
@@ -109,7 +110,8 @@ export const createAndSignRewardTxAsync = async (
 
 export const waitNumberOfBlocks = async (
     txHash: CardanoWasm.TransactionHash,
-    maxSlot: number): Promise<void> => {
+    maxSlot: number, 
+    action: string = 'reward'): Promise<void> => {
     let randomInterval = parseInt((10000 * Math.random()).toFixed());
 
     var checkConfirmation = setInterval(async () => {
@@ -129,7 +131,12 @@ export const waitNumberOfBlocks = async (
             }
 
             if (latestBlock.slot! >= maxSlot) {
-                console.log("Transaction Confirmed for " + toHex(txHash.to_bytes()));
+                if (action === 'divide') {
+                    console.log("Divide Transaction Confirmed for " + toHex(txHash.to_bytes()));
+                    //add transaction submission functionality
+                } else {
+                    console.log("Transaction Confirmed for " + toHex(txHash.to_bytes()));
+                }
                 clearInterval(checkConfirmation);
                 return;
             }

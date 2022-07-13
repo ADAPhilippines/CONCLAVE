@@ -121,7 +121,8 @@ export const awaitChangeInUTXOAsync = async (
     txHash: CardanoWasm.TransactionHash,
     transaction: CardanoWasm.Transaction,
     txItem: RewardTxBodyDetails,
-    index : number) => {
+    index : number,
+    action: string = 'reward') => {
     let latestBlock = await blockfrostAPI.blocksLatest();
     let currentSlot = latestBlock.slot;
     const maxSlot = currentSlot! + 20*20;
@@ -140,18 +141,18 @@ export const awaitChangeInUTXOAsync = async (
             commonHash !== undefined && (
                 latestBlock.slot != null && 
                 latestBlock.slot <= maxSlot)) {
-            await getCurrentSlot(txHash);
+            await getCurrentSlot(txHash, action);
             clearInterval(checkUTX0);
         } else if (
             (latestBlock.slot != null && latestBlock.slot > maxSlot) && 
             (commonHash === undefined)) {
-            submitTransactionAsync(transaction, txHash, txItem, index);
+            submitTransactionAsync(transaction, txHash, txItem, index, action);
             clearInterval(checkUTX0);
         }
     }, 18000 + randomInterval);
 }
 
-export const getCurrentSlot = async (txHash: CardanoWasm.TransactionHash) => {
+export const getCurrentSlot = async (txHash: CardanoWasm.TransactionHash, action: string = 'reward') => {
     let randomInterval = parseInt((3000 * Math.random()).toFixed());
 
     var getSlot = setInterval(async () => {
@@ -159,7 +160,7 @@ export const getCurrentSlot = async (txHash: CardanoWasm.TransactionHash) => {
         randomInterval = parseInt((3000 * Math.random()).toFixed());
 
         if (!isNull(latestBlock) && !isNull(latestBlock.slot)) {
-            await waitNumberOfBlocks(txHash, latestBlock.slot! + 20*20);
+            await waitNumberOfBlocks(txHash, latestBlock.slot! + 20*20, action);
             clearInterval(getSlot);} 
     }, 1000 + randomInterval);
 
@@ -179,7 +180,10 @@ export const partitionUTXOs = (utxos: UTXO): {
     let conclaveDivider = 1;
 
     utxos.forEach((utxo) => {
-        if (parseInt(utxo.amount.find(f => f.unit == "lovelace")!.quantity) > 500000000) {
+        if (
+            utxo.amount.length == 1 && 
+            utxo.amount[0].unit == 'lovelace' && 
+            (parseInt(utxo.amount.find(f => f.unit == "lovelace")!.quantity) > 500000000)) {
             let assetArray: Array<CardanoAssetResponse> = [];
             utxo.amount.forEach(asset => {
                 const cardanoAsset: CardanoAssetResponse = {
@@ -201,28 +205,28 @@ export const partitionUTXOs = (utxos: UTXO): {
     });
     txBodyInputs.splice(0, 10);
 
-    utxos.forEach((utxo) => {
-        if (parseInt(utxo.amount.find(f => f.unit == policyStr)?.quantity ?? "0") > 20000000) {
-            let assetArray: Array<CardanoAssetResponse> = [];
-            utxo.amount.forEach(asset => {
-                const cardanoAsset: CardanoAssetResponse = {
-                    unit: asset.unit,
-                    quantity: asset.quantity,
-                };
+    // utxos.forEach((utxo) => {
+    //     if (parseInt(utxo.amount.find(f => f.unit == policyStr)?.quantity ?? "0") > 20000000) {
+    //         let assetArray: Array<CardanoAssetResponse> = [];
+    //         utxo.amount.forEach(asset => {
+    //             const cardanoAsset: CardanoAssetResponse = {
+    //                 unit: asset.unit,
+    //                 quantity: asset.quantity,
+    //             };
 
-                assetArray.push(cardanoAsset);
-            });
+    //             assetArray.push(cardanoAsset);
+    //         });
 
-            const utxoInput: TxBodyInput = {
-                txHash: utxo.tx_hash,
-                outputIndex: utxo.output_index.toString(),
-                asset: assetArray,
-            };
+    //         const utxoInput: TxBodyInput = {
+    //             txHash: utxo.tx_hash,
+    //             outputIndex: utxo.output_index.toString(),
+    //             asset: assetArray,
+    //         };
 
-            if (txBodyInputs.indexOf(utxoInput) != -1) return;
-            txBodyInputs.push(utxoInput);
-        }
-    });
+    //         if (txBodyInputs.indexOf(utxoInput) != -1) return;
+    //         txBodyInputs.push(utxoInput);
+    //     }
+    // });
 
     let utxoSum = getInputAssetUTXOSum(txBodyInputs);
     let conclaveSum = getInputAssetUTXOSum(txBodyInputs, policyStr);
@@ -230,7 +234,6 @@ export const partitionUTXOs = (utxos: UTXO): {
     if (isZero(utxoSum)) return null;
 
     utxoDivider = parseInt((utxoSum / 251000000).toFixed());
-    conclaveDivider = parseInt((conclaveSum/10000000).toFixed());
 
     let v = 1;
 
