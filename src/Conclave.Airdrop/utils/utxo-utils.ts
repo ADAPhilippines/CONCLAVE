@@ -183,6 +183,7 @@ export const partitionUTXOs = (utxos: UTXO): {
             utxo.amount.length == 1 && 
             utxo.amount[0].unit == 'lovelace' && 
             (parseInt(utxo.amount.find(f => f.unit == "lovelace")!.quantity) > 500000000)) {
+
             let assetArray: Array<CardanoAssetResponse> = [];
             utxo.amount.forEach(asset => {
                 const cardanoAsset: CardanoAssetResponse = {
@@ -202,30 +203,7 @@ export const partitionUTXOs = (utxos: UTXO): {
             txBodyInputs.push(utxoInput);
         }
     });
-    txBodyInputs.splice(0, 10);
-
-    // utxos.forEach((utxo) => {
-    //     if (parseInt(utxo.amount.find(f => f.unit == policyStr)?.quantity ?? "0") > 20000000) {
-    //         let assetArray: Array<CardanoAssetResponse> = [];
-    //         utxo.amount.forEach(asset => {
-    //             const cardanoAsset: CardanoAssetResponse = {
-    //                 unit: asset.unit,
-    //                 quantity: asset.quantity,
-    //             };
-
-    //             assetArray.push(cardanoAsset);
-    //         });
-
-    //         const utxoInput: TxBodyInput = {
-    //             txHash: utxo.tx_hash,
-    //             outputIndex: utxo.output_index.toString(),
-    //             asset: assetArray,
-    //         };
-
-    //         if (txBodyInputs.indexOf(utxoInput) != -1) return;
-    //         txBodyInputs.push(utxoInput);
-    //     }
-    // });
+    txBodyInputs = txBodyInputs.splice(0, 10);
 
     let utxoSum = getInputAssetUTXOSum(txBodyInputs);
     if (isZero(utxoSum)) return null;

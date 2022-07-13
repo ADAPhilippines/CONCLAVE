@@ -1,15 +1,15 @@
 import { blockfrostAPI } from "../../config/network.config";
 import { policyStr, shelleyChangeAddress } from "../../config/walletKeys.config";
-import { airdropTransaction } from "../../server";
 import { TxBodyInput } from "../../types/response-types";
 import { isNull } from "../boolean-utils";
 import { coinSelectionAsync } from "../coin-utils";
 import { toHex } from "../string-utils";
 import { conclaveOutputSum, getInputAssetUTXOSum, lovelaceOutputSum } from "../sum-utils";
-import { createAndSignRewardTxAsync, submitTransactionAsync, waitNumberOfBlocks } from "../transaction-utils";
-import { awaitChangeInUTXOAsync, partitionUTXOs, queryAllUTXOsAsync } from "../utxo-utils";
+import { airdropTransaction, createAndSignRewardTxAsync, displayUTXOs, submitTransactionAsync } from "../transaction-utils";
+import { partitionUTXOs, queryAllUTXOsAsync } from "../utxo-utils";
 
 export const divideUTXOsAsync = async () => {
+    await displayUTXOs();
     console.log('Dividing UTXOs');
     let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
     if (isNull(utxos)) return airdropTransaction();
@@ -29,7 +29,7 @@ export const divideUTXOsAsync = async () => {
     console.log('ConclaveOutput sum: ' + conclaveOutputSum(txInputOutputs!.txOutputs));
     console.log('LovelaceOutput sum: ' + lovelaceOutputSum(txInputOutputs!.txOutputs));
     console.log('TxOutput count: ' + txInputOutputs!.txOutputs.length);
-    console.log(' ');
+    console.log('<-----End of UTXO Divider Details----->');
 
     let transaction = await createAndSignRewardTxAsync(txInputOutputs);
     if (transaction == null) return airdropTransaction();

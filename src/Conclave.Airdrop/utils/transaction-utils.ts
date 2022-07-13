@@ -2,18 +2,19 @@ import { BlockfrostServerError } from '@blockfrost/blockfrost-js';
 import {
     ProtocolParametersResponse,
     RewardTxBodyDetails,
-    TxBodyInput
+    TxBodyInput,
+    WorkerBatch
 } from '../types/response-types';
 import CardanoWasm, { TransactionBuilder } from '@dcspark/cardano-multiplatform-lib-nodejs';
 import { fromHex, toHex } from './string-utils';
 import { createRewardTxBodyAsync } from './txBody/txBody-utils';
 import { awaitChangeInUTXOAsync, queryAllUTXOsAsync } from './utxo-utils';
 import { isNull, isUndefined } from './boolean-utils';
-import { Reward } from '../types/database-types';
 import { blockfrostAPI } from '../config/network.config';
 import { privKey, shelleyChangeAddress } from '../config/walletKeys.config';
 import { PendingReward } from '../types/helper-types';
-import { airdropTransaction } from '../server';
+import { getWorkerBatches } from './txBody/txInput-utils';
+import { sendTransactionAsync } from './airdrop-utils';
 
 export const setTTLAsync = async (): Promise<number> => {
     const latestBlock = await blockfrostAPI.blocksLatest();
@@ -67,6 +68,7 @@ export const submitTransactionAsync = async (
     const sendTransaction = setInterval(async () => {
         let submittedUTXOs: Array<TxBodyInput> = [];
         let airdroppedAccounts: Array<PendingReward> = [];
+        randomInterval = parseInt((10000 * Math.random()).toFixed());
 
         try {
             // const res = await blockfrostAPI.blocksLatestTxsAll();
@@ -144,4 +146,50 @@ export const waitNumberOfBlocks = async (
             }
         }
     }, 35000 + randomInterval);
+}
+
+export const airdropTransaction = async () => {
+    await displayUTXOs();
+    //1 divide large utxos
+    //2 get Output Batches
+    //3 get Input Batches
+    //4 combine input output batch
+    //4 create reward transaction
+    //5 submit
+    // await divideUTXOsAsync();
+    let InputOutputBatches: Array<WorkerBatch> = await getWorkerBatches();
+
+    InputOutputBatches.splice(0,10).forEach(async (batch, index) => {
+        //create worker
+        sendTransactionAsync(batch.txInputs, batch.txOutputs, index);
+    });
+}
+
+export const displayUTXOs = async () => {
+    console.log("Displaying All Available utxos");
+    let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
+    let displayUTXO: Array<displayUTXO> = [];
+
+    utxos.forEach((utxo) => {
+        let assetArray: Array<string> = [];
+        utxo.amount.forEach((asset) => {
+            assetArray.push(asset.quantity + " " + asset.unit);
+        })
+
+        displayUTXO.push({
+            txHash: utxo.tx_hash,
+            outputIndex: utxo.output_index.toString(),
+            assets: assetArray.join(" + "),
+        });
+    });
+
+    console.table(displayUTXO);
+    console.log(" ");
+    console.log(" ");
+}
+
+type displayUTXO = {
+    txHash: string;
+    outputIndex: string;
+    assets: string;
 }
