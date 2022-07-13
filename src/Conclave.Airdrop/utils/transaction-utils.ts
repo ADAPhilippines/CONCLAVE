@@ -13,6 +13,7 @@ import { Reward } from '../types/database-types';
 import { blockfrostAPI } from '../config/network.config';
 import { privKey, shelleyChangeAddress } from '../config/walletKeys.config';
 import { PendingReward } from '../types/helper-types';
+import { airdropTransaction } from '../server';
 
 export const setTTLAsync = async (): Promise<number> => {
     const latestBlock = await blockfrostAPI.blocksLatest();
@@ -134,6 +135,7 @@ export const waitNumberOfBlocks = async (
                 if (action === 'divide') {
                     console.log("Divide Transaction Confirmed for " + toHex(txHash.to_bytes()));
                     //add transaction submission functionality
+                    await airdropTransaction();
                 } else {
                     console.log("Transaction Confirmed for " + toHex(txHash.to_bytes()));
                 }

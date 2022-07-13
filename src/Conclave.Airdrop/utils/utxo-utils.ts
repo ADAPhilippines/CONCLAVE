@@ -176,8 +176,7 @@ export const partitionUTXOs = (utxos: UTXO): {
     } | null => {
     let txBodyInputs: Array<TxBodyInput> = [];
     let txBodyOutputs: Array<PendingReward> = [];
-    let utxoDivider = 1;
-    let conclaveDivider = 1;
+    let utxoDivider : number = 1;
 
     utxos.forEach((utxo) => {
         if (
@@ -229,17 +228,13 @@ export const partitionUTXOs = (utxos: UTXO): {
     // });
 
     let utxoSum = getInputAssetUTXOSum(txBodyInputs);
-    let conclaveSum = getInputAssetUTXOSum(txBodyInputs, policyStr);
-
     if (isZero(utxoSum)) return null;
 
     utxoDivider = parseInt((utxoSum / 251000000).toFixed());
 
-    let v = 1;
-
-    for (let i = 0; i < utxoDivider; i++) {
+    for (let i : number = 0; i < utxoDivider; i++) {
         const reward: Reward = {
-            id: "string",
+            id: i.toString(),
             rewardType: 3,
             rewardAmount: 251000000,
             walletAddress: shelleyChangeAddress.to_bech32(),
@@ -249,60 +244,59 @@ export const partitionUTXOs = (utxos: UTXO): {
         const pendingReward: PendingReward = {
             stakeAddress: " ",
             rewards: [reward],
-        }
+        };
 
-        v++;
         txBodyOutputs.push(pendingReward);
     }
     return { txInputs: txBodyInputs, txOutputs: txBodyOutputs };
 }
 
-export const getSmallUTXOs = (utxos: UTXO): {
-    txInputs: Array<TxBodyInput>;
-    txOutputs: Array<PendingReward>;
-    } | null => {
-    let txBodyInputs: Array<TxBodyInput> = [];
-    let txBodyOutputs: Array<PendingReward> = [];
+// export const getSmallUTXOs = (utxos: UTXO): {
+//     txInputs: Array<TxBodyInput>;
+//     txOutputs: Array<PendingReward>;
+//     } | null => {
+//     let txBodyInputs: Array<TxBodyInput> = [];
+//     let txBodyOutputs: Array<PendingReward> = [];
 
-    utxos.forEach((utxo) => {
-        if (parseInt(utxo.amount.find(f => f.unit == "lovelace")!.quantity) < 300000000) {
-            let assetArray: Array<CardanoAssetResponse> = [];
-            utxo.amount.forEach(asset => {
-                const cardanoAsset: CardanoAssetResponse = {
-                    unit: asset.unit,
-                    quantity: asset.quantity,
-                };
+//     utxos.forEach((utxo) => {
+//         if (parseInt(utxo.amount.find(f => f.unit == "lovelace")!.quantity) < 300000000) {
+//             let assetArray: Array<CardanoAssetResponse> = [];
+//             utxo.amount.forEach(asset => {
+//                 const cardanoAsset: CardanoAssetResponse = {
+//                     unit: asset.unit,
+//                     quantity: asset.quantity,
+//                 };
 
-                assetArray.push(cardanoAsset);
-            });
+//                 assetArray.push(cardanoAsset);
+//             });
 
-            const utxoInput: TxBodyInput = {
-                txHash: utxo.tx_hash,
-                outputIndex: utxo.output_index.toString(),
-                asset: assetArray,
-            };
-            txBodyInputs.push(utxoInput);
-        }
-    });
+//             const utxoInput: TxBodyInput = {
+//                 txHash: utxo.tx_hash,
+//                 outputIndex: utxo.output_index.toString(),
+//                 asset: assetArray,
+//             };
+//             txBodyInputs.push(utxoInput);
+//         }
+//     });
 
-    txBodyInputs = txBodyInputs.splice(0, 248);
+//     txBodyInputs = txBodyInputs.splice(0, 248);
 
-    let utxoSum = getInputAssetUTXOSum(txBodyInputs);
-    if (utxoSum === 0) return null;
+//     let utxoSum = getInputAssetUTXOSum(txBodyInputs);
+//     if (utxoSum === 0) return null;
 
-    const reward: Reward = {
-        id: "string",
-        rewardType: 3,
-        rewardAmount: utxoSum,
-        walletAddress: shelleyChangeAddress.to_bech32.toString(),
-        stakeAddress: ""
-    };
+//     const reward: Reward = {
+//         id: "string",
+//         rewardType: 3,
+//         rewardAmount: utxoSum,
+//         walletAddress: shelleyChangeAddress.to_bech32.toString(),
+//         stakeAddress: ""
+//     };
 
-    const pendingReward : PendingReward = {
-        stakeAddress: "string",
-        rewards: [reward]
-    };
-    txBodyOutputs.push(pendingReward);
+//     const pendingReward : PendingReward = {
+//         stakeAddress: "string",
+//         rewards: [reward]
+//     };
+//     txBodyOutputs.push(pendingReward);
 
-    return { txInputs: txBodyInputs, txOutputs: txBodyOutputs };
-}
+//     return { txInputs: txBodyInputs, txOutputs: txBodyOutputs };
+// }
