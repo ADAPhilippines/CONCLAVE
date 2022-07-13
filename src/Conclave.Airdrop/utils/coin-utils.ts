@@ -45,6 +45,7 @@ export const coinSelectionAsync = async (
             continue;
         }
         removeLastItem(currentConclaveOutputsBatch);
+        console.log(`${index}: ${currentConclaveInputsBatch.length} ${currentConclaveOutputsBatch.length}`);
         isWithinLimit = await isWithinTxSizeLimit(currentConclaveInputsBatch, currentConclaveOutputsBatch, index);
     }
     

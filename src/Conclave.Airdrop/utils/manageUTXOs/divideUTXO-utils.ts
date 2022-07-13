@@ -16,7 +16,7 @@ export const divideUTXOsAsync = async () => {
 
     let rewards = partitionUTXOs(utxos);
     if (rewards?.txInputs === null || rewards?.txOutputs === null || rewards === null) return airdropTransaction();
-
+    console.log('rewards', rewards.txOutputs[0]);
     let txInputOutputs = await coinSelectionAsync(rewards.txInputs, rewards.txOutputs, 0);
     if (txInputOutputs == null || txInputOutputs === undefined) return airdropTransaction();
 
