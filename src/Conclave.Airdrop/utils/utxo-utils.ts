@@ -7,8 +7,10 @@ import { submitTransactionAsync, waitNumberOfBlocks } from './transaction-utils'
 import { getInputAssetUTXOSum } from './sum-utils';
 import { isNull, isZero } from './boolean-utils';
 import { blockfrostAPI } from '../config/network.config';
-import { policyStr, shelleyChangeAddress } from '../config/walletKeys.config';
+import { shelleyChangeAddress } from '../config/walletKeys.config';
 import { PendingReward } from '../types/helper-types';
+import { setTimeout } from 'timers/promises';
+import { parentPort } from 'worker_threads';
 
 export const getUtxosAsync = async (blockfrostApi: BlockFrostAPI, publicAddr: string) => {
     const utxosResults = await blockfrostApi.addressesUtxosAll(publicAddr);
@@ -100,9 +102,9 @@ export const getUtxosWithAsset = async (blockfrostApi: BlockFrostAPI, address: s
 
 export const getPureAdaUtxos = async (blockfrostApi: BlockFrostAPI, address: string): Promise<UTXO> => {
     let utxos: UTXO = await blockfrostApi.addressesUtxosAll(address);
-    let pureAdaUtxos: UTXO = [];
-
     if (utxos.length < 0) return utxos;
+
+    let pureAdaUtxos: UTXO = [];
 
     for (let utxo of utxos) {
         var pureAda = true;
@@ -121,53 +123,62 @@ export const awaitChangeInUTXOAsync = async (
     txHash: CardanoWasm.TransactionHash,
     transaction: CardanoWasm.Transaction,
     txItem: RewardTxBodyDetails,
-    index : number,
-    action: string = 'reward') => {
-    let latestBlock = await blockfrostAPI.blocksLatest();
-    let currentSlot = latestBlock.slot;
-    const maxSlot = currentSlot! + 20*20;
-    let randomInterval = parseInt((7000 * Math.random()).toFixed());
+    index : number) => {
+    let maxSlot = 0;
 
-    var checkUTX0 = setInterval(async () => {
-        latestBlock = await blockfrostAPI.blocksLatest();
-        randomInterval = parseInt((7000 * Math.random()).toFixed());
-
-        console.log('Waiting for utxos to update after Submissions for txhash ' + toHex(txHash.to_bytes()) + '...');
-
-        let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
-        let commonHash = utxos.find(u => u.tx_hash === toHex(txHash.to_bytes()));
-
-        if (
-            commonHash !== undefined && (
-                latestBlock.slot != null && 
-                latestBlock.slot <= maxSlot)) {
-            await getCurrentSlot(txHash, action);
-            clearInterval(checkUTX0);
-        } else if (
-            (latestBlock.slot != null && latestBlock.slot > maxSlot) && 
-            (commonHash === undefined)) {
-            submitTransactionAsync(transaction, txHash, txItem, index, action);
-            clearInterval(checkUTX0);
+    for (let i = 0; i < 30; i++) {
+        let randomInterval = parseInt((3000 * Math.random()).toFixed());
+        try {
+            let latestBlock = await blockfrostAPI.blocksLatest();
+            let currentSlot = latestBlock.slot;
+            maxSlot = currentSlot! + 20*20;
+            break;
+        } catch (error) {
+            console.log("Failed to get latestBlock retrying...")
         }
-    }, 18000 + randomInterval);
+        await setTimeout(2000 + randomInterval);
+    }
+
+    for (let v = 0; v < 50; v++) {
+        let randomInterval = parseInt((10000 * Math.random()).toFixed());
+        console.log("Awaiting for change in utxo for txhash " + toHex(txHash.to_bytes()));
+
+        try {
+            let latestBlock = await blockfrostAPI.blocksLatest();
+            let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
+            let commonHash = utxos.find(u => u.tx_hash === toHex(txHash.to_bytes()));
+
+            if (commonHash !== undefined && (latestBlock.slot != null && latestBlock.slot <= maxSlot)) {
+                await getCurrentSlot(txHash);
+                return;
+            } else if ((latestBlock.slot != null && latestBlock.slot > maxSlot) && (commonHash === undefined)) {
+                await submitTransactionAsync(transaction, txHash, txItem, index);
+                return;
+            }
+        } catch (error) {
+            console.log("Failed to get utxos retrying...")
+        }
+
+        await setTimeout(30000 + randomInterval);
+    }
+    parentPort?.postMessage("failed");
 }
 
-export const getCurrentSlot = async (txHash: CardanoWasm.TransactionHash, action: string = 'reward') => {
-    let randomInterval = parseInt((3000 * Math.random()).toFixed());
-
-    var getSlot = setInterval(async () => {
-        let latestBlock = await blockfrostAPI.blocksLatest();
-        randomInterval = parseInt((3000 * Math.random()).toFixed());
-
-        if (!isNull(latestBlock) && !isNull(latestBlock.slot)) {
-            await waitNumberOfBlocks(txHash, latestBlock.slot! + 20*20, action);
-            clearInterval(getSlot);} 
-    }, 1000 + randomInterval);
-
-    setTimeout(() => {
-        clearInterval(getSlot);
-        //update status in database to failed
-    }, 120000);
+export const getCurrentSlot = async (txHash: CardanoWasm.TransactionHash) => {
+    for (let i = 0; i < 30; i++) {
+        let randomInterval = parseInt((2000 * Math.random()).toFixed());
+        try {
+            let latestBlock = await blockfrostAPI.blocksLatest();
+            if (!isNull(latestBlock) && !isNull(latestBlock.slot)) {
+                await waitNumberOfBlocks(txHash, latestBlock.slot! + 20*20);
+                return;
+            } 
+        } catch (error) {
+            console.log("Failed to get latestBlock retrying...")
+        }
+        await setTimeout(2000 + randomInterval);
+    }
+    parentPort?.postMessage("failed");
 }
 
 export const partitionUTXOs = (utxos: UTXO): {
@@ -229,6 +240,64 @@ export const partitionUTXOs = (utxos: UTXO): {
     return { txInputs: txBodyInputs, txOutputs: txBodyOutputs };
 }
 
+export const combineUTXOs = (utxos: UTXO): {
+    txInputs: Array<TxBodyInput>;
+    txOutputs: Array<PendingReward>
+    } | null => {
+    let txBodyInputs: Array<TxBodyInput> = [];
+    let txBodyOutputs: Array<PendingReward> = [];
+    let utxoDivider : number = 1;
+    
+    utxos.forEach((utxo) => {
+        if (
+            utxo.amount.length == 1 && 
+            utxo.amount[0].unit == 'lovelace' && 
+            (parseInt(utxo.amount.find(f => f.unit == "lovelace")!.quantity) <= 122000000)) {
+
+            let assetArray: Array<CardanoAssetResponse> = [];
+            utxo.amount.forEach(asset => {
+                const cardanoAsset: CardanoAssetResponse = {
+                    unit: asset.unit,
+                    quantity: asset.quantity,
+                };
+
+                assetArray.push(cardanoAsset);
+            });
+
+            const utxoInput: TxBodyInput = {
+                txHash: utxo.tx_hash,
+                outputIndex: utxo.output_index.toString(),
+                asset: assetArray,
+            };
+
+            txBodyInputs.push(utxoInput);
+        }
+    });
+    txBodyInputs = txBodyInputs.splice(0, 10);
+
+    let utxoSum = getInputAssetUTXOSum(txBodyInputs);
+    if (isZero(utxoSum)) return null;
+
+    utxoDivider = parseInt((utxoSum / 251000000).toFixed());
+
+    for (let i : number = 0; i < utxoDivider; i++) {
+        const reward: Reward = {
+            id: i.toString(),
+            rewardType: 3,
+            rewardAmount: 251000000,
+            walletAddress: shelleyChangeAddress.to_bech32(),
+            stakeAddress: " "
+        };
+
+        const pendingReward: PendingReward = {
+            stakeAddress: " ",
+            rewards: [reward],
+        };
+
+        txBodyOutputs.push(pendingReward);
+    }
+    return { txInputs: txBodyInputs, txOutputs: txBodyOutputs };
+}
 // export const getSmallUTXOs = (utxos: UTXO): {
 //     txInputs: Array<TxBodyInput>;
 //     txOutputs: Array<PendingReward>;

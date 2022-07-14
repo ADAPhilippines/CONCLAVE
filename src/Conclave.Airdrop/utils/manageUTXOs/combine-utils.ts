@@ -1,38 +1,43 @@
-// import { TxBodyInput } from "../../types/response-types";
-// import { coinSelectionAsync } from "../coin-utils";
-// import { blockfrostAPI, createAndSignRewardTxAsync, shelleyChangeAddress } from "../transaction-utils";
-// import { awaitChangeInUTXOAsync, getSmallUTXOs, queryAllUTXOsAsync } from "../utxo-utils";
+import { blockfrostAPI } from "../../config/network.config";
+import { policyStr, shelleyChangeAddress } from "../../config/walletKeys.config";
+import { TxBodyInput } from "../../types/response-types";
+import { isNull } from "../boolean-utils";
+import { coinSelectionAsync } from "../coin-utils";
+import { toHex } from "../string-utils";
+import { conclaveOutputSum, getInputAssetUTXOSum, lovelaceOutputSum } from "../sum-utils";
+import { createAndSignRewardTxAsync, displayUTXOs, submitTransactionAsync } from "../transaction-utils";
+import { combineUTXOs, partitionUTXOs, queryAllUTXOsAsync } from "../utxo-utils";
 
-// export const combineUTXOsAsync = async () => {
-//     console.log('Combining UTXOs');
-//     let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
-//     let txInputsSent: Array<TxBodyInput> = [];
+export const combineUTXOsAsync = async () => {
+    console.log('Combining UTXOs');
+    await displayUTXOs();
+    console.log("<-----Dividing UTXOs----->")
+    let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
+    if (isNull(utxos)) return;
 
-//     let rewards = getSmallUTXOs(utxos);
-//     if (rewards?.txInputs === null || rewards?.txOutputs === null || rewards === null) return;
+    let rewards = combineUTXOs(utxos);
+    if (rewards?.txInputs === null || rewards?.txOutputs === null || rewards === null) return;
+    
+    let txInputOutputs = await coinSelectionAsync(rewards.txInputs, rewards.txOutputs, 0);
+    if (txInputOutputs == null || txInputOutputs === undefined) return;
 
-//     let txinputoutputs = await coinSelectionAsync(rewards.txInputs, rewards.txOutputs);
-//     if (txinputoutputs == null || txinputoutputs === undefined) return;
+    console.log('<-----Details----->');
+    txInputOutputs?.txInputs.forEach((e, i) => {
+        console.log('Txinput #' + i + " " + e.txHash + ' ' + e.asset.find(f => f.unit == "lovelace")!.quantity + " " + e.asset.find(f => f.unit == "lovelace")!.unit);
+    });
+    console.log('TxInputLovelace sum: ' + getInputAssetUTXOSum(txInputOutputs!.txInputs));
+    console.log('TxInputConclave sum: ' + getInputAssetUTXOSum(txInputOutputs!.txInputs, policyStr))
+    console.log('ConclaveOutput sum: ' + conclaveOutputSum(txInputOutputs!.txOutputs));
+    console.log('LovelaceOutput sum: ' + lovelaceOutputSum(txInputOutputs!.txOutputs));
+    console.log('TxOutput count: ' + txInputOutputs!.txOutputs.length);
+    console.log('<-----End of UTXO Combiner Details----->');
 
-//     if (rewards === null) return;
+    let transaction = await createAndSignRewardTxAsync(txInputOutputs);
+    if (transaction == null) return;
 
-//     for (let txItem of txinputoutputs) {
-//         let transaction = await createAndSignRewardTxAsync(txItem);
-//         if (transaction == null) return;
+    console.log('Combining Small UTXOs');
+    console.log('Transaction ' + toHex(transaction.txHash.to_bytes()) + ' fee ' + transaction.transaction.body().fee().to_str());
 
-//         console.log('Combining Small UTXOs');
-//         console.log(
-//             'Transaction ' + transaction.txHash.to_bech32('tx_test').toString() + ' fee ' + transaction.transaction.body().fee().to_str()
-//         );
-
-//         //Submit Transaction
-//         // let txResult = await submitTransactionAsync(transaction.transaction, transaction.txHash, txItem);
-//         // if (txResult !== null) {
-//         //     txInputsSent = txInputsSent.concat(txInputsSent, txResult.txInputs);
-//         //     txOutputSent = txOutputSent.concat(txOutputSent, txResult.txOutputs);
-//         // }
-
-//         console.log(' ');
-//     }
-//     await awaitChangeInUTXOAsync(txInputsSent);
-// };
+    //Submit Transaction
+    await submitTransactionAsync(transaction.transaction, transaction.txHash, txInputOutputs!, 0);
+};

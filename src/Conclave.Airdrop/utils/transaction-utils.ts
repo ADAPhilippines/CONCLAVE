@@ -15,6 +15,8 @@ import { privKey, shelleyChangeAddress } from '../config/walletKeys.config';
 import { PendingReward } from '../types/helper-types';
 import { getWorkerBatches } from './txBody/txInput-utils';
 import { sendTransactionAsync } from './airdrop-utils';
+import { setTimeout } from 'timers/promises';
+import { parentPort } from 'worker_threads';
 
 export const setTTLAsync = async (): Promise<number> => {
     const latestBlock = await blockfrostAPI.blocksLatest();
@@ -61,39 +63,34 @@ export const submitTransactionAsync = async (
     transaction: CardanoWasm.Transaction,
     txHash: CardanoWasm.TransactionHash,
     txItem: RewardTxBodyDetails,
-    index: number,
-    action: string = 'reward') => {
-    let randomInterval = parseInt((5000 * Math.random()).toFixed());
-
-    const sendTransaction = setInterval(async () => {
+    index: number) => {
+    
+    for (let i = 0; i < 30; i++) {
         let submittedUTXOs: Array<TxBodyInput> = [];
         let airdroppedAccounts: Array<PendingReward> = [];
-        randomInterval = parseInt((5000 * Math.random()).toFixed());
+        let randomInterval = parseInt((5000 * Math.random()).toFixed());
+        await setTimeout(1000 + randomInterval);
 
         try {
-            // const res = await blockfrostAPI.blocksLatestTxsAll();
             const res = await blockfrostAPI.txSubmit(transaction!.to_bytes());
             if (res) {
                 console.log(`Transaction successfully submitted for Tx ` + toHex(txHash.to_bytes()) + " of index #" + index + " at random interval " + randomInterval);
             }
+
             submittedUTXOs.push(...txItem.txInputs);
             airdroppedAccounts.push(...txItem.txOutputs);
-            //update status in database
-            await awaitChangeInUTXOAsync(txHash, transaction, txItem, index, action);
-            clearTimeout(sendTransaction);
+
+            parentPort?.postMessage("in progress... (" + toHex(txHash.to_bytes()) + ")");
+            await awaitChangeInUTXOAsync(txHash, transaction, txItem, index);
+            return;
         } catch (error) {
             if (error instanceof BlockfrostServerError && error.status_code === 400) {
                 console.log(error.message);
             }
             console.log(`Transaction rejected for Tx ` + toHex(txHash.to_bytes()) + "...retrying");
-            clearTimeout(sendTransaction);
         }
-    }, 5000 + randomInterval);
-
-    setTimeout(() => {
-        clearInterval(sendTransaction);
-        //update status in database to failed
-    }, 180000);
+    }
+    parentPort?.postMessage("failed");
 }
 
 export const createAndSignRewardTxAsync = async (
@@ -113,55 +110,49 @@ export const createAndSignRewardTxAsync = async (
 
 export const waitNumberOfBlocks = async (
     txHash: CardanoWasm.TransactionHash,
-    maxSlot: number, 
-    action: string = 'reward'): Promise<void> => {
-    let randomInterval = parseInt((10000 * Math.random()).toFixed());
+    maxSlot: number): Promise<void> => {
+        
+    for (let i = 0; i < 100; i++) {
+        let randomInterval = parseInt((10000 * Math.random()).toFixed());
+        try {
+            let latestBlock = await blockfrostAPI.blocksLatest();
 
-    var checkConfirmation = setInterval(async () => {
-        let latestBlock = await blockfrostAPI.blocksLatest();
-        randomInterval = parseInt((10000 * Math.random()).toFixed());
-
-        if (!isNull(latestBlock.slot)) {
-            if (((400 - (maxSlot - latestBlock.slot!)) / 400) * 100 <= 100 && ((400 - (maxSlot - latestBlock.slot!)) / 400) * 100 >= 0) {
-                console.log("Waiting for confirmation for transaction " + toHex(txHash.to_bytes()) + ' ' + "(" + (((400 - (maxSlot - latestBlock.slot!)) / 400) * 100).toFixed(2) + '%' + ")");
-            }
-            let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
-            let commonHash = utxos.find(u => u.tx_hash === toHex(txHash.to_bytes()));
-            if (isUndefined(commonHash)) {
-                console.log("Transaction Failed");
-                clearInterval(checkConfirmation);
-                return;
-            }
-
-            if (latestBlock.slot! >= maxSlot) {
-                if (action === 'divide') {
-                    console.log("Divide Transaction Confirmed for " + toHex(txHash.to_bytes()));
-                    //add transaction submission functionality
-                    await airdropTransaction();
-                } else {
-                    console.log("Transaction Confirmed for " + toHex(txHash.to_bytes()));
+            if (!isNull(latestBlock.slot)) {
+                if (((400 - (maxSlot - latestBlock.slot!)) / 400) * 100 <= 100 && ((400 - (maxSlot - latestBlock.slot!)) / 400) * 100 >= 0) {
+                    console.log("Waiting for confirmation for transaction " + toHex(txHash.to_bytes()) + ' ' + "(" + (((400 - (maxSlot - latestBlock.slot!)) / 400) * 100).toFixed(2) + '%' + ")");
                 }
-                clearInterval(checkConfirmation);
-                return;
+                let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
+                let commonHash = utxos.find(u => u.tx_hash === toHex(txHash.to_bytes()));
+                if (isUndefined(commonHash)) {
+                    console.log("Transaction Failed");
+                    break;
+                }
+    
+                if (latestBlock.slot! >= maxSlot) {
+                    console.log("Transaction Confirmed for " + toHex(txHash.to_bytes()));
+                    parentPort?.postMessage("confirmed");
+                    return;
+                }
             }
-        }
-    }, 35000 + randomInterval);
+        } catch (error) {
+            console.log(error);
+        };
+
+        await setTimeout(40000 + randomInterval);
+    }
+
+    parentPort?.postMessage("failed");
 }
 
 export const airdropTransaction = async () => {
     await displayUTXOs();
-    //1 divide large utxos
-    //2 get Output Batches
-    //3 get Input Batches
-    //4 combine input output batch
-    //4 create reward transaction
-    //5 submit
-    // await divideUTXOsAsync();
+
     let InputOutputBatches: Array<WorkerBatch> = await getWorkerBatches();
 
     InputOutputBatches.splice(0,10).forEach(async (batch, index) => {
-        //create worker
-        sendTransactionAsync(batch.txInputs, batch.txOutputs, index);
+        const worker = new Worker("./worker.js");
+        
+        worker.postMessage({batch: batch, index: index});
     });
 }
 

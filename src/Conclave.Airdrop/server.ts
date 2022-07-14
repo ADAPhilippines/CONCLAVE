@@ -13,6 +13,9 @@
 // import { getUnpaidRewardAsync } from './utils/reward-utils';
 // import { getPureAdaUtxos, getUtxosWithAsset } from './utils/utxo-utils';
 
+import { accountKey, addressBech32, privKey, rootKey, utxoPrvKey, utxoPubKey } from "./config/walletKeys.config";
+import { divideUTXOsAsync } from "./utils/manageUTXOs/divideUTXO-utils";
+
 // const blockfrostAPI = new BlockFrostAPI({
 //     projectId: process.env.PROJECT_ID as string,
 //     isTestnet: true,
@@ -64,7 +67,7 @@
 //         }
 
 //         // TODO: tx inputs to cover rewards set
-        
+
 //         // TODO: send transaction
 
 //         // TODO: update reward status of rewards included in the transaction
@@ -113,4 +116,18 @@
 // };
 
 // main();
-console.log("Hello");
+// divideUTXOsAsync();
+
+import { WorkerBatch } from "./types/response-types";
+import { getWorkerBatches } from "./utils/txBody/txInput-utils";
+import { executeWorkers } from "./utils/worker-utils";
+
+
+const airdropFunction = async () => {
+    await divideUTXOsAsync();
+    let InputOutputBatches: Array<WorkerBatch> = await getWorkerBatches();
+
+    await executeWorkers(InputOutputBatches);
+}
+
+airdropFunction();

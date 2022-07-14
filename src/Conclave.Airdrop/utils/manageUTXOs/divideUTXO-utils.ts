@@ -5,19 +5,20 @@ import { isNull } from "../boolean-utils";
 import { coinSelectionAsync } from "../coin-utils";
 import { toHex } from "../string-utils";
 import { conclaveOutputSum, getInputAssetUTXOSum, lovelaceOutputSum } from "../sum-utils";
-import { airdropTransaction, createAndSignRewardTxAsync, displayUTXOs, submitTransactionAsync } from "../transaction-utils";
+import { createAndSignRewardTxAsync, displayUTXOs, submitTransactionAsync } from "../transaction-utils";
 import { partitionUTXOs, queryAllUTXOsAsync } from "../utxo-utils";
 
 export const divideUTXOsAsync = async () => {
     await displayUTXOs();
+    console.log("<-----Dividing UTXOs----->")
     let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
-    if (isNull(utxos)) return airdropTransaction();
+    if (isNull(utxos)) return;
 
     let rewards = partitionUTXOs(utxos);
-    if (rewards?.txInputs === null || rewards?.txOutputs === null || rewards === null) return airdropTransaction();
+    if (rewards?.txInputs === null || rewards?.txOutputs === null || rewards === null) return;
     
     let txInputOutputs = await coinSelectionAsync(rewards.txInputs, rewards.txOutputs, 0);
-    if (txInputOutputs == null || txInputOutputs === undefined) return airdropTransaction();
+    if (txInputOutputs == null || txInputOutputs === undefined) return;
 
     console.log('<-----Details----->');
     txInputOutputs?.txInputs.forEach((e, i) => {
@@ -31,11 +32,11 @@ export const divideUTXOsAsync = async () => {
     console.log('<-----End of UTXO Divider Details----->');
 
     let transaction = await createAndSignRewardTxAsync(txInputOutputs);
-    if (transaction == null) return airdropTransaction();
+    if (transaction == null) return;
 
     console.log('Dividing Large UTXOs');
     console.log('Transaction ' + toHex(transaction.txHash.to_bytes()) + ' fee ' + transaction.transaction.body().fee().to_str());
 
     //Submit Transaction
-    await submitTransactionAsync(transaction.transaction, transaction.txHash, txInputOutputs!, 0, 'divide');
+    await submitTransactionAsync(transaction.transaction, transaction.txHash, txInputOutputs!, 0);
 }
