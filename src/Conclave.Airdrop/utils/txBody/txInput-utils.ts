@@ -40,14 +40,14 @@ export const setTxInputs = (txBuilder: CardanoWasm.TransactionBuilder, txInputs:
     });
 }
 
-export const getWorkerBatches = async (): Promise<Array<WorkerBatch>> => {
-    let OutputBatches: Array<Array<PendingReward>> = await getOutputBatch(300);
-    let utxosInWallet = await getAllUTXOsAsync();
+export const getBatchesPerWorker= async (utxosInWallet: Array<TxBodyInput> | null = null, pendingRewards: Array<PendingReward> | null = null): Promise<Array<WorkerBatch>> => {
+    let outputBatches = await getOutputBatch(pendingRewards ?? [], 300);
+    utxosInWallet = utxosInWallet ??  await getAllUTXOsAsync();
     let inputOutputBatch: Array<WorkerBatch> = [];
     if (isNull(utxosInWallet) || isEmpty(utxosInWallet!)) return inputOutputBatch;
 
-    OutputBatches.forEach(element => {
-        if (isZero(lovelaceInputSum(utxosInWallet))) return;
+    outputBatches!.forEach(element => {
+        if (isZero(lovelaceInputSum(utxosInWallet!))) return;
         let inputsBatch: Array<TxBodyInput> = [];
         if (!isZero(conclaveOutputSum(element))) {
             let addedConclaveUTXO = utxosInWallet!.find(e => e.asset.find(a => a.unit == policyStr) && parseInt(e.asset.find(a => a.unit == policyStr)!.quantity) >= 10000000) ??
@@ -55,7 +55,7 @@ export const getWorkerBatches = async (): Promise<Array<WorkerBatch>> => {
                                     utxosInWallet!.find(e => parseInt(e.asset.find(a => a.unit == "lovelace")!.quantity) >= 248000000) ??
                                     utxosInWallet!.find(e => parseInt(e.asset.find(a => a.unit == "lovelace")!.quantity) >= 0);
             inputsBatch.push(addedConclaveUTXO!);
-            utxosInWallet = utxosInWallet.filter(e => (e.txHash != addedConclaveUTXO!.txHash) || (e.outputIndex != addedConclaveUTXO!.outputIndex));
+            utxosInWallet = utxosInWallet!.filter(e => (e.txHash != addedConclaveUTXO!.txHash) || (e.outputIndex != addedConclaveUTXO!.outputIndex));
 
             while (conclaveInputSum(inputsBatch) < 10000000 && conclaveInputSum(utxosInWallet) > 0) {
                 addedConclaveUTXO = utxosInWallet!.find(e => e.asset.find(a => a.unit == policyStr) && parseInt(e.asset.find(a => a.unit == policyStr)!.quantity) >= 10000000) ??
@@ -67,9 +67,9 @@ export const getWorkerBatches = async (): Promise<Array<WorkerBatch>> => {
             }
 
             while (lovelaceInputSum(inputsBatch) < 248000000 && lovelaceInputSum(utxosInWallet) > 0) {
-                let addedLovelaceUTXO = utxosInWallet!.find(e => e.asset.find(a => a.unit != policyStr) && parseInt(e.asset.find(a => a.unit == "lovelace")!.quantity) >= 250000000) ??
+                let addedLovelaceUTXO : TxBodyInput = utxosInWallet!.find(e => e.asset.find(a => a.unit != policyStr) && parseInt(e.asset.find(a => a.unit == "lovelace")!.quantity) >= 250000000) ??
                                         utxosInWallet!.find(e => e.asset.find(a => a.unit != policyStr) && parseInt(e.asset.find(a => a.unit == "lovelace")!.quantity) >= 0) ??
-                                        utxosInWallet!.find(e => parseInt(e.asset.find(a => a.unit == "lovelace")!.quantity) >= 0);
+                                        utxosInWallet!.find(e => parseInt(e.asset.find(a => a.unit == "lovelace")!.quantity) >= 0)!;
                 inputsBatch.push(addedLovelaceUTXO!);
                 utxosInWallet = utxosInWallet.filter(e => (e.txHash != addedLovelaceUTXO!.txHash) || (e.outputIndex != addedLovelaceUTXO!.outputIndex));
             }
@@ -85,7 +85,7 @@ export const getWorkerBatches = async (): Promise<Array<WorkerBatch>> => {
                                     utxosInWallet!.find(e => e.asset.find(a => a.unit != policyStr) && parseInt(e.asset.find(a => a.unit == "lovelace")!.quantity) >= 0) ??
                                     utxosInWallet!.find(e => parseInt(e.asset.find(a => a.unit == "lovelace")!.quantity) >= 0);
             inputsBatch.push(addedLovelaceUTXO!);
-            utxosInWallet = utxosInWallet.filter(e => (e.txHash != addedLovelaceUTXO!.txHash) || (e.outputIndex != addedLovelaceUTXO!.outputIndex));
+            utxosInWallet = utxosInWallet!.filter(e => (e.txHash != addedLovelaceUTXO!.txHash) || (e.outputIndex != addedLovelaceUTXO!.outputIndex));
 
             while (lovelaceInputSum(inputsBatch) < 250000000 && lovelaceInputSum(utxosInWallet) > 0) {
                 addedLovelaceUTXO = utxosInWallet!.find(e => e.asset.find(a => a.unit == policyStr) && parseInt(e.asset.find(a => a.unit == policyStr)!.quantity) >= 10000000) ??

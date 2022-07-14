@@ -123,7 +123,8 @@ export const awaitChangeInUTXOAsync = async (
     txHash: CardanoWasm.TransactionHash,
     transaction: CardanoWasm.Transaction,
     txItem: RewardTxBodyDetails,
-    index : number) => {
+    worker: number,
+    index: number): Promise<{ currentIndex: number, status: string }> => {
     let maxSlot = 0;
 
     for (let i = 0; i < 30; i++) {
@@ -131,17 +132,18 @@ export const awaitChangeInUTXOAsync = async (
         try {
             let latestBlock = await blockfrostAPI.blocksLatest();
             let currentSlot = latestBlock.slot;
-            maxSlot = currentSlot! + 20*20;
+            maxSlot = currentSlot! + 20 * 20;
             break;
         } catch (error) {
-            console.log("Failed to get latestBlock retrying...")
+            console.log('WORKER# ' + worker + " " + "Failed to get latestBlock retrying...")
         }
         await setTimeout(2000 + randomInterval);
     }
+    if (maxSlot === 0) return { currentIndex: index, status: "failed" };
 
     for (let v = 0; v < 50; v++) {
         let randomInterval = parseInt((10000 * Math.random()).toFixed());
-        console.log("Awaiting for change in utxo for txhash " + toHex(txHash.to_bytes()));
+        console.log('WORKER# ' + worker + " " + "Awaiting for change in utxo for txhash " + toHex(txHash.to_bytes()));
 
         try {
             let latestBlock = await blockfrostAPI.blocksLatest();
@@ -149,50 +151,47 @@ export const awaitChangeInUTXOAsync = async (
             let commonHash = utxos.find(u => u.tx_hash === toHex(txHash.to_bytes()));
 
             if (commonHash !== undefined && (latestBlock.slot != null && latestBlock.slot <= maxSlot)) {
-                await getCurrentSlot(txHash);
-                return;
+                return await getCurrentSlot(txHash, worker, index);
             } else if ((latestBlock.slot != null && latestBlock.slot > maxSlot) && (commonHash === undefined)) {
-                await submitTransactionAsync(transaction, txHash, txItem, index);
-                return;
+                return await submitTransactionAsync(transaction, txHash, txItem, worker, index);
             }
         } catch (error) {
-            console.log("Failed to get utxos retrying...")
+            console.log('WORKER# ' + worker + " " + "Failed to get utxos retrying...")
         }
 
         await setTimeout(30000 + randomInterval);
     }
-    parentPort?.postMessage("failed");
+    return { currentIndex: index, status: "failed" };
 }
 
-export const getCurrentSlot = async (txHash: CardanoWasm.TransactionHash) => {
+export const getCurrentSlot = async (txHash: CardanoWasm.TransactionHash, worker: number, index: number): Promise<{ currentIndex: number, status: string }> => {
     for (let i = 0; i < 30; i++) {
         let randomInterval = parseInt((2000 * Math.random()).toFixed());
         try {
             let latestBlock = await blockfrostAPI.blocksLatest();
             if (!isNull(latestBlock) && !isNull(latestBlock.slot)) {
-                await waitNumberOfBlocks(txHash, latestBlock.slot! + 20*20);
-                return;
-            } 
+                return await waitNumberOfBlocks(txHash, latestBlock.slot! + 20 * 20, worker, index);
+            }
         } catch (error) {
-            console.log("Failed to get latestBlock retrying...")
+            console.log('WORKER# ' + worker + " " + "Failed to get latestBlock retrying...")
         }
         await setTimeout(2000 + randomInterval);
     }
-    parentPort?.postMessage("failed");
+    return { currentIndex: index, status: "failed" };
 }
 
 export const partitionUTXOs = (utxos: UTXO): {
     txInputs: Array<TxBodyInput>;
     txOutputs: Array<PendingReward>
-    } | null => {
+} | null => {
     let txBodyInputs: Array<TxBodyInput> = [];
     let txBodyOutputs: Array<PendingReward> = [];
-    let utxoDivider : number = 1;
+    let utxoDivider: number = 1;
 
     utxos.forEach((utxo) => {
         if (
-            utxo.amount.length == 1 && 
-            utxo.amount[0].unit == 'lovelace' && 
+            utxo.amount.length == 1 &&
+            utxo.amount[0].unit == 'lovelace' &&
             (parseInt(utxo.amount.find(f => f.unit == "lovelace")!.quantity) > 500000000)) {
 
             let assetArray: Array<CardanoAssetResponse> = [];
@@ -221,7 +220,7 @@ export const partitionUTXOs = (utxos: UTXO): {
 
     utxoDivider = parseInt((utxoSum / 251000000).toFixed());
 
-    for (let i : number = 0; i < utxoDivider; i++) {
+    for (let i: number = 0; i < utxoDivider; i++) {
         const reward: Reward = {
             id: i.toString(),
             rewardType: 3,
@@ -243,15 +242,15 @@ export const partitionUTXOs = (utxos: UTXO): {
 export const combineUTXOs = (utxos: UTXO): {
     txInputs: Array<TxBodyInput>;
     txOutputs: Array<PendingReward>
-    } | null => {
+} | null => {
     let txBodyInputs: Array<TxBodyInput> = [];
     let txBodyOutputs: Array<PendingReward> = [];
-    let utxoDivider : number = 1;
-    
+    let utxoDivider: number = 1;
+
     utxos.forEach((utxo) => {
         if (
-            utxo.amount.length == 1 && 
-            utxo.amount[0].unit == 'lovelace' && 
+            utxo.amount.length == 1 &&
+            utxo.amount[0].unit == 'lovelace' &&
             (parseInt(utxo.amount.find(f => f.unit == "lovelace")!.quantity) <= 122000000)) {
 
             let assetArray: Array<CardanoAssetResponse> = [];
@@ -280,7 +279,7 @@ export const combineUTXOs = (utxos: UTXO): {
 
     utxoDivider = parseInt((utxoSum / 251000000).toFixed());
 
-    for (let i : number = 0; i < utxoDivider; i++) {
+    for (let i: number = 0; i < utxoDivider; i++) {
         const reward: Reward = {
             id: i.toString(),
             rewardType: 3,

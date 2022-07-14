@@ -1,6 +1,6 @@
 import { blockfrostAPI } from "../../config/network.config";
 import { policyStr, shelleyChangeAddress } from "../../config/walletKeys.config";
-import { TxBodyInput } from "../../types/response-types";
+import { TxBodyInput, UTXO } from "../../types/response-types";
 import { isNull } from "../boolean-utils";
 import { coinSelectionAsync } from "../coin-utils";
 import { toHex } from "../string-utils";
@@ -8,13 +8,12 @@ import { conclaveOutputSum, getInputAssetUTXOSum, lovelaceOutputSum } from "../s
 import { createAndSignRewardTxAsync, displayUTXOs, submitTransactionAsync } from "../transaction-utils";
 import { partitionUTXOs, queryAllUTXOsAsync } from "../utxo-utils";
 
-export const divideUTXOsAsync = async () => {
+export const divideUTXOsAsync = async (utxos: UTXO | null = null) => {
     await displayUTXOs();
     console.log("<-----Dividing UTXOs----->")
-    let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
     if (isNull(utxos)) return;
 
-    let rewards = partitionUTXOs(utxos);
+    let rewards = partitionUTXOs(utxos!);
     if (rewards?.txInputs === null || rewards?.txOutputs === null || rewards === null) return;
     
     let txInputOutputs = await coinSelectionAsync(rewards.txInputs, rewards.txOutputs, 0);
@@ -38,5 +37,6 @@ export const divideUTXOsAsync = async () => {
     console.log('Transaction ' + toHex(transaction.txHash.to_bytes()) + ' fee ' + transaction.transaction.body().fee().to_str());
 
     //Submit Transaction
-    await submitTransactionAsync(transaction.transaction, transaction.txHash, txInputOutputs!, 0);
+    await submitTransactionAsync(transaction.transaction, transaction.txHash, txInputOutputs!, 0, 0);
+    return await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
 }

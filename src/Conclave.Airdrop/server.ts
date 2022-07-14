@@ -13,7 +13,7 @@
 // import { getUnpaidRewardAsync } from './utils/reward-utils';
 // import { getPureAdaUtxos, getUtxosWithAsset } from './utils/utxo-utils';
 
-import { accountKey, addressBech32, privKey, rootKey, utxoPrvKey, utxoPubKey } from "./config/walletKeys.config";
+import { accountKey, addressBech32, privKey, rootKey, shelleyChangeAddress, utxoPrvKey, utxoPubKey } from "./config/walletKeys.config";
 import { divideUTXOsAsync } from "./utils/manageUTXOs/divideUTXO-utils";
 
 // const blockfrostAPI = new BlockFrostAPI({
@@ -118,16 +118,26 @@ import { divideUTXOsAsync } from "./utils/manageUTXOs/divideUTXO-utils";
 // main();
 // divideUTXOsAsync();
 
-import { WorkerBatch } from "./types/response-types";
-import { getWorkerBatches } from "./utils/txBody/txInput-utils";
+import { TxBodyInput, WorkerBatch } from "./types/response-types";
+import { getBatchesPerWorker } from "./utils/txBody/txInput-utils";
 import { executeWorkers } from "./utils/worker-utils";
+import { queryAllUTXOsAsync } from "./utils/utxo-utils";
+import { blockfrostAPI } from "./config/network.config";
+import { getAllUTXOsAsync } from "./utils/airdrop-utils";
+import { dummyDataOutput } from "./utils/txBody/txOutput-utils";
+import { PendingReward } from "./types/helper-types";
 
 
 const airdropFunction = async () => {
-    await divideUTXOsAsync();
-    let InputOutputBatches: Array<WorkerBatch> = await getWorkerBatches();
+    let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
+    await divideUTXOsAsync(utxos);
 
-    await executeWorkers(InputOutputBatches);
+    let utxosInWallet : Array<TxBodyInput> = await getAllUTXOsAsync();
+    let pendingRewards : Array<PendingReward> = dummyDataOutput(); //replace with RJ's function
+
+    let InputOutputBatches: Array<WorkerBatch> = await getBatchesPerWorker(utxosInWallet, pendingRewards);
+
+    await executeWorkers(InputOutputBatches); //execute code to send transaction for each worker
 }
 
 airdropFunction();

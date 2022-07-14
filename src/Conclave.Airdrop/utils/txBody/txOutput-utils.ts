@@ -97,11 +97,10 @@ export const dummyDataOutput = (): Array<PendingReward> => {
 
     return dummyData;
 }
-export const getOutputBatch = async (batchSize : 300) : Promise<Array<Array<PendingReward>>> =>{
+export const getOutputBatch = async (pendingRewards: Array<PendingReward> = [], batchSize : number = 300) : Promise<Array<Array<PendingReward>>> =>{
     // TODO: uncomment
     // let pendingRewards = await getAllUnpaidAdaRewardsAsync();
     // let getAllConclaveRewards = await getAllUnpaidConclaveTokenRewardsAsync();
-    let pendingRewards : Array<PendingReward> = [];
     let dummyRewards = dummyDataOutput();
     pendingRewards = dummyRewards;
     shuffleArray(pendingRewards);

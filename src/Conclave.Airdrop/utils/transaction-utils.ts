@@ -1,6 +1,5 @@
 import { BlockfrostServerError } from '@blockfrost/blockfrost-js';
 import {
-    ProtocolParametersResponse,
     RewardTxBodyDetails,
     TxBodyInput,
     WorkerBatch
@@ -13,10 +12,8 @@ import { isNull, isUndefined } from './boolean-utils';
 import { blockfrostAPI } from '../config/network.config';
 import { privKey, shelleyChangeAddress } from '../config/walletKeys.config';
 import { PendingReward } from '../types/helper-types';
-import { getWorkerBatches } from './txBody/txInput-utils';
-import { sendTransactionAsync } from './airdrop-utils';
+import { getBatchesPerWorker } from './txBody/txInput-utils';
 import { setTimeout } from 'timers/promises';
-import { parentPort } from 'worker_threads';
 
 export const setTTLAsync = async (): Promise<number> => {
     const latestBlock = await blockfrostAPI.blocksLatest();
@@ -63,7 +60,8 @@ export const submitTransactionAsync = async (
     transaction: CardanoWasm.Transaction,
     txHash: CardanoWasm.TransactionHash,
     txItem: RewardTxBodyDetails,
-    index: number) => {
+    worker: number,
+    index: number) : Promise<{currentIndex: number, status: string}> => {
     
     for (let i = 0; i < 30; i++) {
         let submittedUTXOs: Array<TxBodyInput> = [];
@@ -74,23 +72,22 @@ export const submitTransactionAsync = async (
         try {
             const res = await blockfrostAPI.txSubmit(transaction!.to_bytes());
             if (res) {
-                console.log(`Transaction successfully submitted for Tx ` + toHex(txHash.to_bytes()) + " of index #" + index + " at random interval " + randomInterval);
+                console.log('WORKER# ' + worker + `: Transaction successfully submitted for Tx ` + toHex(txHash.to_bytes()) + " of worker #" + worker + " at random interval " + randomInterval);
             }
 
             submittedUTXOs.push(...txItem.txInputs);
             airdroppedAccounts.push(...txItem.txOutputs);
 
-            parentPort?.postMessage("in progress... (" + toHex(txHash.to_bytes()) + ")");
-            await awaitChangeInUTXOAsync(txHash, transaction, txItem, index);
-            return;
+            // parentPort?.postMessage({currentIndex: index, status: "in progress"});
+            return await awaitChangeInUTXOAsync(txHash, transaction, txItem, worker, index);
         } catch (error) {
             if (error instanceof BlockfrostServerError && error.status_code === 400) {
                 console.log(error.message);
             }
-            console.log(`Transaction rejected for Tx ` + toHex(txHash.to_bytes()) + "...retrying");
+            console.log('WORKER# ' + worker + `: Transaction rejected for Tx ` + toHex(txHash.to_bytes()) + "...retrying");
         }
     }
-    parentPort?.postMessage("failed");
+    return {currentIndex: index, status: "failed"};
 }
 
 export const createAndSignRewardTxAsync = async (
@@ -110,7 +107,9 @@ export const createAndSignRewardTxAsync = async (
 
 export const waitNumberOfBlocks = async (
     txHash: CardanoWasm.TransactionHash,
-    maxSlot: number): Promise<void> => {
+    maxSlot: number,
+    worker: number,
+    index: number) : Promise<{currentIndex: number, status: string}> => {
         
     for (let i = 0; i < 100; i++) {
         let randomInterval = parseInt((10000 * Math.random()).toFixed());
@@ -119,19 +118,18 @@ export const waitNumberOfBlocks = async (
 
             if (!isNull(latestBlock.slot)) {
                 if (((400 - (maxSlot - latestBlock.slot!)) / 400) * 100 <= 100 && ((400 - (maxSlot - latestBlock.slot!)) / 400) * 100 >= 0) {
-                    console.log("Waiting for confirmation for transaction " + toHex(txHash.to_bytes()) + ' ' + "(" + (((400 - (maxSlot - latestBlock.slot!)) / 400) * 100).toFixed(2) + '%' + ")");
+                    console.log('WORKER# ' + worker + " " + "Waiting for confirmation for transaction " + toHex(txHash.to_bytes()) + ' ' + "(" + (((400 - (maxSlot - latestBlock.slot!)) / 400) * 100).toFixed(2) + '%' + ")");
                 }
                 let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
                 let commonHash = utxos.find(u => u.tx_hash === toHex(txHash.to_bytes()));
                 if (isUndefined(commonHash)) {
-                    console.log("Transaction Failed");
+                    console.log('WORKER# ' + worker + " " + "Transaction Failed");
                     break;
                 }
     
                 if (latestBlock.slot! >= maxSlot) {
-                    console.log("Transaction Confirmed for " + toHex(txHash.to_bytes()));
-                    parentPort?.postMessage("confirmed");
-                    return;
+                    console.log('WORKER# ' + worker + " "+ "Transaction Confirmed for " + toHex(txHash.to_bytes()));
+                    return {currentIndex: index, status: "confirmed"}; 
                 }
             }
         } catch (error) {
@@ -141,13 +139,13 @@ export const waitNumberOfBlocks = async (
         await setTimeout(40000 + randomInterval);
     }
 
-    parentPort?.postMessage("failed");
+    return {currentIndex: index, status: "failed"}; 
 }
 
 export const airdropTransaction = async () => {
     await displayUTXOs();
 
-    let InputOutputBatches: Array<WorkerBatch> = await getWorkerBatches();
+    let InputOutputBatches: Array<WorkerBatch> = await getBatchesPerWorker();
 
     InputOutputBatches.splice(0,10).forEach(async (batch, index) => {
         const worker = new Worker("./worker.js");

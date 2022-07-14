@@ -26,7 +26,7 @@ export const isEmpty = (batch: Array<any>): boolean => {
 export const isWithinTxSizeLimit = async (
     txInputs: Array<TxBodyInput>,
     txOutputs: Array<PendingReward>,
-    index: number): Promise<boolean> => {
+    worker: number): Promise<boolean> => {
     let outputSum = lovelaceOutputSum(txOutputs);
     try {
         let _txOutputs: Array<PendingReward> = [];
@@ -49,13 +49,13 @@ export const isWithinTxSizeLimit = async (
 
         let txBuilder = await setRewardTxBodyDetailsAsync(_newTxBodyDetails);
         txBuilder.add_change_if_needed(shelleyChangeAddress);
-        console.log("CurrentTxSize for worker #" + index + ": " + txBuilder.full_size().toString());
+        console.log('WORKER# ' + worker + " " + "CurrentTxSize for worker #" + worker + ": " + txBuilder.full_size().toString());
         if (txBuilder.full_size() > 16384) {
             return false;
         }
         return true;
     } catch (error) {
-        console.log("Rebuilding TxBody for index#" + index + ": " + error);
+        console.log('WORKER# ' + worker + " " + "Rebuilding TxBody for index#" + worker + ": " + error);
         return false;
     }
 }

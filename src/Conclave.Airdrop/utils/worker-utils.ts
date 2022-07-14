@@ -1,7 +1,5 @@
-import { Reward } from "../types/database-types";
 import { WorkerBatch } from "../types/response-types";
 import { Worker } from "worker_threads";
-// import { getAllUnpaidAdaRewardsAsync, getAllUnpaidConclaveTokenRewardsAsync } from "./reward-utils";
 
 export const executeWorkers = async (inputOutputBatches: Array<WorkerBatch>) => {
     let length: number = inputOutputBatches.length;
@@ -23,20 +21,21 @@ export const executeWorkers = async (inputOutputBatches: Array<WorkerBatch>) => 
         Atomics.store(sharedArray, i, i + 1);
     }
 
+    //initialize only 10 workers
     for (let i = 0; i < 10; i++) {
         if (i >= inputOutputBatches.length) break;
 
-        const worker = new Worker("../worker.js");
+        const worker = new Worker("./worker.js");
 
-        worker.on("message", (result: { status: String, batch: Int32Array, currentIndex: number, worker: number }) => {
+        worker.on("message", (result: { status: String, currentIndex: number}) => {
             let index = result.currentIndex;
             if (result.status == "exit") {
                 worker.terminate();
                 return;
             }
+
             worker.postMessage({ batch: sharedArray, currentIndex: index + 1, worker: i, workerbatches: inputOutputBatches });
         });
-
         worker.postMessage({ batch: sharedArray, currentIndex: i, worker: i, workerbatches: inputOutputBatches });
     }
 }
