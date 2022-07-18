@@ -123,7 +123,7 @@ export const waitNumberOfBlocks = async (
                 let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
                 let commonHash = utxos.find(u => u.tx_hash === toHex(txHash.to_bytes()));
                 if (isUndefined(commonHash)) {
-                    console.log('WORKER# ' + worker + " " + "Transaction Failed");
+                    console.log('WORKER# ' + worker + " " + "Transaction Failed for " + toHex(txHash.to_bytes()));
                     break;
                 }
     

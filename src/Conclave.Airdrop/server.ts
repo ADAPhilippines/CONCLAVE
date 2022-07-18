@@ -126,15 +126,17 @@ import { blockfrostAPI } from "./config/network.config";
 import { getAllUTXOsAsync } from "./utils/airdrop-utils";
 import { dummyDataOutput } from "./utils/txBody/txOutput-utils";
 import { PendingReward } from "./types/helper-types";
+import { isEmpty, isNull } from "./utils/boolean-utils";
 
 
 const airdropFunction = async () => {
     let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
-    await divideUTXOsAsync(utxos);
+    // await divideUTXOsAsync(utxos);
 
     let utxosInWallet : Array<TxBodyInput> = await getAllUTXOsAsync();
     let pendingRewards : Array<PendingReward> = dummyDataOutput(); //replace with RJ's function
-
+    if (isEmpty(pendingRewards) || isNull(pendingRewards)) return;
+    
     let InputOutputBatches: Array<WorkerBatch> = await getBatchesPerWorker(utxosInWallet, pendingRewards);
 
     await executeWorkers(InputOutputBatches); //execute code to send transaction for each worker

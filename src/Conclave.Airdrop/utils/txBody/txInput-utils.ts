@@ -81,7 +81,7 @@ export const getBatchesPerWorker= async (utxosInWallet: Array<TxBodyInput> | nul
                 utxosInWallet = utxosInWallet.filter(e => (e.txHash != smallUTXO!.txHash) || (e.outputIndex != smallUTXO!.outputIndex));
             }
         } else {
-            let addedLovelaceUTXO = utxosInWallet!.find(e => e.asset.find(a => a.unit != policyStr) && parseInt(e.asset.find(a => a.unit == "lovelace")!.quantity) >= 250000000) ??
+            let addedLovelaceUTXO = utxosInWallet!.find(e => e.asset.find(a => a.unit != policyStr) && parseInt(e.asset.find(a => a.unit == "lovelace")!.quantity) >= 248000000) ??
                                     utxosInWallet!.find(e => e.asset.find(a => a.unit != policyStr) && parseInt(e.asset.find(a => a.unit == "lovelace")!.quantity) >= 0) ??
                                     utxosInWallet!.find(e => parseInt(e.asset.find(a => a.unit == "lovelace")!.quantity) >= 0);
             inputsBatch.push(addedLovelaceUTXO!);
@@ -90,7 +90,7 @@ export const getBatchesPerWorker= async (utxosInWallet: Array<TxBodyInput> | nul
             while (lovelaceInputSum(inputsBatch) < 250000000 && lovelaceInputSum(utxosInWallet) > 0) {
                 addedLovelaceUTXO = utxosInWallet!.find(e => e.asset.find(a => a.unit == policyStr) && parseInt(e.asset.find(a => a.unit == policyStr)!.quantity) >= 10000000) ??
                                     utxosInWallet!.find(e => e.asset.find(a => a.unit == policyStr) && parseInt(e.asset.find(a => a.unit == policyStr)!.quantity) >= 0) ??
-                                    utxosInWallet!.find(e => parseInt(e.asset.find(a => a.unit == "lovelace")!.quantity) >= 250000000) ??
+                                    utxosInWallet!.find(e => parseInt(e.asset.find(a => a.unit == "lovelace")!.quantity) >= 248000000) ??
                                     utxosInWallet!.find(e => parseInt(e.asset.find(a => a.unit == "lovelace")!.quantity) >= 0);
                 inputsBatch.push(addedLovelaceUTXO!);
                 utxosInWallet = utxosInWallet.filter(e => (e.txHash != addedLovelaceUTXO!.txHash) || (e.outputIndex != addedLovelaceUTXO!.outputIndex));

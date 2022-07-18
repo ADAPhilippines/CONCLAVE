@@ -2,22 +2,9 @@ import { WorkerBatch } from "../types/response-types";
 import { Worker } from "worker_threads";
 
 export const executeWorkers = async (inputOutputBatches: Array<WorkerBatch>) => {
-    let length: number = inputOutputBatches.length;
-    let size: number;
-    while (true) {
-        try {
-            size = Int32Array.BYTES_PER_ELEMENT * length;
-            break;
-        } catch (e) {
-            console.log(e);
-        }
-        length++;
-    }
+    const sharedArray = createSharedArray(inputOutputBatches);
 
-    const sharedBuffer = new SharedArrayBuffer(size);
-    const sharedArray = new Int32Array(sharedBuffer);
-
-    for (let i = 0; i < length; i++) {
+    for (let i = 0; i < inputOutputBatches.length; i++) {
         Atomics.store(sharedArray, i, i + 1);
     }
 
@@ -38,4 +25,22 @@ export const executeWorkers = async (inputOutputBatches: Array<WorkerBatch>) => 
         });
         worker.postMessage({ batch: sharedArray, currentIndex: i, worker: i, workerbatches: inputOutputBatches });
     }
+}
+
+const createSharedArray = (inputOutputBatches: Array<WorkerBatch>) : Int32Array => {
+    let length: number = inputOutputBatches.length;
+    let size: number;
+
+    while (true) {
+        try {
+            size = Int32Array.BYTES_PER_ELEMENT * length;
+            break;
+        } catch (e) {
+            console.log(e);
+        }
+        length++;
+    }
+
+    const sharedBuffer = new SharedArrayBuffer(size);
+    return new Int32Array(sharedBuffer);
 }

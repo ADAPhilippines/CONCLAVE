@@ -68,7 +68,7 @@ export const dummyDataOutput = (): Array<PendingReward> => {
             id: 'random id1',
             walletAddress: shelleyOutputAddress.to_bech32(),
             rewardType: 3,
-            rewardAmount: 2000000, //1ADA
+            rewardAmount: 2000000, //2ADA
             stakeAddress: 'random stake address 0' + i + "r",
         }
 

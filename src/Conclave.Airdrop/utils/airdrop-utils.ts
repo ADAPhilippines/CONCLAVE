@@ -73,7 +73,7 @@ export const sendTransactionAsync = async (txInputBatch: Array<TxBodyInput>, txO
     console.log('WORKER# ' + worker + " " + "<========Creating TxBody for Worker #" + index + " ========>");
     let txInputOutputs = await coinSelectionAsync(txInputBatch, txOutputBatch, worker);
     if (isNull(txInputOutputs)) {
-        return {currentIndex: index, status: "exit"};
+        return {currentIndex: index, status: "invalid"};
     };
 
     txInputOutputs?.txInputs.forEach((e, i) => {
