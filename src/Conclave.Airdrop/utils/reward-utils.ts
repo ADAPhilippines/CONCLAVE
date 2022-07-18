@@ -3,6 +3,7 @@ import { queryAsync } from '../db';
 import AirdropStatus from '../enums/airdrop-status';
 import RewardType from '../enums/reward-type';
 import { Reward } from '../types/database-types';
+import { PendingReward } from '../types/helper-types';
 // import fetch from 'node-fetch';
 
 // TODO: check if total reward can cover the fees
@@ -38,8 +39,6 @@ export const updateRewardListStatusAsync = async (
     }
 };
 
-// Helpers
-
 export const getUnpaidRewardAsync = async (): Promise<Reward[]> => {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
     var res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/reward/unpaid', {});
@@ -47,10 +46,22 @@ export const getUnpaidRewardAsync = async (): Promise<Reward[]> => {
     return res.ok ? data : [];
 };
 
+export const getAllPendingRewardsAsync = async (): Promise<PendingReward[]> => {
+    const unpaidRewards = await getUnpaidRewardAsync();
+    return groupRewards(unpaidRewards);
+};
+
+export const getAllPendingEligibleRewardsAsync = async (): Promise<PendingReward[]> => {
+    const pendingRewards = await getAllPendingRewardsAsync();
+    return filterRewards(pendingRewards);
+};
+
 export const updateRewardStatusAsync = async (reward: Reward, airdropStatus: number, transactionHash: string) => {
     let updatedRewardData = await getUpdatedRewardStatus(reward, airdropStatus, transactionHash);
     await updateRewardAsync(reward, updatedRewardData);
 };
+
+// Helpers
 
 const getUpdatedRewardStatus = async (reward: Reward, airdropStatus: number, transactionHash: string) => {
     let res;
@@ -112,4 +123,42 @@ const updateRewardAsync = async (reward: Reward, updatedRewardData: any): Promis
             throw new Error('Invalid Reward Type!');
     }
     return await res.json();
+};
+
+const groupRewards = (pendingRewards: Reward[]): PendingReward[] => {
+    var rewardsGroupedByStakeAddress: PendingReward[] = [
+        /*{stakeAddress: Reward[]}*/
+    ];
+
+    for (var pendingReward of pendingRewards) {
+        var rewards = rewardsGroupedByStakeAddress.find((r) => r.stakeAddress === pendingReward.stakeAddress);
+        if (rewards) {
+            rewards.rewards.push(pendingReward);
+        } else {
+            rewardsGroupedByStakeAddress.push({
+                stakeAddress: pendingReward.stakeAddress,
+                rewards: [pendingReward],
+            });
+        }
+    }
+    return rewardsGroupedByStakeAddress;
+};
+
+const filterRewards = (pendingRewards: PendingReward[], adaFee: number = 0.4, minimumCollateral: number = 1.4) => {
+    let filteredRewards: PendingReward[] = [];
+
+    for (var pendingReward of pendingRewards) {
+        let totalAdaRewards = 0.0;
+        for (const reward of pendingReward.rewards) {
+            if (reward.rewardType === RewardType.ConclaveOwnerReward) {
+                totalAdaRewards += reward.rewardAmount as number;
+            }
+        }
+
+        if (totalAdaRewards < adaFee + minimumCollateral) continue;
+
+        filteredRewards.push(pendingReward);
+    }
+
+    return filteredRewards;
 };
