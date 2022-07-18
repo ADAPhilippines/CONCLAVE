@@ -101,10 +101,9 @@ export const getOutputBatch = async (pendingRewards: Array<PendingReward> = [], 
     // TODO: uncomment
     // let pendingRewards = await getAllUnpaidAdaRewardsAsync();
     // let getAllConclaveRewards = await getAllUnpaidConclaveTokenRewardsAsync();
-    let dummyRewards = dummyDataOutput();
-    pendingRewards = dummyRewards;
-    shuffleArray(pendingRewards);
-    shuffleArray(pendingRewards);
+    // pendingRewards = dummyRewards;
+    // shuffleArray(pendingRewards);
+    // shuffleArray(pendingRewards);
     let txOutputBatches : Array<Array<PendingReward>> = [];
 
     while(pendingRewards.length > 0){

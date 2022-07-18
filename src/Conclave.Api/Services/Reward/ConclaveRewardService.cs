@@ -175,7 +175,7 @@ public class ConclaveRewardService : IConclaveRewardService
         {
             unpaidRewards.Add(new Reward(conclaveOwnerReward.Id,
                                          RewardType.ConclaveOwnerReward,
-                                         conclaveOwnerReward.RewardAmount,
+                                         conclaveOwnerReward.RewardAmount*1_000_000,
                                          conclaveOwnerReward.ConclaveOwnerSnapshot.DelegatorSnapshot.WalletAddress,
                                          conclaveOwnerReward.ConclaveOwnerSnapshot.DelegatorSnapshot.StakeAddress));
         }

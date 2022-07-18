@@ -144,14 +144,17 @@ const groupRewards = (pendingRewards: Reward[]): PendingReward[] => {
     return rewardsGroupedByStakeAddress;
 };
 
-const filterRewards = (pendingRewards: PendingReward[], adaFee: number = 0.4, minimumCollateral: number = 1.4) => {
+const filterRewards = (pendingRewards: PendingReward[], adaFee: number = 0.4 * 1_000_000, minimumCollateral: number = 1.4 * 1_000_000) => {
     let filteredRewards: PendingReward[] = [];
 
     for (var pendingReward of pendingRewards) {
         let totalAdaRewards = 0.0;
-        for (const reward of pendingReward.rewards) {
+        for (let reward of pendingReward.rewards) {
+           
             if (reward.rewardType === RewardType.ConclaveOwnerReward) {
                 totalAdaRewards += reward.rewardAmount as number;
+            } else {
+                reward.rewardAmount = Math.trunc(reward.rewardAmount);
             }
         }
 
