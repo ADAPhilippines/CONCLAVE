@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "@blockfrost/blockfrost-js": "^4.1.0",
+    "@dcspark/cardano-multiplatform-lib-nodejs": "^0.3.0",
     "@emurgo/cardano-serialization-lib-nodejs": "^10.2.0",
     "@types/node-fetch": "^2.6.2",
     "axiom": "^0.1.6",
