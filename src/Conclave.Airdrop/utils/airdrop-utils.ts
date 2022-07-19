@@ -13,6 +13,8 @@ import {
 } from "./transaction-utils";
 import { queryAllUTXOsAsync } from "./utxo-utils";
 import { parentPort } from "worker_threads";
+import CardanoWasm from '@dcspark/cardano-multiplatform-lib-nodejs';
+import { BlockFrostAPI, BlockfrostServerError, Responses } from '@blockfrost/blockfrost-js';
 
 export const getRawUTXOAssetAsync = async (unit: string = "lovelace"): Promise<Array<TxBodyInput>> => {
     let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
@@ -69,33 +71,28 @@ export const getAllUTXOsAsync = async (): Promise<Array<TxBodyInput>> => {
     return txBodyInputs;
 }
 
-export const sendTransactionAsync = async (txInputBatch: Array<TxBodyInput>, txOutputBatch: Array<PendingReward>, worker: number, index: number) => {
-    console.log('WORKER# ' + worker + " " + "<========Creating TxBody for Worker #" + index + " ========>");
-    let txInputOutputs = await coinSelectionAsync(txInputBatch, txOutputBatch, worker);
-    if (isNull(txInputOutputs)) {
-        return {currentIndex: index, status: "invalid"};
-    };
+// console.log('WORKER# ' + worker + " " + "<========Creating TxBody for Worker #" + index + " ========>");
+//     let txInputOutputs = await coinSelectionAsync(txInputBatch, txOutputBatch, worker);
+//     if (isNull(txInputOutputs)) {
+//         return {currentIndex: index, status: "invalid"};
+//     };
 
-    txInputOutputs?.txInputs.forEach((e, i) => {
-        console.log('Txinput #' + i + " " + e.txHash + ' ' + e.asset.find(f => f.unit == "lovelace")!.quantity + " " + e.asset.find(f => f.unit == "lovelace")!.unit + " " + e.asset.find(f => f.unit != "lovelace")?.quantity);
-    });
+//     txInputOutputs?.txInputs.forEach((e, i) => {
+//         console.log('Txinput #' + i + " " + e.txHash + ' ' + e.asset.find(f => f.unit == "lovelace")!.quantity + " " + e.asset.find(f => f.unit == "lovelace")!.unit + " " + e.asset.find(f => f.unit != "lovelace")?.quantity);
+//     });
 
-    console.log('WORKER# ' + worker + " ");
-    console.log("<========Details for WORKER #" + worker + " ========> \n" +
-        'TxInputLovelace sum: ' + getInputAssetUTXOSum(txInputOutputs!.txInputs) + "\n" +
-        'TxOutputLovelace sum: ' + getOutputLovelaceSum(txInputOutputs!.txOutputs) + "\n" +
-        'TxInputConclave sum: ' + getInputAssetUTXOSum(txInputOutputs!.txInputs, policyStr) + "\n" +
-        'TxOutputConclave sum: ' + getOutputConclaveSum(txInputOutputs!.txOutputs) + "\n" +
-        "<========End of Details for WORKER#" + worker + " ========>");
-    console.log();
+//     console.log('WORKER# ' + worker + " ");
+//     console.log("<========Details for WORKER #" + worker + " ========> \n" +
+//         'TxInputLovelace sum: ' + getInputAssetUTXOSum(txInputOutputs!.txInputs) + "\n" +
+//         'TxOutputLovelace sum: ' + getOutputLovelaceSum(txInputOutputs!.txOutputs) + "\n" +
+//         'TxInputConclave sum: ' + getInputAssetUTXOSum(txInputOutputs!.txInputs, policyStr) + "\n" +
+//         'TxOutputConclave sum: ' + getOutputConclaveSum(txInputOutputs!.txOutputs) + "\n" +
+//         "<========End of Details for WORKER#" + worker + " ========>");
+//     console.log();
 
-    let transaction = await createAndSignRewardTxAsync(txInputOutputs!);
-    if (transaction == null) {
-        return parentPort?.postMessage({currentIndex: index, status: "failed"});
-    };
+//     let transaction = await createAndSignRewardTxAsync(txInputOutputs!);
+//     if (transaction == null) {
+//         return parentPort?.postMessage({currentIndex: index, status: "failed"});
+//     };
 
-    console.log('WORKER# ' + worker + ': Transaction #' + index + " " + toHex(transaction.txHash.to_bytes()) + ' fee ' + transaction.transaction.body().fee().to_str());
-
-    return await submitTransactionAsync(transaction.transaction, transaction.txHash, txInputOutputs!, worker, index);
-}
-
+//     console.log('WORKER# ' + worker + ': Transaction #' + index + " " + toHex(transaction.txHash.to_bytes()) + ' fee ' + transaction.transaction.body().fee().to_str());
