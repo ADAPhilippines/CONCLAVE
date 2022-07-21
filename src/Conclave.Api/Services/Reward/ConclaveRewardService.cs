@@ -136,6 +136,22 @@ public class ConclaveRewardService : IConclaveRewardService
         return delta * Math.Pow(satRate, epochNumber - 1) + satAmount;
     }
 
+    public IEnumerable<string> GetAllPendingTransactionHashes()
+    {
+        var delegatorRewardsHashes = _delegatorRewardService.GetAllByAirdropStatus(AirdropStatus.InProgress)?.Select(d => d.TransactionHash).ToList().Distinct() ?? new List<string>();
+        var nftRewardsHashes = _nftRewardService.GetAllByAirdropStatus(AirdropStatus.InProgress)?.Select(d => d.TransactionHash).ToList().Distinct() ?? new List<string>();
+        var operatorRewardsHashes = _opeartorRewardService.GetAllByAirdropStatus(AirdropStatus.InProgress)?.Select(d => d.TransactionHash).ToList().Distinct() ?? new List<string>();
+        var conclaveOwnerRewardsHashes = _conclaveOwnerRewardService.GetAllByAirdropStatus(AirdropStatus.InProgress)?.Select(d => d.TransactionHash).ToList().Distinct() ?? new List<string>();
+
+        var pendingTransactionHashes = delegatorRewardsHashes.Concat(nftRewardsHashes)
+                                                             .Concat(operatorRewardsHashes)
+                                                             .Concat(conclaveOwnerRewardsHashes)
+                                                             .ToList()
+                                                             .Distinct();
+
+        return pendingTransactionHashes;
+    }
+
     public IEnumerable<Reward> GetAllUnpaidRewards()
     {
         var unpaidRewards = new List<Reward>();
