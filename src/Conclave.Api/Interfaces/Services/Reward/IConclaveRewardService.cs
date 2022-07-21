@@ -10,4 +10,5 @@ public interface IConclaveRewardService
     IEnumerable<NFTReward> CalculateNFTRewardsAsync(IEnumerable<NFTSnapshot> nftSnapshots, double totalReward);
     double CalculateTotalConclaveReward(ulong epochNumber);
     IEnumerable<Reward> GetAllUnpaidRewards();
+    IEnumerable<string> GetAllPendingTransactionHashes();
 }
