@@ -1,60 +1,93 @@
-import { Reward } from "../../types/database-types";
-import { RewardTxBodyDetails, TxBodyInput } from "../../types/response-types";
-import { isNull } from "../boolean-utils";
-import { calculateRewardFeesAsync } from "../fees-utils";
-import { initRewardTxBodyDetails } from "../type-utils";
+import { ProtocolParametersResponse, RewardTxBodyDetails, TxBodyInput } from '../../types/response-types';
+import { isNull } from '../boolean-utils';
+import { calculateRewardFeesAsync } from '../fees-utils';
+import { initRewardTxBodyDetails } from '../type-utils';
 import CardanoWasm from '@dcspark/cardano-multiplatform-lib-nodejs';
-import { setTTLAsync } from "../transaction-utils";
-import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
-import { setTxInputs } from "./txInput-utils";
-import { setRewardTxOutputs } from "./txOutput-utils";
-import { shelleyChangeAddress } from "../../config/walletKeys.config";
-import { getLatestProtocolParametersAsync } from "../../config/network.config";
-import { getTransactionBuilder } from "../../config/transaction.config";
-import { PendingReward } from "../../types/helper-types";
+import { setTTLAsync } from '../transaction-utils';
+import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
+import { setTxInputs } from './txInput-utils';
+import { setRewardTxOutputs } from './txOutput-utils';
+import { shelleyChangeAddress } from '../../config/walletKeys.config';
+import { getLatestProtocolParametersAsync } from '../../config/network.config';
+import { getTransactionBuilder } from '../../config/transaction.config';
+import { PendingReward } from '../../types/helper-types';
+import { setTimeout } from 'timers/promises';
 
 const blockfrostAPI = new BlockFrostAPI({
-    projectId: "testnet4Zo3x6oMtftyJH0X0uutC1RflLn8JtWR",
-    isTestnet: true,
+	projectId: 'testnet4Zo3x6oMtftyJH0X0uutC1RflLn8JtWR',
+	isTestnet: true,
 });
 
 export const createRewardTxBodywithFee = async (
-    inputs: Array<TxBodyInput>,
-    outputs: Array<PendingReward>,
-    outputSum: number): Promise<RewardTxBodyDetails | null> => {
-    const newTxBodyDetails: RewardTxBodyDetails = initRewardTxBodyDetails(inputs, outputSum, "0", outputs);
+	inputs: Array<TxBodyInput>,
+	outputs: Array<PendingReward>,
+	outputSum: number,
+	protocolParameters: ProtocolParametersResponse
+): Promise<RewardTxBodyDetails | null> => {
+	const newTxBodyDetails: RewardTxBodyDetails = initRewardTxBodyDetails(inputs, outputSum, '0', outputs);
 
-    let fees = await calculateRewardFeesAsync(newTxBodyDetails);
-    if (isNull(fees)) return null;
+	let fees = await calculateRewardFeesAsync(newTxBodyDetails, protocolParameters);
+	if (isNull(fees)) return null;
 
-    newTxBodyDetails.fee = fees!;
+	newTxBodyDetails.fee = fees!;
 
-    return newTxBodyDetails;
+	return newTxBodyDetails;
 };
 
 export const createRewardTxBodyAsync = async (
-    txBodyDetails: RewardTxBodyDetails
+	txBodyDetails: RewardTxBodyDetails,
+	protocolParameters: ProtocolParametersResponse
 ): Promise<{ txHash: CardanoWasm.TransactionHash; txBody: CardanoWasm.TransactionBody } | null> => {
-    try {
-        let txBuilder = await setRewardTxBodyDetailsAsync(txBodyDetails);
-        let ttl = await setTTLAsync();
-        txBuilder.set_ttl(CardanoWasm.BigNum.from_str(ttl.toString()));
-        txBuilder.add_change_if_needed(shelleyChangeAddress);
-        const txBody = txBuilder.build();
-        const txHash = CardanoWasm.hash_transaction(txBody);
-        
-        return { txHash, txBody };
-    } catch (error) {
-        console.log('Error Creating TxBody ' + error);
-        return null;
-    }
+	const MAX_NUMBER_OF_RETRIES = 30;
+	let retryCount = 0;
+
+	while (retryCount < MAX_NUMBER_OF_RETRIES) {
+		try {
+			let txBuilder = await setRewardTxBodyDetailsAsync(txBodyDetails, protocolParameters);
+			if (txBuilder === null) throw new Error('Error creating transaction builder');
+			let ttl = await setTTLAsync();
+			txBuilder.set_ttl(CardanoWasm.BigNum.from_str(ttl.toString()));
+			txBuilder.add_change_if_needed(shelleyChangeAddress);
+			const txBody = txBuilder.build();
+			const txHash = CardanoWasm.hash_transaction(txBody);
+
+			return { txHash, txBody };
+		} catch (error) {
+			const interval = parseInt((5000 * Math.random()).toFixed());
+			console.log(
+				`error creating transaction body, retrying in ${interval} ms...\nNumber of retries: ${retryCount}`
+			);
+			console.log(error);
+			await setTimeout(3000 + interval);
+			retryCount++;
+		}
+	}
+	return null;
 };
 
-export const setRewardTxBodyDetailsAsync = async (txBodyDetails: RewardTxBodyDetails): Promise<CardanoWasm.TransactionBuilder> => {
-    let protocolParameter = await getLatestProtocolParametersAsync(blockfrostAPI);
-    let txBuilder = getTransactionBuilder(protocolParameter);
+export const setRewardTxBodyDetailsAsync = async (
+	txBodyDetails: RewardTxBodyDetails,
+	protocolParameter: any
+): Promise<CardanoWasm.TransactionBuilder | null> => {
+	const MAX_NUMBER_OF_RETRIES = 30;
+	let retryCount = 0;
 
-    setTxInputs(txBuilder, txBodyDetails.txInputs);
-    setRewardTxOutputs(txBuilder, txBodyDetails.txOutputs);
-    return txBuilder;
+	while (retryCount < MAX_NUMBER_OF_RETRIES) {
+		try {
+			let txBuilder = getTransactionBuilder(protocolParameter);
+
+			setTxInputs(txBuilder, txBodyDetails.txInputs);
+			setRewardTxOutputs(txBuilder, txBodyDetails.txOutputs);
+			return txBuilder;
+		} catch (error) {
+			const interval = parseInt((1000 * Math.random()).toFixed());
+			console.log(
+				`error setting transaction body details, retrying in ${interval} ms...\nNumber of retries: ${retryCount}`
+			);
+			console.log(error);
+			await setTimeout(2000 + interval);
+			retryCount++;
+		}
+	}
+	return null;
 };

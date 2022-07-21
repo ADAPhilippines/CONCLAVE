@@ -1,5 +1,11 @@
 import { BlockFrostAPI, BlockfrostServerError } from '@blockfrost/blockfrost-js';
-import { RewardTxBodyDetails, TxBodyInput, WorkerBatch } from '../types/response-types';
+import {
+	RewardTxBodyDetails,
+	TxBodyInput,
+	UTXO,
+	AirdropBatch,
+	ProtocolParametersResponse,
+} from '../types/response-types';
 import CardanoWasm, { TransactionBuilder } from '@dcspark/cardano-multiplatform-lib-nodejs';
 import { fromHex, toHex } from './string-utils';
 import { createRewardTxBodyAsync } from './txBody/txBody-utils';
@@ -10,6 +16,7 @@ import { privKey, shelleyChangeAddress } from '../config/walletKeys.config';
 import { PendingReward } from '../types/helper-types';
 import { getBatchesPerWorker } from './txBody/txInput-utils';
 import { setTimeout } from 'timers/promises';
+import AirdropTransactionStatus from '../enums/airdrop-transaction-status';
 
 export const setTTLAsync = async (): Promise<number> => {
 	const latestBlock = await blockfrostAPI.blocksLatest();
@@ -56,7 +63,7 @@ export const submitTransactionAsync = async (
 	blockfrostAPI: BlockFrostAPI,
 	transaction: CardanoWasm.Transaction,
 	txHashString: string
-): Promise<{ status: string; message: string; txHashString: string }> => {
+): Promise<{ status: number; message: string; txHashString: string }> => {
 	const MAX_NUMBER_OF_RETRIES = 30;
 	let retryCount = 0;
 
@@ -65,32 +72,34 @@ export const submitTransactionAsync = async (
 			await blockfrostAPI.txSubmit(transaction.to_bytes());
 			console.log('Transaction submitted successfully ' + txHashString);
 			return {
-				status: 'submitted',
+				status: AirdropTransactionStatus.Success,
 				message: 'Successfully submitted!',
 				txHashString,
 			};
-		} catch (err) {
+		} catch (error) {
 			const interval = parseInt((5000 * Math.random()).toFixed());
-			console.log(`Server error, retrying in ${interval} ms...\nNumber of retries: ${retryCount}`);
+			console.log(`error submitting, retrying in ${interval} ms...\nNumber of retries: ${retryCount}`);
+			console.log(error);
 			await setTimeout(interval);
 			retryCount++;
 		}
 	}
 
 	return {
-		status: 'failed',
+		status: AirdropTransactionStatus.Failed,
 		message: 'Maximum number of retries reached',
 		txHashString,
 	};
 };
 
 export const createAndSignRewardTxAsync = async (
-	txBodyDetails: RewardTxBodyDetails
+	txBodyDetails: RewardTxBodyDetails,
+	protocolParameter: any
 ): Promise<{
 	transaction: CardanoWasm.Transaction;
 	txHash: CardanoWasm.TransactionHash;
 } | null> => {
-	let txBodyResult = await createRewardTxBodyAsync(txBodyDetails);
+	let txBodyResult = await createRewardTxBodyAsync(txBodyDetails, protocolParameter);
 	if (txBodyResult == null) return null;
 
 	let txSigned = signTxBody(txBodyResult.txHash, txBodyResult.txBody, privKey);
@@ -102,16 +111,17 @@ export const createAndSignRewardTxAsync = async (
 export const transactionConfirmation = async (
 	blockfrostAPI: BlockFrostAPI,
 	txHashString: string
-): Promise<{ status: string; message: string; txHashString: string }> => {
+): Promise<{ status: number; message: string; txHashString: string }> => {
 	const MAX_NUMBER_OF_RETRIES = 30;
 	let retryCount = 0;
 	let maxSlot = await getMaximumSlotAsync(blockfrostAPI);
-	if (maxSlot == 0)
+	if (maxSlot == 0) {
 		return {
-			status: 'failed',
+			status: AirdropTransactionStatus.Failed,
 			message: 'Could not get current slot',
 			txHashString,
 		};
+	}
 
 	while (retryCount <= MAX_NUMBER_OF_RETRIES) {
 		try {
@@ -123,8 +133,7 @@ export const transactionConfirmation = async (
 					((400 - (maxSlot - latestBlock.slot!)) / 400) * 100 >= 0
 				) {
 					console.log(
-						'WORKER: ' +
-							'Waiting for confirmation for transaction ' +
+						'Waiting for confirmation for transaction ' +
 							txHashString +
 							' ' +
 							'(' +
@@ -133,20 +142,22 @@ export const transactionConfirmation = async (
 							')'
 					);
 				}
+
 				let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
 				let commonHash = utxos.find(u => u.tx_hash === txHashString);
+
 				if (isUndefined(commonHash)) {
+					console.log('Failure: Transaction not found in UTXO set');
 					return {
-						status: 'failed',
+						status: AirdropTransactionStatus.Failed,
 						message: 'Confirmation failed',
 						txHashString,
 					};
 				}
-
 				if (latestBlock.slot! >= maxSlot) {
-					console.log('WORKER: ' + 'Transaction Confirmed for ' + txHashString);
+					console.log('Transaction Confirmed for ' + txHashString);
 					return {
-						status: 'confirmed',
+						status: AirdropTransactionStatus.Success,
 						message: 'Successfully confirmed transaction!',
 						txHashString,
 					};
@@ -156,34 +167,36 @@ export const transactionConfirmation = async (
 			}
 		} catch (error) {
 			const interval = parseInt((3000 * Math.random()).toFixed());
-			console.log(`Server error, retrying in ${5000 + interval} ms...\nNumber of retries: ${retryCount}`);
+			console.log(
+				`error in confirmation, retrying in ${5000 + interval} ms...\nNumber of retries: ${retryCount}`
+			);
+			console.log(error);
 			await setTimeout(interval + 5000);
 			retryCount++;
 		}
 	}
 
 	return {
-		status: 'failed',
+		status: AirdropTransactionStatus.Failed,
 		message: 'Confirmation failed',
 		txHashString,
 	};
 };
 
-export const airdropTransaction = async () => {
-	await displayUTXOs();
+// export const airdropTransaction = async () => {
+// 	await displayUTXOs();
 
-	let InputOutputBatches: Array<WorkerBatch> = await getBatchesPerWorker();
+// 	let InputOutputBatches: Array<WorkerBatch> = await getBatchesPerWorker();
 
-	InputOutputBatches.splice(0, 10).forEach(async (batch, index) => {
-		const worker = new Worker('./worker.js');
+// 	InputOutputBatches.splice(0, 10).forEach(async (batch, index) => {
+// 		const worker = new Worker('./worker.js');
 
-		worker.postMessage({ batch: batch, index: index });
-	});
-};
+// 		worker.postMessage({ batch: batch, index: index });
+// 	});
+// };
 
-export const displayUTXOs = async () => {
+export const displayUTXOs = async (utxos: UTXO) => {
 	console.log('Displaying All Available utxos');
-	let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
 	let displayUTXO: Array<displayUTXO> = [];
 
 	utxos.forEach(utxo => {

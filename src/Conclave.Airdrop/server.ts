@@ -4,35 +4,40 @@ import {
 	privKey,
 	rootKey,
 	shelleyChangeAddress,
+	shelleyOutputAddress,
 	utxoPrvKey,
 	utxoPubKey,
 } from './config/walletKeys.config';
 import { divideUTXOsAsync } from './utils/manageUTXOs/divideUTXO-utils';
-import { TxBodyInput, WorkerBatch } from './types/response-types';
+import { TxBodyInput, AirdropBatch, ProtocolParametersResponse } from './types/response-types';
 import { getBatchesPerWorker } from './utils/txBody/txInput-utils';
-import { executeWorkers } from './utils/worker-utils';
 import { queryAllUTXOsAsync } from './utils/utxo-utils';
-import { blockfrostAPI } from './config/network.config';
+import { blockfrostAPI, getLatestProtocolParametersAsync } from './config/network.config';
 import { getAllUTXOsAsync } from './utils/airdrop-utils';
 import { dummyDataOutput } from './utils/txBody/txOutput-utils';
 import { PendingReward } from './types/helper-types';
 import { isEmpty, isNull } from './utils/boolean-utils';
 import { getAllPendingEligibleRewardsAsync, getAllPendingRewardsAsync } from './utils/reward-utils';
 import { setTimeout } from 'timers/promises';
+import ConclaveAirdropper from './models/ConclaveAirdropper';
 
 const main = async () => {
 	// initWorkers (i.e workerPool = initWorkerPool())
-
-	const PENDING_REWARD_TRESHOLD = 60; // move to config
+	const PENDING_REWARD_TRESHOLD = 10; // move to config
 
 	while (true) {
-		let pendingRewards: Array<PendingReward> = await getAllPendingEligibleRewardsAsync();
+		// let pendingRewards: Array<PendingReward> = await getAllPendingEligibleRewardsAsync(); failed, new, inProgress
+		// batch => new => batchit => if failed => new => resend => if in progress => wait for confirmation
+		let pendingRewards: Array<PendingReward> = dummyDataOutput();
 		// get inProgressTransactionHashes: string[]
 
-		if (pendingRewards.length >= PENDING_REWARD_TRESHOLD /* || inProgressTransactionHashes.length > 0 */)
+		if (pendingRewards.length >= PENDING_REWARD_TRESHOLD /* || inProgressTransactionHashes.length > 0 */) {
 			await startAirdropper(pendingRewards /*, inProgressRewards, workerPool */);
+		}
 
-		await setTimeout(1000 * 60 * 5); // Check every 5 minutes
+		const AIRDROPPER_INTERVAL = 1000 * 60 * 5;
+		console.log(`Airdropper will rerun in ${AIRDROPPER_INTERVAL / 24.0} hours `);
+		await setTimeout(AIRDROPPER_INTERVAL); // Check every 6 hourse
 	}
 };
 
@@ -61,59 +66,59 @@ const getTotalRewardQuantity = (isAda: boolean, data: PendingReward[]) => {
 		.reduce((acc, next) => acc + next);
 };
 
-// BATCH #0
-// INPUT LOVELACE SUM: 279493194
-// INPUT CONCLAVE SUM: 689413782
-// OUTPUT LOVELACE SUM: 600000000
-// OUTPUT CONCLAVE SUM: 1099
-// BATCH #1
-// INPUT LOVELACE SUM: 249992996
-// INPUT CONCLAVE SUM: 10000000
-// OUTPUT LOVELACE SUM: 600000000
-// OUTPUT CONCLAVE SUM: 1001
-
-main();
-
-const startAirdropper = async (pendingRewards: PendingReward[] /*, inProgressTransactionHashes: string[] */) => {
+const startAirdropper = async (
+	pendingRewards: PendingReward[] /*, inProgressTransactionHashes: string[] */
+): Promise<void> => {
+	let protocolParameter = await getLatestProtocolParametersAsync(blockfrostAPI);
 	// Divide UTXOs
-	let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
-	await divideUTXOsAsync(utxos /*, adaTreshold, conclaveTreshold)*/);
+	// let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
+	// await divideUTXOsAsync(utxos, 500_000_000, protocolParameter);
 
-	/* 500 rewards -> */
-	// Batch 1 - 100 ADA 1m CNLV
-	// Batch 2 - 200 ADA 2m CNLV
-	// batch ------ 10000 ada 10 batches -> 1000 ada
-	// 1000 utxo 1000 reward
-	// 1000 ada -> + 50 other small transactions = 5000 ADA -> 1 batch only --
-
-	// output 5000 ADA
-
-	// divide utxo -> input
-	// 1 UTXO -> to cover batch 1
-	// 1 UTXO - to cover batch 2
-
-	// Fetch UTXOs in Wallet
-	let utxosInWallet: Array<TxBodyInput> = await getAllUTXOsAsync(/* wallet address */);
-
+	let utxosInWallet: Array<TxBodyInput> = await getAllUTXOsAsync(shelleyChangeAddress.to_bech32());
 	// Log pending rewards
-	displayPendingRewards(pendingRewards);
+	// displayPendingRewards(pendingRewards);
 
 	// Check if there's rewards to airdrop
 	if (isEmpty(pendingRewards) || isNull(pendingRewards))
 		return console.log('No eligible rewards as of the moment...');
 
 	// Divide pending rewards into batches
-	let inputOutputBatches: Array<WorkerBatch> = await getBatchesPerWorker(utxosInWallet, pendingRewards);
+	let airdropBatches: Array<AirdropBatch> = await getBatchesPerWorker(utxosInWallet, pendingRewards);
 
+	// console.table(airdropBatches);
 	// Log input and output totals
-	displayInputOutputTotals(inputOutputBatches);
+	// displayInputOutputTotals(airdropBatches);
 
-	await executeWorkers(inputOutputBatches); // worker, args => while
+	const conclaveAirdropper = new ConclaveAirdropper(10);
 
-	// outside -> executeWorker(worker, params);
+	let index = 0;
+	for (let airdropBatch of airdropBatches) {
+		airdropBatch.index = ++index;
+		await executeAirdropWorkerAsync(conclaveAirdropper, airdropBatch, protocolParameter);
+	}
 };
 
 // helpers
+const executeAirdropWorkerAsync = async (
+	conclaveAirdropper: ConclaveAirdropper,
+	batch: AirdropBatch,
+	protocolParameter: ProtocolParametersResponse
+): Promise<void> => {
+	let airdropWorker = null;
+
+	while (airdropWorker === null) {
+		airdropWorker = conclaveAirdropper.getFirstAvailableWorker();
+
+		if (isNull(airdropWorker)) {
+			console.log('waiting available worker');
+			await setTimeout(1000 * 60 * 2); // wait 2 minutes
+			continue;
+		}
+
+		airdropWorker!.execute(batch, protocolParameter);
+		break;
+	}
+};
 
 const displayPendingRewards = (pendingRewards: PendingReward[]) => {
 	pendingRewards.forEach(pendingReward => {
@@ -125,7 +130,7 @@ const displayPendingRewards = (pendingRewards: PendingReward[]) => {
 	});
 };
 
-const displayInputOutputTotals = (inputOutputBatches: WorkerBatch[]) => {
+const displayInputOutputTotals = (inputOutputBatches: AirdropBatch[]) => {
 	inputOutputBatches.forEach((e, index) => {
 		console.log('BATCH #' + index);
 		console.log('INPUT LOVELACE SUM: ' + getTotalQuantity('lovelace', e.txInputs));
@@ -143,3 +148,30 @@ const displayInputOutputTotals = (inputOutputBatches: WorkerBatch[]) => {
 		console.log('OUTPUT ACCOUNT COUNT: ' + e.txOutputs.length);
 	});
 };
+
+main();
+
+// pendingReward -> [ 100, 1000 ], [10, 1000], [500, 1000]
+// UTXO - 10000 ADA 1b CNLV
+
+// batch1 = [100 ADA, 1000 CNLV]
+// batch2 = [10 ADA, 1000 CNLV]
+// batch3 = [500 ADA, 1000 CNLV]
+
+// DIVIDE UTXO FUNCTION
+// UTXO 1 = [100 ADA, 1000 CNLV] -> batch1
+// UTXO 2 = [10 ADA< 1000 CNLV] -> batch2
+// UTXO 3 = [500 ADA, 1000 CNLV] -> batch3
+// UTXO 4 = 9000 ADA 988m CNLV -------> waiting for next batches
+
+// input
+// -----> 1 input -> outputs -----> 200 outputs -> 15-50 -> 150  ---> bigger fee ? -> 250 250 250 250 250
+
+// UTXO -> 1000
+// 4 -> 250 (variable) ADA UTXOS ->
+
+// startAirdrop
+// batchWithoutInput -> output[100 ADA, 500, 1000 ADA]
+// divideUtxo -> utxos -> utxo 100 ADA, 500 ADA -> cost effective -> possible sobrang laki ng fee -> 100 -> 500 -> 9400 --> 9400 -> <- 1000
+
+// 9400 + 1000 --------> 100 ADA, 500 ADA, 1000 ADA -> change

@@ -1,75 +1,82 @@
-import { blockfrostAPI } from "../config/network.config";
-import { policyStr, shelleyChangeAddress } from "../config/walletKeys.config";
-import { Reward } from "../types/database-types";
-import { PendingReward } from "../types/helper-types";
-import { CardanoAssetResponse, TxBodyInput } from "../types/response-types";
-import { isEmpty, isNull, isUndefined } from "./boolean-utils";
-import { coinSelectionAsync } from "./coin-utils";
-import { toHex } from "./string-utils";
-import { conclaveOutputSum, getInputAssetUTXOSum, getOutputConclaveSum, getOutputLovelaceSum, lovelaceOutputSum } from "./sum-utils";
+import { blockfrostAPI } from '../config/network.config';
+import { policyStr, shelleyChangeAddress } from '../config/walletKeys.config';
+import { Reward } from '../types/database-types';
+import { PendingReward } from '../types/helper-types';
+import { CardanoAssetResponse, TxBodyInput } from '../types/response-types';
+import { isEmpty, isNull, isUndefined } from './boolean-utils';
+import { coinSelectionAsync } from './coin-utils';
+import { toHex } from './string-utils';
 import {
-    createAndSignRewardTxAsync,
-    submitTransactionAsync
-} from "./transaction-utils";
-import { queryAllUTXOsAsync } from "./utxo-utils";
-import { parentPort } from "worker_threads";
+	conclaveOutputSum,
+	getInputAssetUTXOSum,
+	getOutputConclaveSum,
+	getOutputLovelaceSum,
+	lovelaceOutputSum,
+} from './sum-utils';
+import { createAndSignRewardTxAsync, submitTransactionAsync } from './transaction-utils';
+import { queryAllUTXOsAsync } from './utxo-utils';
+import { parentPort } from 'worker_threads';
 import CardanoWasm from '@dcspark/cardano-multiplatform-lib-nodejs';
 import { BlockFrostAPI, BlockfrostServerError, Responses } from '@blockfrost/blockfrost-js';
 
-export const getRawUTXOAssetAsync = async (unit: string = "lovelace"): Promise<Array<TxBodyInput>> => {
-    let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
-    let txBodyInputs: Array<TxBodyInput> = [];
-    utxos = utxos.filter(utxo => (unit == "lovelace" ? utxo.amount.length == 1 : utxo.amount.length >= 1) && utxo.amount.find(asset => asset.unit == unit));
+export const getRawUTXOAssetAsync = async (unit: string = 'lovelace'): Promise<Array<TxBodyInput>> => {
+	let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
+	let txBodyInputs: Array<TxBodyInput> = [];
+	utxos = utxos.filter(
+		utxo =>
+			(unit == 'lovelace' ? utxo.amount.length == 1 : utxo.amount.length >= 1) &&
+			utxo.amount.find(asset => asset.unit == unit)
+	);
 
-    utxos.forEach((utxo) => {
-        let assetArray: Array<CardanoAssetResponse> = [];
-        utxo.amount.forEach(asset => {
-            const cardanoAsset: CardanoAssetResponse = {
-                unit: asset.unit,
-                quantity: asset.quantity,
-            };
+	utxos.forEach(utxo => {
+		let assetArray: Array<CardanoAssetResponse> = [];
+		utxo.amount.forEach(asset => {
+			const cardanoAsset: CardanoAssetResponse = {
+				unit: asset.unit,
+				quantity: asset.quantity,
+			};
 
-            assetArray.push(cardanoAsset);
-        });
+			assetArray.push(cardanoAsset);
+		});
 
-        const utxoInput: TxBodyInput = {
-            txHash: utxo.tx_hash,
-            outputIndex: utxo.output_index.toString(),
-            asset: assetArray,
-        };
+		const utxoInput: TxBodyInput = {
+			txHash: utxo.tx_hash,
+			outputIndex: utxo.output_index.toString(),
+			asset: assetArray,
+		};
 
-        txBodyInputs.push(utxoInput);
-    });
+		txBodyInputs.push(utxoInput);
+	});
 
-    return txBodyInputs;
-}
+	return txBodyInputs;
+};
 
-export const getAllUTXOsAsync = async (): Promise<Array<TxBodyInput>> => {
-    let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
-    let txBodyInputs: Array<TxBodyInput> = [];
+export const getAllUTXOsAsync = async (walletAddress: string): Promise<Array<TxBodyInput>> => {
+	let utxos = await queryAllUTXOsAsync(blockfrostAPI, walletAddress);
+	let txBodyInputs: Array<TxBodyInput> = [];
 
-    utxos.forEach((utxo) => {
-        let assetArray: Array<CardanoAssetResponse> = [];
-        utxo.amount.forEach(asset => {
-            const cardanoAsset: CardanoAssetResponse = {
-                unit: asset.unit,
-                quantity: asset.quantity,
-            };
+	utxos.forEach(utxo => {
+		let assetArray: Array<CardanoAssetResponse> = [];
+		utxo.amount.forEach(asset => {
+			const cardanoAsset: CardanoAssetResponse = {
+				unit: asset.unit,
+				quantity: asset.quantity,
+			};
 
-            assetArray.push(cardanoAsset);
-        });
+			assetArray.push(cardanoAsset);
+		});
 
-        const utxoInput: TxBodyInput = {
-            txHash: utxo.tx_hash,
-            outputIndex: utxo.output_index.toString(),
-            asset: assetArray,
-        };
+		const utxoInput: TxBodyInput = {
+			txHash: utxo.tx_hash,
+			outputIndex: utxo.output_index.toString(),
+			asset: assetArray,
+		};
 
-        txBodyInputs.push(utxoInput);
-    });
+		txBodyInputs.push(utxoInput);
+	});
 
-    return txBodyInputs;
-}
+	return txBodyInputs;
+};
 
 // console.log('WORKER# ' + worker + " " + "<========Creating TxBody for Worker #" + index + " ========>");
 //     let txInputOutputs = await coinSelectionAsync(txInputBatch, txOutputBatch, worker);

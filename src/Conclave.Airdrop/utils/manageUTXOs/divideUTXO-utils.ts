@@ -1,22 +1,33 @@
 import { blockfrostAPI } from '../../config/network.config';
 import { policyStr, shelleyChangeAddress } from '../../config/walletKeys.config';
-import { TxBodyInput, UTXO } from '../../types/response-types';
+import AirdropTransactionStatus from '../../enums/airdrop-transaction-status';
+import { ProtocolParametersResponse, TxBodyInput, UTXO } from '../../types/response-types';
 import { isNull } from '../boolean-utils';
 import { coinSelectionAsync } from '../coin-utils';
 import { toHex } from '../string-utils';
 import { conclaveOutputSum, getInputAssetUTXOSum, lovelaceOutputSum } from '../sum-utils';
-import { createAndSignRewardTxAsync, displayUTXOs, submitTransactionAsync } from '../transaction-utils';
-import { partitionUTXOs, queryAllUTXOsAsync } from '../utxo-utils';
+import {
+	createAndSignRewardTxAsync,
+	displayUTXOs,
+	submitTransactionAsync,
+	transactionConfirmation,
+} from '../transaction-utils';
+import { awaitChangeInUTXOAsync, partitionUTXOs, queryAllUTXOsAsync } from '../utxo-utils';
 
-export const divideUTXOsAsync = async (utxos: UTXO | null = null) => {
-	await displayUTXOs();
+export const divideUTXOsAsync = async (
+	utxos: UTXO | null = null,
+	threshold: number,
+	protocolParameter: ProtocolParametersResponse
+) => {
+	await displayUTXOs(utxos!);
 	console.log('<-----Dividing UTXOs----->');
 	if (isNull(utxos)) return;
 
-	let rewards = partitionUTXOs(utxos!);
-	if (rewards?.txInputs === null || rewards?.txOutputs === null || rewards === null) return;
+	let rewards = partitionUTXOs(utxos!, threshold);
+	if (rewards === null || rewards.txInputs === null || rewards.txOutputs === null)
+		return console.log('No UTXOs to divide');
 
-	let txInputOutputs = await coinSelectionAsync(rewards.txInputs, rewards.txOutputs, 0);
+	let txInputOutputs = await coinSelectionAsync(rewards.txInputs, rewards.txOutputs, 'random', protocolParameter);
 	if (txInputOutputs == null || txInputOutputs === undefined) return;
 
 	console.log('<-----Details----->');
@@ -39,7 +50,7 @@ export const divideUTXOsAsync = async (utxos: UTXO | null = null) => {
 	console.log('TxOutput count: ' + txInputOutputs!.txOutputs.length);
 	console.log('<-----End of UTXO Divider Details----->');
 
-	let transaction = await createAndSignRewardTxAsync(txInputOutputs);
+	let transaction = await createAndSignRewardTxAsync(txInputOutputs, protocolParameter);
 	if (transaction == null) return;
 
 	console.log('Dividing Large UTXOs');
@@ -48,6 +59,35 @@ export const divideUTXOsAsync = async (utxos: UTXO | null = null) => {
 	);
 
 	//Submit Transaction
-	// await submitTransactionAsync(transaction.transaction, transaction.txHash, txInputOutputs!, 0, 0);
-	return await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
+
+	let txHashString = toHex(transaction.txHash.to_bytes());
+	let MAX_NUMBER_OF_RETRIES = 40;
+	let retryCount = 0;
+	let submitResult: { status: number; message: string; txHashString: string };
+	let updateResult: { status: number; message: string; txHashString: string };
+
+	while (retryCount < MAX_NUMBER_OF_RETRIES) {
+		submitResult = await submitTransactionAsync(blockfrostAPI, transaction!.transaction, txHashString);
+		console.log('Submit Result: ' + submitResult.status + ' ' + submitResult.message);
+		if (submitResult.status != AirdropTransactionStatus.Success) {
+			retryCount++;
+			continue;
+		}
+		updateResult = await awaitChangeInUTXOAsync(blockfrostAPI, txHashString);
+		console.log('Update Result: ' + updateResult.status + ' ' + updateResult.message);
+		if (updateResult.status != AirdropTransactionStatus.Success) {
+			retryCount++;
+			continue;
+		} else {
+			break;
+		}
+	}
+	if (submitResult!.status != AirdropTransactionStatus.Success) {
+		return;
+	}
+	if (updateResult!.status != AirdropTransactionStatus.Success) {
+		return;
+	}
+
+	await transactionConfirmation(blockfrostAPI, txHashString);
 };

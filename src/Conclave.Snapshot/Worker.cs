@@ -16,7 +16,6 @@ public class Worker : BackgroundService
     private ConclaveEpoch? NewConclaveEpoch { get; set; }
 
     // services
-
     private IConclaveEpochsService EpochsService { get; set; }
     private IConclaveCardanoService CardanoService { get; set; }
     private IConclaveSchedulerService SnapshotSchedulerService { get; set; }
@@ -35,7 +34,6 @@ public class Worker : BackgroundService
 
     // options
     private IOptions<SnapshotOptions> SnapshotOptions { get; set; }
-
 
     public Worker(ILogger<Worker> logger, IServiceProvider provider)
     {
