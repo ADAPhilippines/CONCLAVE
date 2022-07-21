@@ -20,4 +20,11 @@ public class RewardController : ControllerBase
         var res = _service.GetAllUnpaidRewards();
         return Ok(res);
     }
+
+    [HttpGet("inprogress")]
+    public IActionResult GetAllPendingTransactionHashes()
+    {
+        var res = _service.GetAllPendingTransactionHashes();
+        return Ok(res);
+    }
 }
