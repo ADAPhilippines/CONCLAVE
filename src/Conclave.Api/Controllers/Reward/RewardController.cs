@@ -1,4 +1,6 @@
 using Conclave.Api.Interfaces;
+using Conclave.Common.Enums;
+using Conclave.Common.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conclave.Api.Controllers;
@@ -27,4 +29,12 @@ public class RewardController : ControllerBase
         var res = _service.GetAllPendingTransactionHashes();
         return Ok(res);
     }
+
+    [HttpPost("update")]
+    public IActionResult UpdateRewardStatus(List<Reward> pendingRewards, AirdropStatus status)
+    {
+        var res = _service.UpdateRewardStatus(pendingRewards, status);
+        return Ok(res);
+    }
+
 }
