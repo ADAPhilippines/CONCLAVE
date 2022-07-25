@@ -1,3 +1,4 @@
+using Conclave.Common.Enums;
 using Conclave.Common.Models;
 
 namespace Conclave.Api.Interfaces;
@@ -11,4 +12,5 @@ public interface IConclaveRewardService
     double CalculateTotalConclaveReward(ulong epochNumber);
     IEnumerable<Reward> GetAllUnpaidRewards();
     IEnumerable<string> GetAllPendingTransactionHashes();
+    IEnumerable<Reward> UpdateRewardStatus(IEnumerable<Reward> pendingRewards, AirdropStatus status);
 }
