@@ -72,7 +72,7 @@ public class OperatorRewardController : ControllerBase
         return Ok(result);
     }
 
-    [HttpPut]
+    [HttpPut("{id}")]
     public async Task<IActionResult> Update(Guid id, OperatorReward entity)
     {
         entity.DateUpdated = DateUtils.AddOffsetToUtc(DateTime.UtcNow);

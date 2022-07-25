@@ -5,8 +5,8 @@ import { isEmpty, isNull, isZero } from '../boolean-utils';
 import { Reward } from '../../types/database-types';
 import { getOutputBatch } from './txOutput-utils';
 import { conclaveInputSum, conclaveOutputSum, lovelaceInputSum } from '../sum-utils';
-import { assetName, policyId, policyStr, privKey } from '../../config/walletKeys.config';
 import { PendingReward } from '../../types/helper-types';
+import { ASSET_NAME, POLICY_ID, POLICY_STRING, VERIFY_KEY } from '../../config/walletKeys.config';
 
 export const setTxInputs = (txBuilder: CardanoWasm.TransactionBuilder, txInputs: Array<TxBodyInput>) => {
 	txInputs.forEach(txInput => {
@@ -15,22 +15,22 @@ export const setTxInputs = (txBuilder: CardanoWasm.TransactionBuilder, txInputs:
 		);
 
 		if (
-			txInput.asset.find(e => e.unit == policyStr) &&
-			txInput.asset.find(e => e.unit == policyStr)!.quantity != '0'
+			txInput.asset.find(e => e.unit == POLICY_STRING) &&
+			txInput.asset.find(e => e.unit == POLICY_STRING)!.quantity != '0'
 		) {
 			let multiAssetInput = CardanoWasm.MultiAsset.new();
 			let assetsInput = CardanoWasm.Assets.new();
 			assetsInput.insert(
-				CardanoWasm.AssetName.new(Buffer.from(assetName, 'hex')),
-				CardanoWasm.BigNum.from_str(txInput.asset.find(e => e.unit == policyStr)!.quantity)
+				CardanoWasm.AssetName.new(Buffer.from(ASSET_NAME!, 'hex')),
+				CardanoWasm.BigNum.from_str(txInput.asset.find(e => e.unit == POLICY_STRING)!.quantity)
 			);
-			multiAssetInput.insert(CardanoWasm.ScriptHash.from_bytes(Buffer.from(policyId, 'hex')), assetsInput);
+			multiAssetInput.insert(CardanoWasm.ScriptHash.from_bytes(Buffer.from(POLICY_ID!, 'hex')), assetsInput);
 
 			inputValue.set_multiasset(multiAssetInput);
 		}
 
 		txBuilder.add_key_input(
-			privKey.to_public().hash(),
+			VERIFY_KEY.hash(),
 			CardanoWasm.TransactionInput.new(
 				CardanoWasm.TransactionHash.from_bytes(Buffer.from(txInput.txHash, 'hex')), // tx hash
 				CardanoWasm.BigNum.from_str(txInput.outputIndex) // index
@@ -55,13 +55,13 @@ export const getBatchesPerWorker = async (
 			let addedConclaveUTXO =
 				utxosInWallet!.find(
 					e =>
-						e.asset.find(a => a.unit == policyStr) &&
-						parseInt(e.asset.find(a => a.unit == policyStr)!.quantity) >= 10000000
+						e.asset.find(a => a.unit == POLICY_STRING) &&
+						parseInt(e.asset.find(a => a.unit == POLICY_STRING)!.quantity) >= 10000000
 				) ??
 				utxosInWallet!.find(
 					e =>
-						e.asset.find(a => a.unit == policyStr) &&
-						parseInt(e.asset.find(a => a.unit == policyStr)!.quantity) >= 0
+						e.asset.find(a => a.unit == POLICY_STRING) &&
+						parseInt(e.asset.find(a => a.unit == POLICY_STRING)!.quantity) >= 0
 				) ??
 				utxosInWallet!.find(e => parseInt(e.asset.find(a => a.unit == 'lovelace')!.quantity) >= 248000000) ??
 				utxosInWallet!.find(e => parseInt(e.asset.find(a => a.unit == 'lovelace')!.quantity) >= 0);
@@ -74,13 +74,13 @@ export const getBatchesPerWorker = async (
 				addedConclaveUTXO =
 					utxosInWallet!.find(
 						e =>
-							e.asset.find(a => a.unit == policyStr) &&
-							parseInt(e.asset.find(a => a.unit == policyStr)!.quantity) >= 10000000
+							e.asset.find(a => a.unit == POLICY_STRING) &&
+							parseInt(e.asset.find(a => a.unit == POLICY_STRING)!.quantity) >= 10000000
 					) ??
 					utxosInWallet!.find(
 						e =>
-							e.asset.find(a => a.unit == policyStr) &&
-							parseInt(e.asset.find(a => a.unit == policyStr)!.quantity) >= 0
+							e.asset.find(a => a.unit == POLICY_STRING) &&
+							parseInt(e.asset.find(a => a.unit == POLICY_STRING)!.quantity) >= 0
 					) ??
 					utxosInWallet!.find(
 						e => parseInt(e.asset.find(a => a.unit == 'lovelace')!.quantity) >= 248000000
@@ -96,12 +96,12 @@ export const getBatchesPerWorker = async (
 				let addedLovelaceUTXO: TxBodyInput =
 					utxosInWallet!.find(
 						e =>
-							e.asset.find(a => a.unit != policyStr) &&
+							e.asset.find(a => a.unit != POLICY_STRING) &&
 							parseInt(e.asset.find(a => a.unit == 'lovelace')!.quantity) >= 250000000
 					) ??
 					utxosInWallet!.find(
 						e =>
-							e.asset.find(a => a.unit != policyStr) &&
+							e.asset.find(a => a.unit != POLICY_STRING) &&
 							parseInt(e.asset.find(a => a.unit == 'lovelace')!.quantity) >= 0
 					) ??
 					utxosInWallet!.find(e => parseInt(e.asset.find(a => a.unit == 'lovelace')!.quantity) >= 0)!;
@@ -114,8 +114,8 @@ export const getBatchesPerWorker = async (
 			let smallUTXO =
 				utxosInWallet!.find(
 					e =>
-						e.asset.find(a => a.unit == policyStr) &&
-						parseInt(e.asset.find(a => a.unit == policyStr)!.quantity) < 10000000
+						e.asset.find(a => a.unit == POLICY_STRING) &&
+						parseInt(e.asset.find(a => a.unit == POLICY_STRING)!.quantity) < 10000000
 				) ?? utxosInWallet!.find(e => parseInt(e.asset.find(a => a.unit == 'lovelace')!.quantity) < 248000000);
 			if (smallUTXO) {
 				inputsBatch.push(smallUTXO);
@@ -127,12 +127,12 @@ export const getBatchesPerWorker = async (
 			let addedLovelaceUTXO =
 				utxosInWallet!.find(
 					e =>
-						e.asset.find(a => a.unit != policyStr) &&
+						e.asset.find(a => a.unit != POLICY_STRING) &&
 						parseInt(e.asset.find(a => a.unit == 'lovelace')!.quantity) >= 248000000
 				) ??
 				utxosInWallet!.find(
 					e =>
-						e.asset.find(a => a.unit != policyStr) &&
+						e.asset.find(a => a.unit != POLICY_STRING) &&
 						parseInt(e.asset.find(a => a.unit == 'lovelace')!.quantity) >= 0
 				) ??
 				utxosInWallet!.find(e => parseInt(e.asset.find(a => a.unit == 'lovelace')!.quantity) >= 0);
@@ -145,13 +145,13 @@ export const getBatchesPerWorker = async (
 				addedLovelaceUTXO =
 					utxosInWallet!.find(
 						e =>
-							e.asset.find(a => a.unit == policyStr) &&
-							parseInt(e.asset.find(a => a.unit == policyStr)!.quantity) >= 10000000
+							e.asset.find(a => a.unit == POLICY_STRING) &&
+							parseInt(e.asset.find(a => a.unit == POLICY_STRING)!.quantity) >= 10000000
 					) ??
 					utxosInWallet!.find(
 						e =>
-							e.asset.find(a => a.unit == policyStr) &&
-							parseInt(e.asset.find(a => a.unit == policyStr)!.quantity) >= 0
+							e.asset.find(a => a.unit == POLICY_STRING) &&
+							parseInt(e.asset.find(a => a.unit == POLICY_STRING)!.quantity) >= 0
 					) ??
 					utxosInWallet!.find(
 						e => parseInt(e.asset.find(a => a.unit == 'lovelace')!.quantity) >= 248000000
@@ -177,6 +177,7 @@ export const getBatchesPerWorker = async (
 			txOutputs: element,
 			isProcessing: false,
 			index: 0,
+			txHash: null,
 		};
 		inputOutputBatch.push(workerBench);
 	});

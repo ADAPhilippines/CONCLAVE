@@ -1,5 +1,4 @@
 import { blockfrostAPI } from '../config/network.config';
-import { policyStr, shelleyChangeAddress } from '../config/walletKeys.config';
 import { Reward } from '../types/database-types';
 import { PendingReward } from '../types/helper-types';
 import { CardanoAssetResponse, TxBodyInput } from '../types/response-types';
@@ -18,9 +17,10 @@ import { queryAllUTXOsAsync } from './utxo-utils';
 import { parentPort } from 'worker_threads';
 import CardanoWasm from '@dcspark/cardano-multiplatform-lib-nodejs';
 import { BlockFrostAPI, BlockfrostServerError, Responses } from '@blockfrost/blockfrost-js';
+import { SHELLEY_CHANGE_ADDRESS } from '../config/walletKeys.config';
 
 export const getRawUTXOAssetAsync = async (unit: string = 'lovelace'): Promise<Array<TxBodyInput>> => {
-	let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
+	let utxos = await queryAllUTXOsAsync(blockfrostAPI, SHELLEY_CHANGE_ADDRESS.to_bech32());
 	let txBodyInputs: Array<TxBodyInput> = [];
 	utxos = utxos.filter(
 		utxo =>

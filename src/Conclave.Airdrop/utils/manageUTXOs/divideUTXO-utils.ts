@@ -1,5 +1,5 @@
 import { blockfrostAPI } from '../../config/network.config';
-import { policyStr, shelleyChangeAddress } from '../../config/walletKeys.config';
+import { POLICY_STRING } from '../../config/walletKeys.config';
 import AirdropTransactionStatus from '../../enums/airdrop-transaction-status';
 import { ProtocolParametersResponse, TxBodyInput, UTXO } from '../../types/response-types';
 import { isNull } from '../boolean-utils';
@@ -44,7 +44,7 @@ export const divideUTXOsAsync = async (
 		);
 	});
 	console.log('TxInputLovelace sum: ' + getInputAssetUTXOSum(txInputOutputs!.txInputs));
-	console.log('TxInputConclave sum: ' + getInputAssetUTXOSum(txInputOutputs!.txInputs, policyStr));
+	console.log('TxInputConclave sum: ' + getInputAssetUTXOSum(txInputOutputs!.txInputs, POLICY_STRING));
 	console.log('ConclaveOutput sum: ' + conclaveOutputSum(txInputOutputs!.txOutputs));
 	console.log('LovelaceOutput sum: ' + lovelaceOutputSum(txInputOutputs!.txOutputs));
 	console.log('TxOutput count: ' + txInputOutputs!.txOutputs.length);
@@ -59,35 +59,13 @@ export const divideUTXOsAsync = async (
 	);
 
 	//Submit Transaction
-
 	let txHashString = toHex(transaction.txHash.to_bytes());
-	let MAX_NUMBER_OF_RETRIES = 40;
-	let retryCount = 0;
-	let submitResult: { status: number; message: string; txHashString: string };
-	let updateResult: { status: number; message: string; txHashString: string };
 
-	while (retryCount < MAX_NUMBER_OF_RETRIES) {
-		submitResult = await submitTransactionAsync(blockfrostAPI, transaction!.transaction, txHashString);
-		console.log('Submit Result: ' + submitResult.status + ' ' + submitResult.message);
-		if (submitResult.status != AirdropTransactionStatus.Success) {
-			retryCount++;
-			continue;
-		}
-		updateResult = await awaitChangeInUTXOAsync(blockfrostAPI, txHashString);
-		console.log('Update Result: ' + updateResult.status + ' ' + updateResult.message);
-		if (updateResult.status != AirdropTransactionStatus.Success) {
-			retryCount++;
-			continue;
-		} else {
-			break;
-		}
-	}
+	let submitResult = await submitTransactionAsync(blockfrostAPI, transaction!.transaction, txHashString);
 	if (submitResult!.status != AirdropTransactionStatus.Success) {
-		return;
-	}
-	if (updateResult!.status != AirdropTransactionStatus.Success) {
 		return;
 	}
 
 	await transactionConfirmation(blockfrostAPI, txHashString);
+	return;
 };

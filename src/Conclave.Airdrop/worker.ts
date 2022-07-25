@@ -1,20 +1,29 @@
 import { AirdropBatch, AirdropWorkerParameter, ProtocolParametersResponse } from './types/response-types';
 import { updateRewardListStatusAsync } from './utils/reward-utils';
 import { coinSelectionAsync } from './utils/coin-utils';
-import { isNull } from './utils/boolean-utils';
+import { isNull, isUndefined } from './utils/boolean-utils';
 import { getInputAssetUTXOSum, getOutputConclaveSum, getOutputLovelaceSum } from './utils/sum-utils';
-import { policyStr } from './config/walletKeys.config';
 import { createAndSignRewardTxAsync, submitTransactionAsync, transactionConfirmation } from './utils/transaction-utils';
 import AirdropTransactionStatus from './enums/airdrop-transaction-status';
 import { parentPort } from 'worker_threads';
 import { toHex } from './utils/string-utils';
 import { blockfrostAPI } from './config/network.config';
 import { awaitChangeInUTXOAsync } from './utils/utxo-utils';
+import { POLICY_STRING } from './config/walletKeys.config';
 
 const { v1: uuidv1 } = require('uuid');
 
 parentPort!.on('message', async (workerparameter: AirdropWorkerParameter) => {
 	let workerId = uuidv1().substring(0, 5);
+
+	// if (!isNull(workerparameter.batch.txHash) && !isUndefined(workerparameter.batch.txHash)) {
+	// 	let confirmationResult = await transactionConfirmation(blockfrostAPI, workerparameter.batch.txHash!);
+	// 	return parentPort!.postMessage({
+	// 		...confirmationResult,
+	// 		batch: workerparameter.batch,
+	// 		txHashString: workerparameter.batch.txHash!,
+	// 	});
+	// }
 
 	let txInputOutputs = await coinSelectionAsync(
 		workerparameter.batch.txInputs,
@@ -26,8 +35,8 @@ parentPort!.on('message', async (workerparameter: AirdropWorkerParameter) => {
 	if (isNull(txInputOutputs)) {
 		return parentPort!.postMessage({
 			status: AirdropTransactionStatus.Failed,
-			txHashString: null,
 			batch: workerparameter.batch,
+			txHashString: null,
 		});
 	}
 
@@ -60,7 +69,7 @@ parentPort!.on('message', async (workerparameter: AirdropWorkerParameter) => {
 			getOutputLovelaceSum(txInputOutputs!.txOutputs) +
 			'\n' +
 			'TxInputConclave sum: ' +
-			getInputAssetUTXOSum(txInputOutputs!.txInputs, policyStr) +
+			getInputAssetUTXOSum(txInputOutputs!.txInputs, POLICY_STRING) +
 			'\n' +
 			'TxOutputConclave sum: ' +
 			getOutputConclaveSum(txInputOutputs!.txOutputs) +
@@ -76,42 +85,17 @@ parentPort!.on('message', async (workerparameter: AirdropWorkerParameter) => {
 		console.log('exiting worker ' + workerId);
 		return parentPort!.postMessage({
 			status: AirdropTransactionStatus.Failed,
-			txHashString: null,
 			batch: workerparameter.batch,
+			txHashString: null,
 		});
 	}
 
 	let txHashString = toHex(transaction.txHash.to_bytes());
-	let MAX_NUMBER_OF_RETRIES = 40;
-	let retryCount = 0;
-	let submitResult: { status: number; message: string; txHashString: string } | null = null;
-	let updateResult: { status: number; message: string; txHashString: string } | null = null;
 
-	while (retryCount < MAX_NUMBER_OF_RETRIES) {
-		submitResult = await submitTransactionAsync(blockfrostAPI, transaction!.transaction, txHashString);
-		if (submitResult.status != AirdropTransactionStatus.Success) {
-			retryCount++;
-			continue;
-		}
-
-		updateResult = await awaitChangeInUTXOAsync(blockfrostAPI, txHashString);
-		if (updateResult.status != AirdropTransactionStatus.Success) {
-			retryCount++;
-			continue;
-		}
-		break;
-	}
-
+	let submitResult = await submitTransactionAsync(blockfrostAPI, transaction!.transaction, txHashString);
 	if (submitResult!.status != AirdropTransactionStatus.Success) {
 		return parentPort!.postMessage({
 			...submitResult,
-			batch: workerparameter.batch,
-			txHashString: txHashString,
-		});
-	}
-	if (updateResult!.status != AirdropTransactionStatus.Success) {
-		return parentPort!.postMessage({
-			...updateResult,
 			batch: workerparameter.batch,
 			txHashString: txHashString,
 		});
@@ -123,7 +107,7 @@ parentPort!.on('message', async (workerparameter: AirdropWorkerParameter) => {
 		batch: workerparameter.batch,
 		txHashString: txHashString,
 	});
-	// console.log('exiting worker ' + workerId);
+	console.log('exiting worker ' + workerId);
 	// parentPort!.postMessage({
 	// 	status: AirdropTransactionStatus.Success,
 	// 	message: 'confirmation completed',

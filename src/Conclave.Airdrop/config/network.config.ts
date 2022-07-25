@@ -21,5 +21,5 @@ export const getLatestProtocolParametersAsync = async (
 };
 
 export const blockfrostAPI = new BlockFrostAPI({
-	projectId: 'testnet1fVIuBg2VhkRVBtDsAZkudFVwSfBNDtc',
+	projectId: process.env.PROJECT_ID!,
 });

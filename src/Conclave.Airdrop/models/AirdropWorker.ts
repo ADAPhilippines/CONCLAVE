@@ -7,6 +7,7 @@ import {
 import { Worker } from 'worker_threads';
 import AirdropStatus from '../enums/airdrop-status';
 import AirdropTransactionStatus from '../enums/airdrop-transaction-status';
+import { getAllRewards, updateRewardListStatusAsync } from '../utils/reward-utils';
 
 // failed
 // success
@@ -22,17 +23,25 @@ export default class AirdropWorker extends Worker {
 	private initEventListeners(): void {
 		this.on('message', ({ status, txHashString, batch }: AirdropWorkerResponse) => {
 			this.isAvailable = true;
+			let airdropStatus: number;
 
 			switch (status) {
 				case AirdropTransactionStatus.Failed:
-					// TODO: update pendingRewards to failed
+					console.log(`Reverting rewards list status for batch #${batch.index} to New`);
+					airdropStatus = AirdropStatus.New;
 					break;
 				case AirdropTransactionStatus.Success:
-					// TODO: update pendingRewards to complete
+					console.log(`Updating rewards list status for batch #${batch.index} to Complete`);
+					airdropStatus = AirdropStatus.Completed;
 					break;
 				default:
 					throw new Error('Invalid Airdrop Transaction Status!');
 			}
+
+			// if (airdropStatus === AirdropStatus.New || airdropStatus === AirdropStatus.Completed) {
+			// 	var rewards = getAllRewards(batch.txOutputs);
+			// 	updateRewardListStatusAsync(rewards, airdropStatus, txHashString);
+			// }
 		});
 	}
 

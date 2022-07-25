@@ -5,8 +5,8 @@ import { setTTLAsync } from './transaction-utils';
 import { createRewardTxBodyAsync, createRewardTxBodywithFee, setRewardTxBodyDetailsAsync } from './txBody/txBody-utils';
 import { initReward, initRewardTxBodyDetails } from './type-utils';
 import CardanoWasm from '@dcspark/cardano-multiplatform-lib-nodejs';
-import { shelleyChangeAddress } from '../config/walletKeys.config';
 import { PendingReward } from '../types/helper-types';
+import { SHELLEY_CHANGE_ADDRESS } from '../config/walletKeys.config';
 
 export const isNull = (item: any | null): boolean => {
 	if (item === null) return true;
@@ -58,9 +58,9 @@ export const isWithinTxSizeLimit = async (
 		let txBuilder = await setRewardTxBodyDetailsAsync(_newTxBodyDetails, protocolParameters);
 		if (txBuilder === null) return null;
 
-		txBuilder.add_change_if_needed(shelleyChangeAddress);
+		txBuilder.add_change_if_needed(SHELLEY_CHANGE_ADDRESS);
 		console.log('WORKER ' + id + ' ' + 'CurrentTxSize for worker #' + id + ': ' + txBuilder.full_size().toString());
-		if (txBuilder.full_size() > 16384) {
+		if (txBuilder.full_size() > protocolParameters.maxTxSize) {
 			return false;
 		}
 		return true;

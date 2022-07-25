@@ -5,6 +5,7 @@ import {
 	UTXO,
 	AirdropBatch,
 	ProtocolParametersResponse,
+	TransactionData,
 } from '../types/response-types';
 import CardanoWasm, { TransactionBuilder } from '@dcspark/cardano-multiplatform-lib-nodejs';
 import { fromHex, toHex } from './string-utils';
@@ -12,11 +13,11 @@ import { createRewardTxBodyAsync } from './txBody/txBody-utils';
 import { awaitChangeInUTXOAsync, getMaximumSlotAsync, queryAllUTXOsAsync } from './utxo-utils';
 import { isNull, isUndefined } from './boolean-utils';
 import { blockfrostAPI } from '../config/network.config';
-import { privKey, shelleyChangeAddress } from '../config/walletKeys.config';
 import { PendingReward } from '../types/helper-types';
 import { getBatchesPerWorker } from './txBody/txInput-utils';
 import { setTimeout } from 'timers/promises';
 import AirdropTransactionStatus from '../enums/airdrop-transaction-status';
+import { SIGN_KEY } from '../config/walletKeys.config';
 
 export const setTTLAsync = async (): Promise<number> => {
 	const latestBlock = await blockfrostAPI.blocksLatest();
@@ -102,7 +103,7 @@ export const createAndSignRewardTxAsync = async (
 	let txBodyResult = await createRewardTxBodyAsync(txBodyDetails, protocolParameter);
 	if (txBodyResult == null) return null;
 
-	let txSigned = signTxBody(txBodyResult.txHash, txBodyResult.txBody, privKey);
+	let txSigned = signTxBody(txBodyResult.txHash, txBodyResult.txBody, SIGN_KEY);
 	if (txSigned == null) return null;
 
 	return { transaction: txSigned, txHash: txBodyResult.txHash };
@@ -110,61 +111,41 @@ export const createAndSignRewardTxAsync = async (
 
 export const transactionConfirmation = async (
 	blockfrostAPI: BlockFrostAPI,
-	txHashString: string
+	txHashString: string,
+	confirmationCount: number = 20
 ): Promise<{ status: number; message: string; txHashString: string }> => {
+	const hasExpired = false;
+	let txData: TransactionData;
+
+	while (true) {
+		try {
+			txData = await getTransactionData(blockfrostAPI, txHashString);
+			break;
+		} catch (err) {
+			console.log('tx data not yet available, re-fetching in 10 seconds...');
+			await setTimeout(10000);
+		}
+	}
+	//what if txData fails
 	const MAX_NUMBER_OF_RETRIES = 30;
 	let retryCount = 0;
-	let maxSlot = await getMaximumSlotAsync(blockfrostAPI);
-	if (maxSlot == 0) {
-		return {
-			status: AirdropTransactionStatus.Failed,
-			message: 'Could not get current slot',
-			txHashString,
-		};
-	}
 
 	while (retryCount <= MAX_NUMBER_OF_RETRIES) {
 		try {
-			let latestBlock = await blockfrostAPI.blocksLatest();
+			let latestBlock = await blockfrostAPI.blocks(txData.block);
+			console.log(`Confirmations: ${latestBlock.confirmations}/${confirmationCount}`);
 
-			if (!isNull(latestBlock.slot)) {
-				if (
-					((400 - (maxSlot - latestBlock.slot!)) / 400) * 100 <= 100 &&
-					((400 - (maxSlot - latestBlock.slot!)) / 400) * 100 >= 0
-				) {
-					console.log(
-						'Waiting for confirmation for transaction ' +
-							txHashString +
-							' ' +
-							'(' +
-							(((400 - (maxSlot - latestBlock.slot!)) / 400) * 100).toFixed(2) +
-							'%' +
-							')'
-					);
-				}
-
-				let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
-				let commonHash = utxos.find(u => u.tx_hash === txHashString);
-
-				if (isUndefined(commonHash)) {
-					console.log('Failure: Transaction not found in UTXO set');
-					return {
-						status: AirdropTransactionStatus.Failed,
-						message: 'Confirmation failed',
-						txHashString,
-					};
-				}
-				if (latestBlock.slot! >= maxSlot) {
-					console.log('Transaction Confirmed for ' + txHashString);
-					return {
-						status: AirdropTransactionStatus.Success,
-						message: 'Successfully confirmed transaction!',
-						txHashString,
-					};
-				}
-				const interval = parseInt((25000 * Math.random()).toFixed());
-				await setTimeout(35000 + interval);
+			if (latestBlock.confirmations >= confirmationCount) {
+				console.log('Transaction Confirmed for ' + txHashString);
+				return {
+					status: AirdropTransactionStatus.Success,
+					message: 'Successfully confirmed transaction!',
+					txHashString,
+				};
 			}
+			const interval = parseInt((25000 * Math.random()).toFixed());
+			// await setTimeout(35000 + interval);
+			await setTimeout(10000);
 		} catch (error) {
 			const interval = parseInt((3000 * Math.random()).toFixed());
 			console.log(
@@ -221,4 +202,12 @@ type displayUTXO = {
 	txHash: string;
 	outputIndex: string;
 	assets: string;
+};
+
+export const getTransactionData = async (
+	blockfrostAPI: BlockFrostAPI,
+	txHashString: string
+): Promise<TransactionData> => {
+	const txData = await blockfrostAPI.txs(txHashString);
+	return txData;
 };

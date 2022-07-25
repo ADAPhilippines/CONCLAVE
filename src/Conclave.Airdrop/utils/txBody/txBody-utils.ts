@@ -7,11 +7,11 @@ import { setTTLAsync } from '../transaction-utils';
 import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
 import { setTxInputs } from './txInput-utils';
 import { setRewardTxOutputs } from './txOutput-utils';
-import { shelleyChangeAddress } from '../../config/walletKeys.config';
 import { getLatestProtocolParametersAsync } from '../../config/network.config';
 import { getTransactionBuilder } from '../../config/transaction.config';
 import { PendingReward } from '../../types/helper-types';
 import { setTimeout } from 'timers/promises';
+import { SHELLEY_CHANGE_ADDRESS } from '../../config/walletKeys.config';
 
 const blockfrostAPI = new BlockFrostAPI({
 	projectId: 'testnet4Zo3x6oMtftyJH0X0uutC1RflLn8JtWR',
@@ -47,7 +47,7 @@ export const createRewardTxBodyAsync = async (
 			if (txBuilder === null) throw new Error('Error creating transaction builder');
 			let ttl = await setTTLAsync();
 			txBuilder.set_ttl(CardanoWasm.BigNum.from_str(ttl.toString()));
-			txBuilder.add_change_if_needed(shelleyChangeAddress);
+			txBuilder.add_change_if_needed(SHELLEY_CHANGE_ADDRESS);
 			const txBody = txBuilder.build();
 			const txHash = CardanoWasm.hash_transaction(txBody);
 

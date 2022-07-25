@@ -1,42 +1,92 @@
-// import { blockfrostAPI } from "../../config/network.config";
-// import { policyStr, shelleyChangeAddress } from "../../config/walletKeys.config";
-// import { TxBodyInput } from "../../types/response-types";
-// import { isNull } from "../boolean-utils";
-// import { coinSelectionAsync } from "../coin-utils";
-// import { toHex } from "../string-utils";
-// import { conclaveOutputSum, getInputAssetUTXOSum, lovelaceOutputSum } from "../sum-utils";
-// import { createAndSignRewardTxAsync, displayUTXOs, submitTransactionAsync } from "../transaction-utils";
-// import { combineUTXOs, partitionUTXOs, queryAllUTXOsAsync } from "../utxo-utils";
+import { blockfrostAPI } from '../../config/network.config';
+import AirdropTransactionStatus from '../../enums/airdrop-transaction-status';
+import { ProtocolParametersResponse, TxBodyInput, UTXO } from '../../types/response-types';
+import { isNull } from '../boolean-utils';
+import { coinSelectionAsync } from '../coin-utils';
+import { toHex } from '../string-utils';
+import { conclaveOutputSum, getInputAssetUTXOSum, lovelaceOutputSum } from '../sum-utils';
+import {
+	createAndSignRewardTxAsync,
+	displayUTXOs,
+	submitTransactionAsync,
+	transactionConfirmation,
+} from '../transaction-utils';
+import { awaitChangeInUTXOAsync, combineUTXOs, partitionUTXOs, queryAllUTXOsAsync } from '../utxo-utils';
 
-// export const combineUTXOsAsync = async () => {
-//     await displayUTXOs();
-//     console.log("<-----Combining UTXOs----->")
-//     let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
-//     if (isNull(utxos)) return;
+export const combineUTXOsAsync = async (
+	utxos: UTXO | null = null,
+	threshold: number,
+	protocolParameter: ProtocolParametersResponse
+) => {
+	await displayUTXOs(utxos!);
+	console.log('<-----Dividing UTXOs----->');
+	if (isNull(utxos)) return;
 
-//     let rewards = combineUTXOs(utxos);
-//     if (rewards?.txInputs === null || rewards?.txOutputs === null || rewards === null) return;
-    
-//     let txInputOutputs = await coinSelectionAsync(rewards.txInputs, rewards.txOutputs, 0);
-//     if (txInputOutputs == null || txInputOutputs === undefined) return;
+	let rewards = combineUTXOs(utxos!, threshold);
+	if (rewards === null || rewards.txInputs === null || rewards.txOutputs === null)
+		return console.log('No UTXOs to divide');
 
-//     console.log('<-----Details----->');
-//     txInputOutputs?.txInputs.forEach((e, i) => {
-//         console.log('Txinput #' + i + " " + e.txHash + ' ' + e.asset.find(f => f.unit == "lovelace")!.quantity + " " + e.asset.find(f => f.unit == "lovelace")!.unit);
-//     });
-//     console.log('TxInputLovelace sum: ' + getInputAssetUTXOSum(txInputOutputs!.txInputs));
-//     console.log('TxInputConclave sum: ' + getInputAssetUTXOSum(txInputOutputs!.txInputs, policyStr))
-//     console.log('ConclaveOutput sum: ' + conclaveOutputSum(txInputOutputs!.txOutputs));
-//     console.log('LovelaceOutput sum: ' + lovelaceOutputSum(txInputOutputs!.txOutputs));
-//     console.log('TxOutput count: ' + txInputOutputs!.txOutputs.length);
-//     console.log('<-----End of UTXO Combiner Details----->');
+	let txInputOutputs = await coinSelectionAsync(rewards.txInputs, rewards.txOutputs, 'random', protocolParameter);
+	if (txInputOutputs == null || txInputOutputs === undefined) return;
 
-//     let transaction = await createAndSignRewardTxAsync(txInputOutputs);
-//     if (transaction == null) return;
+	// console.log('<-----Details----->');
+	// txInputOutputs?.txInputs.forEach((e, i) => {
+	// 	console.log(
+	// 		'Txinput #' +
+	// 			i +
+	// 			' ' +
+	// 			e.txHash +
+	// 			' ' +
+	// 			e.asset.find(f => f.unit == 'lovelace')!.quantity +
+	// 			' ' +
+	// 			e.asset.find(f => f.unit == 'lovelace')!.unit
+	// 	);
+	// });
+	// console.log('TxInputLovelace sum: ' + getInputAssetUTXOSum(txInputOutputs!.txInputs));
+	// console.log('TxInputConclave sum: ' + getInputAssetUTXOSum(txInputOutputs!.txInputs, policyStr));
+	// console.log('ConclaveOutput sum: ' + conclaveOutputSum(txInputOutputs!.txOutputs));
+	// console.log('LovelaceOutput sum: ' + lovelaceOutputSum(txInputOutputs!.txOutputs));
+	// console.log('TxOutput count: ' + txInputOutputs!.txOutputs.length);
+	// console.log('<-----End of UTXO Divider Details----->');
 
-//     console.log('Combining Small UTXOs');
-//     console.log('Transaction ' + toHex(transaction.txHash.to_bytes()) + ' fee ' + transaction.transaction.body().fee().to_str());
+	let transaction = await createAndSignRewardTxAsync(txInputOutputs, protocolParameter);
+	if (transaction == null) return;
 
-//     //Submit Transaction
-//     await submitTransactionAsync(transaction.transaction, transaction.txHash, txInputOutputs!, 0);
-// };
+	console.log('Dividing Large UTXOs');
+	console.log(
+		'Transaction ' + toHex(transaction.txHash.to_bytes()) + ' fee ' + transaction.transaction.body().fee().to_str()
+	);
+
+	//Submit Transaction
+
+	let txHashString = toHex(transaction.txHash.to_bytes());
+	let MAX_NUMBER_OF_RETRIES = 40;
+	let retryCount = 0;
+	let submitResult: { status: number; message: string; txHashString: string };
+	let updateResult: { status: number; message: string; txHashString: string };
+
+	while (retryCount < MAX_NUMBER_OF_RETRIES) {
+		submitResult = await submitTransactionAsync(blockfrostAPI, transaction!.transaction, txHashString);
+		console.log('Submit Result: ' + submitResult.status + ' ' + submitResult.message);
+		if (submitResult.status != AirdropTransactionStatus.Success) {
+			retryCount++;
+			continue;
+		}
+		updateResult = await awaitChangeInUTXOAsync(blockfrostAPI, txHashString);
+		console.log('Update Result: ' + updateResult.status + ' ' + updateResult.message);
+		if (updateResult.status != AirdropTransactionStatus.Success) {
+			retryCount++;
+			continue;
+		} else {
+			break;
+		}
+	}
+	if (submitResult!.status != AirdropTransactionStatus.Success) {
+		return;
+	}
+	if (updateResult!.status != AirdropTransactionStatus.Success) {
+		return;
+	}
+
+	await transactionConfirmation(blockfrostAPI, txHashString);
+};

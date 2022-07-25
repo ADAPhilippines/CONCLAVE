@@ -37,6 +37,7 @@ export const updateRewardListStatusAsync = async (
 	for (const reward of rewards) {
 		await updateRewardStatusAsync(reward, airdropStatus, transactionHash);
 	}
+	console.log(`Done updating airdrop status for tx hash: ${transactionHash}`);
 };
 
 export const getUnpaidRewardAsync = async (): Promise<Reward[]> => {
@@ -67,6 +68,18 @@ export const updateRewardStatusAsync = async (reward: Reward, airdropStatus: num
 	await updateRewardAsync(reward, updatedRewardData);
 };
 
+export const getAllRewards = (pendingRewards: PendingReward[]): Reward[] => {
+	const rewardList = [];
+
+	for (var pendingReward of pendingRewards) {
+		for (var reward of pendingReward.rewards) {
+			rewardList.push(reward);
+		}
+	}
+
+	return rewardList;
+};
+
 // Helpers
 
 const getUpdatedRewardStatus = async (reward: Reward, airdropStatus: number, transactionHash: string) => {
@@ -94,8 +107,9 @@ const getUpdatedRewardStatus = async (reward: Reward, airdropStatus: number, tra
 	return updatedRewardData;
 };
 
-const updateRewardAsync = async (reward: Reward, updatedRewardData: any): Promise<JSON> => {
+const updateRewardAsync = async (reward: Reward, updatedRewardData: any): Promise<void> => {
 	let res;
+	console.log(`Updating Reward status of stakeAddress: ${reward.stakeAddress}`);
 	switch (reward.rewardType) {
 		case RewardType.DelegatorReward:
 			res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/DelegatorReward/' + reward.id, {
@@ -128,7 +142,6 @@ const updateRewardAsync = async (reward: Reward, updatedRewardData: any): Promis
 		default:
 			throw new Error('Invalid Reward Type!');
 	}
-	return await res.json();
 };
 
 const groupRewards = (pendingRewards: Reward[]): PendingReward[] => {

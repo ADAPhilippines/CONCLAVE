@@ -1,5 +1,5 @@
 import CardanoWasm from '@dcspark/cardano-multiplatform-lib-nodejs';
-import { assetName, policyId, shelleyOutputAddress } from '../../config/walletKeys.config';
+import { ASSET_NAME, POLICY_ID, SHELLEY_OUTPUT_ADDRESS } from '../../config/walletKeys.config';
 import { Reward } from '../../types/database-types';
 import { PendingReward } from '../../types/helper-types';
 import { shuffleArray } from '../list-utils';
@@ -24,10 +24,10 @@ export const setRewardTxOutputs = (txBuilder: CardanoWasm.TransactionBuilder, tx
 			let assetsOutput = CardanoWasm.Assets.new();
 
 			assetsOutput.insert(
-				CardanoWasm.AssetName.new(Buffer.from(assetName, 'hex')),
+				CardanoWasm.AssetName.new(Buffer.from(ASSET_NAME!, 'hex')),
 				CardanoWasm.BigNum.from_str(conclaveSum)
 			);
-			multiAssetOutput.insert(CardanoWasm.ScriptHash.from_bytes(Buffer.from(policyId, 'hex')), assetsOutput);
+			multiAssetOutput.insert(CardanoWasm.ScriptHash.from_bytes(Buffer.from(POLICY_ID!, 'hex')), assetsOutput);
 
 			outputValue.set_multiasset(multiAssetOutput);
 		}
@@ -44,50 +44,74 @@ export const setRewardTxOutputs = (txBuilder: CardanoWasm.TransactionBuilder, tx
 export const dummyDataOutput = (): Array<PendingReward> => {
 	let dummyData: Array<PendingReward> = [];
 
-	for (let i = 0; i < 3000; i++) {
+	// for (let i = 0; i < 3000; i++) {
+	// 	const reward: Reward = {
+	// 		id: 'random id1',
+	// 		walletAddress: SHELLEY_OUTPUT_ADDRESS.to_bech32(),
+	// 		rewardType: 3,
+	// 		rewardAmount: 2000000, //2ADA
+	// 		stakeAddress: 'random stake address' + i,
+	// 	};
+
+	// 	const pendingReward: PendingReward = {
+	// 		stakeAddress: 'random id1' + i,
+	// 		rewards: [reward],
+	// 	};
+	// 	dummyData.push(pendingReward);
+	// }
+
+	// for (let i = 0; i < 2000; i++) {
+	// 	const reward: Reward = {
+	// 		id: 'random id1',
+	// 		walletAddress: SHELLEY_OUTPUT_ADDRESS.to_bech32(),
+	// 		rewardType: 3,
+	// 		rewardAmount: 2000000, //2ADA
+	// 		stakeAddress: 'random stake address 0' + i + 'r',
+	// 	};
+
+	// 	const reward1: Reward = {
+	// 		id: 'random id2',
+	// 		walletAddress: SHELLEY_OUTPUT_ADDRESS.to_bech32(),
+	// 		rewardType: 1,
+	// 		rewardAmount: 5, //5CONCLAVE
+	// 		stakeAddress: 'random stake address 1' + i + 'r',
+	// 	};
+
+	// 	const reward3: Reward = {
+	// 		id: 'random id3',
+	// 		walletAddress: SHELLEY_OUTPUT_ADDRESS.to_bech32(),
+	// 		rewardType: 2,
+	// 		rewardAmount: 2, //2CONCLAVE
+	// 		stakeAddress: 'random stake address 2' + i + 'r',
+	// 	};
+
+	// 	const pendingReward: PendingReward = {
+	// 		stakeAddress: 'random id1',
+	// 		rewards: [reward, reward1, reward3],
+	// 	};
+	// 	dummyData.push(pendingReward);
+	// }
+
+	for (let i = 0; i < 10; i++) {
 		const reward: Reward = {
 			id: 'random id1',
-			walletAddress: shelleyOutputAddress.to_bech32(),
+			walletAddress: SHELLEY_OUTPUT_ADDRESS.to_bech32(),
 			rewardType: 3,
-			rewardAmount: 2000000, //2ADA
-			stakeAddress: 'random stake address' + i,
-		};
-
-		const pendingReward: PendingReward = {
-			stakeAddress: 'random id1' + i,
-			rewards: [reward],
-		};
-		dummyData.push(pendingReward);
-	}
-
-	for (let i = 0; i < 2000; i++) {
-		const reward: Reward = {
-			id: 'random id1',
-			walletAddress: shelleyOutputAddress.to_bech32(),
-			rewardType: 3,
-			rewardAmount: 2000000, //2ADA
+			rewardAmount: 252000000, //2ADA
 			stakeAddress: 'random stake address 0' + i + 'r',
-		};
-
-		const reward1: Reward = {
-			id: 'random id2',
-			walletAddress: shelleyOutputAddress.to_bech32(),
-			rewardType: 1,
-			rewardAmount: 5, //5CONCLAVE
-			stakeAddress: 'random stake address 1' + i + 'r',
 		};
 
 		const reward3: Reward = {
 			id: 'random id3',
-			walletAddress: shelleyOutputAddress.to_bech32(),
+			walletAddress: SHELLEY_OUTPUT_ADDRESS.to_bech32(),
 			rewardType: 2,
-			rewardAmount: 2, //2CONCLAVE
+			rewardAmount: 90000000, //2CONCLAVE
 			stakeAddress: 'random stake address 2' + i + 'r',
 		};
 
 		const pendingReward: PendingReward = {
 			stakeAddress: 'random id1',
-			rewards: [reward, reward1, reward3],
+			rewards: [reward, reward3],
 		};
 		dummyData.push(pendingReward);
 	}

@@ -1,13 +1,3 @@
-import {
-	accountKey,
-	addressBech32,
-	privKey,
-	rootKey,
-	shelleyChangeAddress,
-	shelleyOutputAddress,
-	utxoPrvKey,
-	utxoPubKey,
-} from './config/walletKeys.config';
 import { divideUTXOsAsync } from './utils/manageUTXOs/divideUTXO-utils';
 import { TxBodyInput, AirdropBatch, ProtocolParametersResponse } from './types/response-types';
 import { getBatchesPerWorker } from './utils/txBody/txInput-utils';
@@ -17,25 +7,29 @@ import { getAllUTXOsAsync } from './utils/airdrop-utils';
 import { dummyDataOutput } from './utils/txBody/txOutput-utils';
 import { PendingReward } from './types/helper-types';
 import { isEmpty, isNull } from './utils/boolean-utils';
-import { getAllPendingEligibleRewardsAsync, getAllPendingRewardsAsync } from './utils/reward-utils';
+import {
+	getAllPendingEligibleRewardsAsync,
+	getAllPendingRewardsAsync,
+	getAllPendingTransactionsAsync,
+} from './utils/reward-utils';
 import { setTimeout } from 'timers/promises';
 import ConclaveAirdropper from './models/ConclaveAirdropper';
+import { POLICY_STRING, SHELLEY_CHANGE_ADDRESS } from './config/walletKeys.config';
 
 const main = async () => {
 	// initWorkers (i.e workerPool = initWorkerPool())
 	const PENDING_REWARD_TRESHOLD = 10; // move to config
 
 	while (true) {
-		// let pendingRewards: Array<PendingReward> = await getAllPendingEligibleRewardsAsync(); failed, new, inProgress
-		// batch => new => batchit => if failed => new => resend => if in progress => wait for confirmation
+		// let pendingRewards: Array<PendingReward> = await getAllPendingEligibleRewardsAsync();
 		let pendingRewards: Array<PendingReward> = dummyDataOutput();
-		// get inProgressTransactionHashes: string[]
+		// let inProgressTransactionHashes: string[] = await getAllPendingTransactionsAsync();
 
 		if (pendingRewards.length >= PENDING_REWARD_TRESHOLD /* || inProgressTransactionHashes.length > 0 */) {
-			await startAirdropper(pendingRewards /*, inProgressRewards, workerPool */);
+			await startAirdropper(pendingRewards, []);
 		}
 
-		const AIRDROPPER_INTERVAL = 1000 * 60 * 5;
+		const AIRDROPPER_INTERVAL = 1000 * 60 * 60 * 5;
 		console.log(`Airdropper will rerun in ${AIRDROPPER_INTERVAL / 24.0} hours `);
 		await setTimeout(AIRDROPPER_INTERVAL); // Check every 6 hourse
 	}
@@ -67,28 +61,19 @@ const getTotalRewardQuantity = (isAda: boolean, data: PendingReward[]) => {
 };
 
 const startAirdropper = async (
-	pendingRewards: PendingReward[] /*, inProgressTransactionHashes: string[] */
+	pendingRewards: PendingReward[],
+	inProgressTransactionHashes: string[]
 ): Promise<void> => {
 	let protocolParameter = await getLatestProtocolParametersAsync(blockfrostAPI);
 	// Divide UTXOs
-	// let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
+	// let utxos = await queryAllUTXOsAsync(blockfrostAPI, SHELLEY_CHANGE_ADDRESS.to_bech32());
 	// await divideUTXOsAsync(utxos, 500_000_000, protocolParameter);
 
-	let utxosInWallet: Array<TxBodyInput> = await getAllUTXOsAsync(shelleyChangeAddress.to_bech32());
-	// Log pending rewards
-	// displayPendingRewards(pendingRewards);
-
-	// Check if there's rewards to airdrop
-	if (isEmpty(pendingRewards) || isNull(pendingRewards))
-		return console.log('No eligible rewards as of the moment...');
+	let utxosInWallet: Array<TxBodyInput> = await getAllUTXOsAsync(SHELLEY_CHANGE_ADDRESS.to_bech32());
 
 	// Divide pending rewards into batches
 	let airdropBatches: Array<AirdropBatch> = await getBatchesPerWorker(utxosInWallet, pendingRewards);
-
-	// console.table(airdropBatches);
-	// Log input and output totals
 	// displayInputOutputTotals(airdropBatches);
-
 	const conclaveAirdropper = new ConclaveAirdropper(10);
 
 	let index = 0;
@@ -130,17 +115,11 @@ const displayPendingRewards = (pendingRewards: PendingReward[]) => {
 	});
 };
 
-const displayInputOutputTotals = (inputOutputBatches: AirdropBatch[]) => {
+const displayInputOutputTotals = (inputOutputBatches: Array<AirdropBatch>) => {
 	inputOutputBatches.forEach((e, index) => {
 		console.log('BATCH #' + index);
 		console.log('INPUT LOVELACE SUM: ' + getTotalQuantity('lovelace', e.txInputs));
-		console.log(
-			'INPUT CONCLAVE SUM: ' +
-				getTotalQuantity(
-					'b7f89333a361e0c467a4c149c9bc283c2472de5640dbd821320eca1853616d706c65546f6b656e4a0a',
-					e.txInputs
-				)
-		);
+		console.log('INPUT CONCLAVE SUM: ' + getTotalQuantity(POLICY_STRING!, e.txInputs));
 		console.log('OUTPUT LOVELACE SUM: ' + getTotalRewardQuantity(true, e.txOutputs));
 
 		console.log('OUTPUT CONCLAVE SUM: ' + getTotalRewardQuantity(false, e.txOutputs));
