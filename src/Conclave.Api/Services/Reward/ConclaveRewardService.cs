@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Conclave.Api.Interfaces;
 using Conclave.Common.Enums;
 using Conclave.Common.Models;
@@ -197,5 +198,59 @@ public class ConclaveRewardService : IConclaveRewardService
         }
 
         return unpaidRewards;
+    }
+
+    public async IEnumerable<Reward> UpdateRewardStatus(IEnumerable<Reward> rewards, AirdropStatus status)
+    {
+        var updatedRewardStatus = new List<Reward>();
+
+        foreach (var reward in rewards)
+        {
+            switch (reward.RewardType)
+            {
+                case RewardType.DelegatorReward:
+                    var delegatorReward = _delegatorRewardService.GetById(reward.Id);
+
+                    if (delegatorReward is null) break;
+
+                    delegatorReward.AirdropStatus = status;
+                    await _delegatorRewardService.UpdateAsync(delegatorReward.Id, delegatorReward);
+
+                    break;
+                case RewardType.NFTReward:
+                    var nftReward = _nftRewardService.GetById(reward.Id);
+
+                    if (nftReward is null) break;
+
+                    nftReward.AirdropStatus = status;
+                    await _nftRewardService.UpdateAsync(nftReward.Id, nftReward);
+
+                    break;
+                case RewardType.OperatorReward:
+                    var operatorReward = _opeartorRewardService.GetById(reward.Id);
+
+                    if (operatorReward is null) break;
+
+                    operatorReward.AirdropStatus = status;
+                    await _opeartorRewardService.UpdateAsync(operatorReward.Id, operatorReward);
+
+                    break;
+                case RewardType.ConclaveOwnerReward:
+                    var conclaveOwnerReward = _conclaveOwnerRewardService.GetById(reward.Id);
+
+                    if (conclaveOwnerReward is null) break;
+
+                    conclaveOwnerReward.AirdropStatus = status;
+                    await _conclaveOwnerRewardService.UpdateAsync(conclaveOwnerReward.Id, conclaveOwnerReward);
+
+                    break;
+                default:
+                    throw new Exception("Invalid reward type");
+            }
+        }
+
+
+
+        return updatedRewardStatus;
     }
 }
