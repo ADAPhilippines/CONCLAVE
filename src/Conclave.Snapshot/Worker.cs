@@ -34,7 +34,8 @@ public class Worker : BackgroundService
     private ConclaveOwnerRewardHandler ConcalveOwnerRewardHandler { get; }
 
     // options
-    private IOptions<SnapshotOptions> SnapshotOptions { get; set; }
+    private SnapshotOptions SnapshotOptions { get; }
+    private ApplicationOptions ApplicationOptions { get; }
 
 
     public Worker(ILogger<Worker> logger, IServiceProvider provider)
@@ -60,7 +61,8 @@ public class Worker : BackgroundService
         SnapshotSchedulerService = scopedProvider.GetService<IConclaveSchedulerService>()!;
 
         //options
-        SnapshotOptions = scopedProvider.GetService<IOptions<SnapshotOptions>>()!;
+        SnapshotOptions = scopedProvider.GetService<IOptions<SnapshotOptions>>()!.Value;
+        ApplicationOptions = scopedProvider.GetService<IOptions<ApplicationOptions>>()!.Value;
 
     }
     protected async override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -71,10 +73,13 @@ public class Worker : BackgroundService
             {
                 // TODO: check for blockfrost health status before proceeding
 
-                // prepare snapshot
+                // Prepare snapshot
                 await ExecuteSeedEpochGetterOrSetterAsync();
                 await ExecuteCurrentEpochGetterOrSetterAsync();
-                await ExecuteSnapshotSchedulerAsync();
+
+                // Scheduler
+                if (!ApplicationOptions.IsDevelopment) await ExecuteSnapshotSchedulerAsync();
+
                 await ExecuteNewEpochGetterOrSetterAsync();
 
                 if (NewConclaveEpoch is null)
@@ -93,20 +98,10 @@ public class Worker : BackgroundService
                 await DelegatorRewardHandler.HandleAsync(NewConclaveEpoch);
                 await OperatorRewardHandler.HandleAsync(NewConclaveEpoch);
                 await NftRewardHandler.HandleAsync(NewConclaveEpoch);
-
-                // TODO: calculate conclave owner rewards without blocking the worker
-                _ = ConcalveOwnerRewardHandler.HandleAsync(NewConclaveEpoch);
+                await ConcalveOwnerRewardHandler.HandleAsync();
 
                 // end conclave epoch cycle
                 await ExecuteSnapshotEndSchedulerAsync();
-
-                if (CurrentConclaveEpoch is null)
-                {
-                    await Task.Delay(60 * 5 * 1000, stoppingToken);
-                    return;
-                } // 5 minutes
-
-                // CurrentConclaveEpoch = NewConclaveEpoch;
             }
             catch (Exception e)
             {
@@ -167,7 +162,7 @@ public class Worker : BackgroundService
         do
         {
             delayInMilliseconds = SnapshotSchedulerService!.GetSnapshotDelayInMilliseconds(CurrentConclaveEpoch!,
-                                                                                           SnapshotOptions!.Value.SnapshotBeforeMilliseconds);
+                                                                                           SnapshotOptions!.SnapshotBeforeMilliseconds);
             _logger.LogInformation($"Conclave Epoch snapshot cycle will start in {DateUtils.GetReadableTimeFromMilliseconds((int)delayInMilliseconds)}");
             await Task.Delay(5000);
         } while (delayInMilliseconds > 0);
@@ -200,7 +195,7 @@ public class Worker : BackgroundService
         do
         {
             delayInMilliseconds = SnapshotSchedulerService!.GetNewEpochCreationDelayInMilliseconds(CurrentConclaveEpoch!,
-                                                                       SnapshotOptions!.Value.SnapshotCompleteAfterMilliseconds);
+                                                                       SnapshotOptions!.SnapshotCompleteAfterMilliseconds);
             _logger.LogInformation($"Conclave Epoch will end after {DateUtils.GetReadableTimeFromMilliseconds((int)delayInMilliseconds)}");
             await Task.Delay(5000);
         } while (delayInMilliseconds > 0);
@@ -237,54 +232,6 @@ public class Worker : BackgroundService
             CurrentConclaveEpoch = NewConclaveEpoch;
             NewConclaveEpoch = null;
         }
-
-        _logger.LogInformation("Exiting SnapshotCycleWrapperAsync");
-    }
-
-    private async Task ExecuteTestNewEpochSetterAsync()
-    {
-        _logger.LogInformation("Executing SnapshotCycleWrapperAsync");
-
-        var delayInMilliseconds = SnapshotSchedulerService!.GetNewEpochCreationDelayInMilliseconds(CurrentConclaveEpoch!,
-                                                                                           SnapshotOptions!.Value.SnapshotCompleteAfterMilliseconds);
-
-        _logger.LogInformation($"Conclave Epoch will end after {DateUtils.GetReadableTimeFromMilliseconds((int)delayInMilliseconds)}");
-
-        await Task.Delay((int)delayInMilliseconds);
-
-        // while (NewConclaveEpoch is not null)
-        // {
-
-        // var currentEpoch = await CardanoService!.GetCurrentEpochAsync();
-
-        // if (currentEpoch.Number != NewConclaveEpoch.EpochNumber)
-        // {
-        //     // try again after 5 minutes
-        //     _logger.LogInformation("New epoch is not current, waiting 5 minutes");
-        //     await Task.Delay(60 * 5 * 1000);
-        //     continue;
-        // }
-
-        // // update new epoch status
-        // NewConclaveEpoch.StartTime = currentEpoch.StartTime;
-        // NewConclaveEpoch.EndTime = currentEpoch.EndTime;
-        // NewConclaveEpoch.EpochStatus = EpochStatus.Current;
-        // NewConclaveEpoch.TotalConclaveReward = ConcalveOwnerRewardHandler.CalculateTotalConclaveReward(NewConclaveEpoch.EpochNumber - SeedEpoch!.EpochNumber);
-
-        // await EpochsService!.UpdateAsync(NewConclaveEpoch.Id, NewConclaveEpoch);
-
-        // //should be on top of new epoch instead of below
-        // if (CurrentConclaveEpoch!.EpochStatus != EpochStatus.Seed)
-        // {
-        //     // Update epoch status to Old
-        //     CurrentConclaveEpoch.EpochStatus = EpochStatus.Old;
-        //     await EpochsService!.UpdateAsync(CurrentConclaveEpoch.Id, CurrentConclaveEpoch);
-        // }
-
-        // Update worker epoch properties
-        CurrentConclaveEpoch = SeedEpoch;
-        NewConclaveEpoch = null;
-        //}
 
         _logger.LogInformation("Exiting SnapshotCycleWrapperAsync");
     }
