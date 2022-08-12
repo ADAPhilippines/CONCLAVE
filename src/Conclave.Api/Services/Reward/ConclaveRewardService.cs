@@ -200,7 +200,7 @@ public class ConclaveRewardService : IConclaveRewardService
         return unpaidRewards;
     }
 
-    public async IEnumerable<Reward> UpdateRewardStatus(IEnumerable<Reward> rewards, AirdropStatus status)
+    public async Task<IEnumerable<Reward>> UpdateRewardStatus(IEnumerable<Reward> rewards, AirdropStatus status)
     {
         var updatedRewardStatus = new List<Reward>();
 
