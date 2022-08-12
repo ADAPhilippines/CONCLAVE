@@ -8,7 +8,7 @@ namespace Conclave.Api.Extensions;
 public static class ConclaveCardanoServicesExtension
 {
 
-    public static IServiceCollection AddConclaveApi(this IServiceCollection services, ConclaveOptions options)
+    public static IServiceCollection AddConclaveApi(this IServiceCollection services, ConclaveOptions conclaveOptions, ApplicationOptions applicationOptions)
     {
 
         // General
@@ -33,11 +33,15 @@ public static class ConclaveCardanoServicesExtension
         services.AddScoped<IConclaveOwnerRewardService, ConclaveOwnerRewardService>();
 
 
-
         services.Configure<ConclaveOptions>(o =>
         {
-            o.PoolIds = options.PoolIds;
-            o.ConclaveAddress = options.ConclaveAddress;
+            o.PoolIds = conclaveOptions.PoolIds;
+            o.ConclaveAddress = conclaveOptions.ConclaveAddress;
+        });
+
+        services.Configure<ApplicationOptions>(o =>
+        {
+            o.IsDevelopment = applicationOptions.IsDevelopment;
         });
 
         return services;

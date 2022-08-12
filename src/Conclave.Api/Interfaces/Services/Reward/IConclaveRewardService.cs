@@ -12,5 +12,5 @@ public interface IConclaveRewardService
     double CalculateTotalConclaveReward(ulong epochNumber);
     IEnumerable<Reward> GetAllUnpaidRewards();
     IEnumerable<string> GetAllPendingTransactionHashes();
-    IEnumerable<Reward> UpdateRewardStatus(IEnumerable<Reward> pendingRewards, AirdropStatus status);
+    Task<IEnumerable<Reward>> UpdateRewardStatus(IEnumerable<Reward> pendingRewards, AirdropStatus status);
 }

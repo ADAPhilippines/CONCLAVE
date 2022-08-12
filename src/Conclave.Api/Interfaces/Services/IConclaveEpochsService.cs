@@ -15,6 +15,8 @@ public interface IConclaveEpochsService : IRepository<ConclaveEpoch, Guid>
     IEnumerable<ConclaveEpoch> GetByAllStatus(EpochStatus epochStatus, SnapshotStatus snapshotStatus,
                                               RewardStatus rewardStatus, AirdropStatus airdropStatus);
 
+    IEnumerable<ConclaveEpoch> GetByConclaveOwnerStatus(SnapshotStatus conclaveOwnerSnapshotStatus, RewardStatus conclaveOwnerRewardStatus);
+
     // WRITE
     Task<ConclaveEpoch> DeleteByEpochNumber(ulong epochNumber);
 

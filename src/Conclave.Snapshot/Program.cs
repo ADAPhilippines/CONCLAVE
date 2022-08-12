@@ -9,12 +9,25 @@ IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((hostContext, services) =>
     {
         var conclaveOptions = hostContext.Configuration.GetSection("Conclave").Get<ConclaveOptions>();
+        var applicationOptions = new ApplicationOptions()
+        {
+            IsDevelopment = hostContext.HostingEnvironment.IsDevelopment()
+        };
 
-        services.AddConclaveDb(hostContext.Configuration.GetConnectionString("PostgresSQL"))
+        // BLOCKFROST CONFIG
+        if (applicationOptions.IsDevelopment)
+        {
+            services.AddBlockfrost("testnet", Environment.GetEnvironmentVariable("BLOCKFROST_TESTNET_PROJECT_ID"));
+        }
+        else
+        {
+            services.AddBlockfrost("mainnet", Environment.GetEnvironmentVariable("BLOCKFROST_MAINNET_PROJECT_ID"));
+        }
+
+        // CONCLAVE CONFIG
+        services.AddConclaveDb(Environment.GetEnvironmentVariable("CONCLAVE_CONNECTION_STRING") ?? hostContext.Configuration.GetConnectionString("PostgresSQL"))
                 .AddHostedService<Worker>()
-                .AddBlockfrost(hostContext.Configuration.GetValue<string>("Blockfrost:Network"),
-                                hostContext.Configuration.GetValue<string>("Blockfrost:ProjectId"))
-                .AddConclaveApi(conclaveOptions);
+                .AddConclaveApi(conclaveOptions, applicationOptions);
 
         // Snapshot
         services.AddScoped<DelegatorSnapshotHandler>();
@@ -39,7 +52,7 @@ IHost host = Host.CreateDefaultBuilder(args)
             o.PoolOwnerRewardBeforeMilliseconds = (long)TimeSpan.FromHours(1).TotalMilliseconds;
             o.PoolOwnerRewardCompleteAfterMilliseconds = (long)TimeSpan.FromMinutes(10).TotalMilliseconds;
         });
-        
+
         services.Configure<RewardOptions>(hostContext.Configuration.GetSection("RewardOptions"));
         services.Configure<ConclaveDistributionParameters>(hostContext.Configuration.GetSection("ConclaveDistributionParameters"));
     })

@@ -84,4 +84,10 @@ public class ConclaveEpochsService : IConclaveEpochsService
     {
         throw new NotImplementedException();
     }
+
+    public IEnumerable<ConclaveEpoch> GetByConclaveOwnerStatus(SnapshotStatus conclaveOwnerSnapshotStatus, RewardStatus conclaveOwnerRewardStatus)
+    {
+
+        return _context.ConclaveEpochs.Where(e => e.ConclaveOwnerSnapshotStatus == conclaveOwnerSnapshotStatus && e.ConclaveOwnerRewardStatus == conclaveOwnerRewardStatus).ToList(); ;
+    }
 }
