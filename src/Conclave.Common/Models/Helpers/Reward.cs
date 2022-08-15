@@ -9,13 +9,16 @@ public class Reward
     public double RewardAmount { get; set; }
     public string WalletAddress { get; set; } = string.Empty;
     public string StakeAddress { get; set; } = string.Empty;
+    public string TransactionHash {get; set; } = string.Empty;
 
-    public Reward(Guid Id, RewardType RewardType, double RewardAmount, string WalletAddress, string StakeAddress)
+    public Reward(Guid Id, RewardType RewardType, double RewardAmount, string WalletAddress, string StakeAddress, string TransactionHash)
     {
         this.Id = Id;
         this.RewardType = RewardType;
         this.RewardAmount = RewardAmount;
         this.WalletAddress = WalletAddress;
         this.StakeAddress = StakeAddress;
+        this.TransactionHash = TransactionHash;
+
     }
 }

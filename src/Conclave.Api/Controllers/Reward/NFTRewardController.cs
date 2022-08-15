@@ -72,7 +72,7 @@ public class NFTRewardController : ControllerBase
         return Ok(result);
     }
 
-    [HttpPut]
+    [HttpPut("{id}")]
     public async Task<IActionResult> Update(Guid id, NFTReward entity)
     {
         entity.DateUpdated = DateUtils.AddOffsetToUtc(DateTime.UtcNow);

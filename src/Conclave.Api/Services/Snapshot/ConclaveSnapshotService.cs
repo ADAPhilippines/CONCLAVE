@@ -79,8 +79,11 @@ public class ConclaveSnapshotService : IConclaveSnapshotService
                 if (uniqueDelegatorIds.Contains(delegator.StakeId!)) continue;
 
                 uniqueDelegatorIds.Add(delegator.StakeId!);
+                Console.WriteLine("STAKE ID: " + delegator.StakeId);
                 var walletAddress = await _service.GetAssociatedWalletAddressAsync(delegator.StakeId!);
-
+    
+                if (walletAddress.Count() < 1) continue;
+                 
                 delegatorSnapshots.Add(new DelegatorSnapshot
                 {
                     ConclaveEpoch = epoch,

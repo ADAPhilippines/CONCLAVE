@@ -1,184 +1,293 @@
-import { BlockfrostServerError } from '@blockfrost/blockfrost-js';
-import {
-    RewardTxBodyDetails,
-    TxBodyInput,
-    WorkerBatch
-} from '../types/response-types';
-import CardanoWasm, { TransactionBuilder } from '@dcspark/cardano-multiplatform-lib-nodejs';
-import { fromHex, toHex } from './string-utils';
-import { createRewardTxBodyAsync } from './txBody/txBody-utils';
-import { awaitChangeInUTXOAsync, queryAllUTXOsAsync } from './utxo-utils';
-import { isNull, isUndefined } from './boolean-utils';
-import { blockfrostAPI } from '../config/network.config';
-import { privKey, shelleyChangeAddress } from '../config/walletKeys.config';
+import { RewardTxBodyDetails, TxBodyInput, ProtocolParametersResponse, TransactionData } from '../types/response-types';
+import CardanoWasm from '@dcspark/cardano-multiplatform-lib-nodejs';
+import { createRewardTxBodyAsync, createRewardTxBodywithFee } from './txBody-utils';
+import { isEmpty, isInputSumLarger, isNull, isNullOrUndefined, isOutputSumLarger, isUndefined, isWithinTxSizeLimit, isZero } from './boolean-utils';
 import { PendingReward } from '../types/helper-types';
-import { getBatchesPerWorker } from './txBody/txInput-utils';
 import { setTimeout } from 'timers/promises';
+import AirdropTransactionStatus from '../enums/airdrop-transaction-status';
+import { SIGN_KEY } from '../config/walletKeys.config';
+import { conclaveInputSum, conclaveOutputSum, lovelaceInputSum, lovelaceOutputSum, purelovelaceOutputSum } from './sum-utils';
+import {
+	addSmallestConclaveOrSmallestLovelaceReward,
+	addSmallestConclaveReward,
+	addSmallestLovelaceReward,
+	getIdxSmallestConclaveReward,
+	removeLargestConclaveReward,
+	removeLargestLovelaceReward,
+	removeLastItem,
+} from './list-utils';
+import { initReward, initRewardTxBodyDetails } from './type-utils';
+import { Reward } from '../types/database-types';
+import { getBlock, getLatestBlockAsync, getTransactionData, submitTransactionToChain } from './blockFrost-tools';
+import { consoleWithWorkerId } from '../worker';
 
 export const setTTLAsync = async (): Promise<number> => {
-    const latestBlock = await blockfrostAPI.blocksLatest();
-    const currentSlot = latestBlock.slot;
+	const latestBlock = await getLatestBlockAsync();
+	const currentSlot = latestBlock.slot;
 
-    return currentSlot! + 20 * 20; //after 20 blocks
-}
+	return currentSlot! + 20 * 20; //after 20 blocks
+};
 
 export const signTxBody = (
-    txHash: CardanoWasm.TransactionHash,
-    txBody: CardanoWasm.TransactionBody,
-    signKey: CardanoWasm.PrivateKey
+	txHash: CardanoWasm.TransactionHash,
+	txBody: CardanoWasm.TransactionBody,
+	signKey: CardanoWasm.PrivateKey
 ): CardanoWasm.Transaction | null => {
-    try {
-        const witnesses = CardanoWasm.TransactionWitnessSet.new();
-        const vkeyWitnesses = CardanoWasm.Vkeywitnesses.new();
-        const vkeyWitness = CardanoWasm.make_vkey_witness(txHash, signKey);
-        vkeyWitnesses.add(vkeyWitness);
-        witnesses.set_vkeys(vkeyWitnesses);
+	try {
+		const witnesses = CardanoWasm.TransactionWitnessSet.new();
+		const vkeyWitnesses = CardanoWasm.Vkeywitnesses.new();
+		const vkeyWitness = CardanoWasm.make_vkey_witness(txHash, signKey);
+		vkeyWitnesses.add(vkeyWitness);
+		witnesses.set_vkeys(vkeyWitnesses);
 
-        const transaction = createTxBody(txBody, witnesses);
+		const transaction = createTxBody(txBody, witnesses);
 
-        return transaction;
-    } catch (error) {
-        console.log('Error Signing Transaction body ' + error);
-        return null;
-    }
-}
+		return transaction;
+	} catch (error) {
+		console.log('Error Signing Transaction body ' + error);
+		return null;
+	}
+};
 
-export const createTxBody = (
-    txBody: CardanoWasm.TransactionBody,
-    witnesses: CardanoWasm.TransactionWitnessSet
-): CardanoWasm.Transaction | null => {
-    try {
-        const transaction = CardanoWasm.Transaction.new(txBody, witnesses);
-        return transaction;
-    } catch (error) {
-        console.log('Error Creating Transaction body ' + error);
-        return null;
-    }
-}
+export const createTxBody = (txBody: CardanoWasm.TransactionBody, witnesses: CardanoWasm.TransactionWitnessSet): CardanoWasm.Transaction | null => {
+	try {
+		const transaction = CardanoWasm.Transaction.new(txBody, witnesses);
+		return transaction;
+	} catch (error) {
+		console.log('Error Creating Transaction body ' + error);
+		return null;
+	}
+};
 
 export const submitTransactionAsync = async (
-    transaction: CardanoWasm.Transaction,
-    txHash: CardanoWasm.TransactionHash,
-    txItem: RewardTxBodyDetails,
-    worker: number,
-    index: number) : Promise<{currentIndex: number, status: string}> => {
-    
-    for (let i = 0; i < 30; i++) {
-        let submittedUTXOs: Array<TxBodyInput> = [];
-        let airdroppedAccounts: Array<PendingReward> = [];
-        let randomInterval = parseInt((5000 * Math.random()).toFixed());
-        await setTimeout(1000 + randomInterval);
+	transaction: CardanoWasm.Transaction,
+	txHashString: string
+): Promise<{ status: number; message: string; txHashString: string }> => {
+	const MAX_NUMBER_OF_RETRIES = 30;
+	let retryCount = 0;
 
-        try {
-            const res = await blockfrostAPI.txSubmit(transaction!.to_bytes());
-            if (res) {
-                console.log('WORKER# ' + worker + `: Transaction successfully submitted for Tx ` + toHex(txHash.to_bytes()) + " of worker #" + worker + " at random interval " + randomInterval);
-            }
+	while (retryCount <= MAX_NUMBER_OF_RETRIES) {
+		try {
+			await submitTransactionToChain(transaction.to_bytes());
 
-            submittedUTXOs.push(...txItem.txInputs);
-            airdroppedAccounts.push(...txItem.txOutputs);
+			consoleWithWorkerId.log('Transaction Submitted Successfully');
+			return {
+				status: AirdropTransactionStatus.Success,
+				message: 'Submission Successful: Transaction submitted!',
+				txHashString,
+			};
+		} catch (error) {
+			const interval = parseInt((5000 * Math.random()).toFixed());
+			console.log(`error submitting, retrying in ${interval} ms...\nNumber of retries: ${retryCount}`);
+			console.log(error);
+			await setTimeout(interval);
+			retryCount++;
+		}
+	}
 
-            // parentPort?.postMessage({currentIndex: index, status: "in progress"});
-            return await awaitChangeInUTXOAsync(txHash, transaction, txItem, worker, index);
-        } catch (error) {
-            if (error instanceof BlockfrostServerError && error.status_code === 400) {
-                console.log(error.message);
-            }
-            console.log('WORKER# ' + worker + `: Transaction rejected for Tx ` + toHex(txHash.to_bytes()) + "...retrying");
-        }
-    }
-    return {currentIndex: index, status: "failed"};
-}
+	return {
+		status: AirdropTransactionStatus.New,
+		message: 'Submission Error: Maximum number of retries reached',
+		txHashString: '',
+	};
+};
 
-export const createAndSignRewardTxAsync = async (
-    txBodyDetails: RewardTxBodyDetails
+export const createAndSignTxAsync = async (
+	txBodyDetails: RewardTxBodyDetails,
+	protocolParameter: any
 ): Promise<{
-    transaction: CardanoWasm.Transaction;
-    txHash: CardanoWasm.TransactionHash
+	transaction: CardanoWasm.Transaction;
+	txHash: CardanoWasm.TransactionHash;
 } | null> => {
-    let txBodyResult = await createRewardTxBodyAsync(txBodyDetails);
-    if (txBodyResult == null) return null;
+	let txBodyResult = await createRewardTxBodyAsync(txBodyDetails, protocolParameter);
+	if (isNull(txBodyResult)) return null;
 
-    let txSigned = signTxBody(txBodyResult.txHash, txBodyResult.txBody, privKey);
-    if (txSigned == null) return null;
+	let txSigned = signTxBody(txBodyResult!.txHash, txBodyResult!.txBody, SIGN_KEY);
+	if (isNull(txSigned)) return null;
 
-    return { transaction: txSigned, txHash: txBodyResult.txHash };
-}
+	return { transaction: txSigned!, txHash: txBodyResult!.txHash };
+};
 
-export const waitNumberOfBlocks = async (
-    txHash: CardanoWasm.TransactionHash,
-    maxSlot: number,
-    worker: number,
-    index: number) : Promise<{currentIndex: number, status: string}> => {
-        
-    for (let i = 0; i < 100; i++) {
-        let randomInterval = parseInt((10000 * Math.random()).toFixed());
-        try {
-            let latestBlock = await blockfrostAPI.blocksLatest();
+export const transactionConfirmation = async (
+	txHashString: string,
+	confirmationCount: number = 20
+): Promise<{ status: number; message: string; txHashString: string }> => {
+	let txData: TransactionData | null = null;
 
-            if (!isNull(latestBlock.slot)) {
-                if (((400 - (maxSlot - latestBlock.slot!)) / 400) * 100 <= 100 && ((400 - (maxSlot - latestBlock.slot!)) / 400) * 100 >= 0) {
-                    console.log('WORKER# ' + worker + " " + "Waiting for confirmation for transaction " + toHex(txHash.to_bytes()) + ' ' + "(" + (((400 - (maxSlot - latestBlock.slot!)) / 400) * 100).toFixed(2) + '%' + ")");
-                }
-                let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
-                let commonHash = utxos.find(u => u.tx_hash === toHex(txHash.to_bytes()));
-                if (isUndefined(commonHash)) {
-                    console.log('WORKER# ' + worker + " " + "Transaction Failed");
-                    break;
-                }
-    
-                if (latestBlock.slot! >= maxSlot) {
-                    console.log('WORKER# ' + worker + " "+ "Transaction Confirmed for " + toHex(txHash.to_bytes()));
-                    return {currentIndex: index, status: "confirmed"}; 
-                }
-            }
-        } catch (error) {
-            console.log(error);
-        };
+	let MAX_NUMBER_OF_RETRIES = 100;
+	let retryCount = 0;
 
-        await setTimeout(40000 + randomInterval);
-    }
+	while (retryCount <= MAX_NUMBER_OF_RETRIES) {
+		try {
+			txData = await getTransactionData(txHashString);
+			break;
+		} catch (err) {
+			const interval = parseInt((15000 * Math.random()).toFixed());
+			consoleWithWorkerId.log(`Tx data not yet available for txHash: ${txHashString}, re-fetching in ${(15000 + interval) / 1000} seconds...`);
 
-    return {currentIndex: index, status: "failed"}; 
-}
+			await setTimeout(15000 + interval);
+		}
+	}
 
-export const airdropTransaction = async () => {
-    await displayUTXOs();
+	if (retryCount > MAX_NUMBER_OF_RETRIES) {
+		return {
+			status: AirdropTransactionStatus.New,
+			message: 'Confirmation Error: Maximum number of retries reached',
+			txHashString: '',
+		};
+	}
 
-    let InputOutputBatches: Array<WorkerBatch> = await getBatchesPerWorker();
+	//what if txData fails
+	MAX_NUMBER_OF_RETRIES = 50;
+	retryCount = 0;
 
-    InputOutputBatches.splice(0,10).forEach(async (batch, index) => {
-        const worker = new Worker("./worker.js");
-        
-        worker.postMessage({batch: batch, index: index});
-    });
-}
+	while (retryCount <= MAX_NUMBER_OF_RETRIES) {
+		try {
+			let block = await getBlock(txData!.block);
+			const interval = parseInt((30000 * Math.random()).toFixed());
+			consoleWithWorkerId.log(
+				`Confirmations for txHash: ${txHashString}: ${block.confirmations}/${confirmationCount} retrying in ${(interval + 20000) / 1000}s...`
+			);
 
-export const displayUTXOs = async () => {
-    console.log("Displaying All Available utxos");
-    let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
-    let displayUTXO: Array<displayUTXO> = [];
+			if (block.confirmations >= confirmationCount) {
+				consoleWithWorkerId.log('Transaction Confirmed for ' + txHashString);
+				return {
+					status: AirdropTransactionStatus.Success,
+					message: 'Confirmation Success: Transaction Confirmed',
+					txHashString,
+				};
+			}
+			await setTimeout(20000 + interval);
+		} catch (error) {
+			const interval = parseInt((3000 * Math.random()).toFixed());
+			consoleWithWorkerId.log(`error in confirmation, retrying in ${5000 + interval} ms...\nNumber of retries: ${retryCount}\n ${error}`);
+			await setTimeout(interval + 5000);
+			retryCount++;
+		}
+	}
 
-    utxos.forEach((utxo) => {
-        let assetArray: Array<string> = [];
-        utxo.amount.forEach((asset) => {
-            assetArray.push(asset.quantity + " " + asset.unit);
-        })
+	return {
+		status: AirdropTransactionStatus.New,
+		message: 'Confirmation Error: Maximum number of retries reached',
+		txHashString: '',
+	};
+};
 
-        displayUTXO.push({
-            txHash: utxo.tx_hash,
-            outputIndex: utxo.output_index.toString(),
-            assets: assetArray.join(" + "),
-        });
-    });
+export const coinSelectionAsync = async (
+	conclaveUTXOInputs: Array<TxBodyInput>,
+	conclaveBodyOutputs: Array<PendingReward>,
+	protocolParameter: ProtocolParametersResponse
+): Promise<RewardTxBodyDetails | null> => {
+	let currentConclaveInputsBatch: Array<TxBodyInput> = conclaveUTXOInputs;
+	let currentConclaveOutputsBatch: Array<PendingReward> = [];
 
-    console.table(displayUTXO);
-    console.log(" ");
-    console.log(" ");
-}
+	let isWithinLimit = await isWithinTxSizeLimit(currentConclaveInputsBatch, currentConclaveOutputsBatch, protocolParameter);
+	if (isNull(isWithinLimit)) return null;
 
-type displayUTXO = {
-    txHash: string;
-    outputIndex: string;
-    assets: string;
-}
+	while (
+		isWithinLimit &&
+		!isOutputSumLarger(conclaveOutputSum(currentConclaveOutputsBatch), conclaveInputSum(currentConclaveInputsBatch)) &&
+		!isOutputSumLarger(lovelaceOutputSum(currentConclaveOutputsBatch) + 2_100_000, lovelaceInputSum(currentConclaveInputsBatch))
+	) {
+		if (isEmpty(conclaveBodyOutputs)) break;
+		if (
+			isInputSumLarger(conclaveInputSum(currentConclaveInputsBatch), conclaveOutputSum(currentConclaveOutputsBatch)) &&
+			isInputSumLarger(lovelaceInputSum(currentConclaveInputsBatch), lovelaceOutputSum(currentConclaveOutputsBatch) + 2_100_000) &&
+			!isZero(conclaveOutputSum(conclaveBodyOutputs))
+		) {
+			addSmallestConclaveOrSmallestLovelaceReward(currentConclaveOutputsBatch, conclaveBodyOutputs, currentConclaveInputsBatch);
+		} else if (
+			isInputSumLarger(lovelaceInputSum(currentConclaveInputsBatch), lovelaceOutputSum(currentConclaveOutputsBatch) + 2_100_000) &&
+			!isZero(lovelaceOutputSum(conclaveBodyOutputs))
+		) {
+			addSmallestLovelaceReward(currentConclaveOutputsBatch, conclaveBodyOutputs);
+		}
+
+		isWithinLimit = await isWithinTxSizeLimit(currentConclaveInputsBatch, currentConclaveOutputsBatch, protocolParameter);
+		if (isNull(isWithinLimit)) return null;
+	}
+	if (isZero(lovelaceOutputSum(currentConclaveOutputsBatch))) return null;
+
+	isWithinLimit = await isWithinTxSizeLimit(currentConclaveInputsBatch, currentConclaveOutputsBatch, protocolParameter);
+	if (isNull(isWithinLimit)) return null;
+
+	while (
+		!isWithinLimit ||
+		isOutputSumLarger(conclaveOutputSum(currentConclaveOutputsBatch), conclaveInputSum(currentConclaveInputsBatch)) ||
+		isOutputSumLarger(lovelaceOutputSum(currentConclaveOutputsBatch) + 2_100_000, lovelaceInputSum(currentConclaveInputsBatch))
+	) {
+		if (isOutputSumLarger(conclaveOutputSum(currentConclaveOutputsBatch), conclaveInputSum(currentConclaveInputsBatch))) {
+			removeLargestConclaveReward(currentConclaveOutputsBatch);
+		} else if (isOutputSumLarger(lovelaceOutputSum(currentConclaveOutputsBatch) + 2_100_000, lovelaceInputSum(currentConclaveInputsBatch))) {
+			removeLargestLovelaceReward(currentConclaveOutputsBatch);
+		} else removeLastItem(currentConclaveOutputsBatch);
+
+		isWithinLimit = await isWithinTxSizeLimit(currentConclaveInputsBatch, currentConclaveOutputsBatch, protocolParameter);
+		if (isNull(isWithinLimit)) return null;
+	}
+
+	if (
+		isZero(lovelaceOutputSum(currentConclaveOutputsBatch)) ||
+		isOutputSumLarger(conclaveOutputSum(currentConclaveOutputsBatch), conclaveInputSum(currentConclaveInputsBatch)) ||
+		isOutputSumLarger(lovelaceOutputSum(currentConclaveOutputsBatch) + 2_100_000, lovelaceInputSum(currentConclaveInputsBatch))
+	)
+		return null;
+
+	let newTxBodyDetails: RewardTxBodyDetails | null = await createRewardTxBodywithFee(
+		currentConclaveInputsBatch,
+		currentConclaveOutputsBatch,
+		lovelaceOutputSum(currentConclaveOutputsBatch),
+		protocolParameter
+	);
+	if (isNullOrUndefined(newTxBodyDetails)) return null;
+
+	deductRewardFees(newTxBodyDetails!);
+	return newTxBodyDetails;
+};
+
+export const calculateRewardFeesAsync = async (
+	newTxBodyDetails: RewardTxBodyDetails,
+	protocolParameter: ProtocolParametersResponse
+): Promise<string | null> => {
+	let _txOutputs: Array<PendingReward> = [];
+
+	const _newTxBodyDetails: RewardTxBodyDetails = initRewardTxBodyDetails(newTxBodyDetails.txInputs, newTxBodyDetails.txOutputSum);
+
+	newTxBodyDetails.txOutputs.forEach(e => {
+		let _pendingReward: PendingReward = {
+			stakeAddress: e.stakeAddress,
+			rewards: [],
+		};
+
+		e.rewards.forEach(reward => {
+			let _reward: Reward = initReward(
+				reward.Id,
+				reward.RewardType === 3 ? 2_100_000 : 2,
+				reward.RewardType,
+				reward.WalletAddress,
+				reward.StakeAddress
+			);
+			_pendingReward.rewards.push(_reward);
+		});
+
+		_txOutputs.push(_pendingReward);
+	});
+	_newTxBodyDetails.txOutputs = _txOutputs;
+
+	let _result = await createRewardTxBodyAsync(_newTxBodyDetails, protocolParameter);
+	if (isNull(_result)) return null;
+
+	return _result!.txBody.fee().to_str();
+};
+
+export const deductRewardFees = (txBodyDetails: RewardTxBodyDetails) => {
+	let newFee = parseInt(txBodyDetails.fee) + 200;
+	txBodyDetails.txOutputs.forEach(e => {
+		e.rewards.find(f => f.RewardType == 3)!.RewardAmount = parseInt(
+			(
+				e.rewards.find(f => f.RewardType == 3)!.RewardAmount -
+				(newFee / txBodyDetails.txOutputSum) * e.rewards.find(f => f.RewardType == 3)!.RewardAmount
+			).toFixed()
+		);
+	});
+};

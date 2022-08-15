@@ -72,7 +72,7 @@ public class ConclaveOwnerRewardController : ControllerBase
         return Ok(result);
     }
 
-    [HttpPut]
+    [HttpPut("{id}")]
     public async Task<IActionResult> Update(Guid id, ConclaveOwnerReward entity)
     {
         entity.DateUpdated = DateUtils.AddOffsetToUtc(DateTime.UtcNow);

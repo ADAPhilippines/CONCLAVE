@@ -1,164 +1,171 @@
-import { QueryResult } from 'pg';
-import { queryAsync } from '../db';
-import AirdropStatus from '../enums/airdrop-status';
 import RewardType from '../enums/reward-type';
-import { Reward } from '../types/database-types';
+import { Reward, RawReward } from '../types/database-types';
 import { PendingReward } from '../types/helper-types';
-// import fetch from 'node-fetch';
+import { consoleWithWorkerId } from '../worker';
 
-// TODO: check if total reward can cover the fees
-
-// export const getAllUnpaidConclaveTokenRewardsAsync = async (): Promise<Reward[]> => {
-//     const unpaidList: Reward[] = [];
-//     const delegatorRewards = await getUnpaidRewardAsync('DelegatorRewards');
-//     const nftRewards = await getUnpaidRewardAsync('NFTRewards');
-//     const operatorReward = await getUnpaidRewardAsync('OperatorRewards');
-
-//     unpaidList.push(
-//         ...mapToReward(delegatorRewards, RewardType.DelegatorReward),
-//         ...mapToReward(nftRewards, RewardType.NFTReward),
-//         ...mapToReward(operatorReward, RewardType.OperatorReward)
-//     );
-
-//     return unpaidList;
-// };
-
-// export const getAllUnpaidAdaRewardsAsync = async (): Promise<Reward[]> => {
-//     const adaRewards = await getUnpaidRewardAsync('ConclaveOwnerRewards');
-
-//     return mapToReward(adaRewards, RewardType.ConclaveOwnerReward);
-// };
-
-export const updateRewardListStatusAsync = async (
-    rewards: Reward[],
-    airdropStatus: number,
-    transactionHash: string
-): Promise<void> => {
-    for (const reward of rewards) {
-        await updateRewardStatusAsync(reward, airdropStatus, transactionHash);
-    }
+export const updateRewardListStatusAsync = async (rewards: Reward[], airdropStatus: number, transactionHash: string): Promise<void> => {
+	consoleWithWorkerId.log('Updating database...');
+	// console.log(`${process.env.CONCLAVE_API_BASE_URL}/reward/update/${transactionHash ?? ''}/${airdropStatus}`);
+	const res = await fetch(`${process.env.CONCLAVE_API_BASE_URL}/reward/update/${transactionHash}/${airdropStatus}`, {
+		method: 'PUT',
+		body: JSON.stringify(rewards),
+		headers: { 'Content-Type': 'application/json' },
+	});
+	consoleWithWorkerId.log(`Done updating airdrop status for tx hash: ${transactionHash}`);
 };
 
 export const getUnpaidRewardAsync = async (): Promise<Reward[]> => {
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-    var res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/reward/unpaid', {});
-    var data = await res.json();
-    return res.ok ? data : [];
+	process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+	var res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/reward/unpaid', {});
+	var rewards: Reward[] = [];
+
+	if (res.ok) {
+		var data: RawReward[] = await res.json();
+		rewards = data.map(d => ({
+			Id: d.id,
+			RewardType: d.rewardType,
+			RewardAmount: d.rewardAmount,
+			WalletAddress: d.walletAddress,
+			StakeAddress: d.stakeAddress,
+			TransactionHash: d.transactionHash,
+		}));
+	}
+
+	return rewards;
 };
 
-export const getAllPendingRewardsAsync = async (): Promise<PendingReward[]> => {
-    const unpaidRewards = await getUnpaidRewardAsync();
-    return groupRewards(unpaidRewards);
+export const getAllPendingRewardsAsync = async (): Promise<{
+	newPendingRewards: PendingReward[];
+	inProgressPendingRewards: PendingReward[];
+}> => {
+	const unpaidRewards = await getUnpaidRewardAsync();
+	return groupRewards(unpaidRewards);
 };
 
-export const getAllPendingEligibleRewardsAsync = async (): Promise<PendingReward[]> => {
-    const pendingRewards = await getAllPendingRewardsAsync();
-    return filterRewards(pendingRewards);
+export const getAllPendingTransactionsAsync = async (): Promise<string[]> => {
+	const res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/reward/inprogress');
+	const pendingTransactions = await res.json();
+	return pendingTransactions;
 };
 
-export const updateRewardStatusAsync = async (reward: Reward, airdropStatus: number, transactionHash: string) => {
-    let updatedRewardData = await getUpdatedRewardStatus(reward, airdropStatus, transactionHash);
-    await updateRewardAsync(reward, updatedRewardData);
+export const getAllPendingEligibleRewardsAsync = async (): Promise<{
+	newPendingRewards: PendingReward[];
+	inProgressPendingRewards: PendingReward[];
+}> => {
+	let { newPendingRewards, inProgressPendingRewards } = await getAllPendingRewardsAsync();
+	newPendingRewards = filterRewards(newPendingRewards);
+	return { newPendingRewards, inProgressPendingRewards };
+};
+
+export const getAllRewards = (pendingRewards: PendingReward[]): Reward[] => {
+	const rewardList = [];
+
+	for (var pendingReward of pendingRewards) {
+		for (var reward of pendingReward.rewards) {
+			rewardList.push(reward);
+		}
+	}
+
+	return rewardList;
 };
 
 // Helpers
 
 const getUpdatedRewardStatus = async (reward: Reward, airdropStatus: number, transactionHash: string) => {
-    let res;
-    switch (reward.rewardType) {
-        case RewardType.DelegatorReward:
-            res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/DelegatorReward/' + reward.id);
-            break;
-        case RewardType.OperatorReward:
-            res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/OperatorReward/' + reward.id, {});
-            break;
-        case RewardType.NFTReward:
-            res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/NFTReward/' + reward.id, {});
-            break;
-        case RewardType.ConclaveOwnerReward:
-            res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/ConclaveOwnerReward/' + reward.id, {});
-            break;
-        default:
-            throw new Error('Invalid Reward Type!');
-    }
-    const updatedRewardData = await res.json();
-    updatedRewardData.airdropStatus = airdropStatus;
-    updatedRewardData.transactionHash = transactionHash;
+	let res;
+	switch (reward.RewardType) {
+		case RewardType.DelegatorReward:
+			res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/DelegatorReward/' + reward.Id);
+			break;
+		case RewardType.OperatorReward:
+			res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/OperatorReward/' + reward.Id, {});
+			break;
+		case RewardType.NFTReward:
+			res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/NFTReward/' + reward.Id, {});
+			break;
+		case RewardType.ConclaveOwnerReward:
+			res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/ConclaveOwnerReward/' + reward.Id, {});
+			break;
+		default:
+			throw new Error('Invalid Reward Type!');
+	}
+	const updatedRewardData = await res.json();
+	updatedRewardData.airdropStatus = airdropStatus;
+	updatedRewardData.transactionHash = transactionHash;
 
-    return updatedRewardData;
+	return updatedRewardData;
 };
 
-const updateRewardAsync = async (reward: Reward, updatedRewardData: any): Promise<JSON> => {
-    let res;
-    switch (reward.rewardType) {
-        case RewardType.DelegatorReward:
-            res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/DelegatorReward/' + reward.id, {
-                method: 'PUT',
-                body: JSON.stringify(updatedRewardData),
-                headers: { 'Content-Type': 'application/json' },
-            });
-            break;
-        case RewardType.OperatorReward:
-            res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/OperatorReward/' + reward.id, {
-                method: 'PUT',
-                body: JSON.stringify(updatedRewardData),
-                headers: { 'Content-Type': 'application/json' },
-            });
-            break;
-        case RewardType.NFTReward:
-            res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/NFTReward/' + reward.id, {
-                method: 'PUT',
-                body: JSON.stringify(updatedRewardData),
-                headers: { 'Content-Type': 'application/json' },
-            });
-            break;
-        case RewardType.ConclaveOwnerReward:
-            res = await fetch(process.env.CONCLAVE_API_BASE_URL + '/ConclaveOwnerReward/' + reward.id, {
-                method: 'PUT',
-                body: JSON.stringify(updatedRewardData),
-                headers: { 'Content-Type': 'application/json' },
-            });
-            break;
-        default:
-            throw new Error('Invalid Reward Type!');
-    }
-    return await res.json();
+const groupRewards = (rewards: Reward[]): { newPendingRewards: PendingReward[]; inProgressPendingRewards: PendingReward[] } => {
+	let newRewardsGroupedByStakeAddress: PendingReward[] = [
+		/*{stakeAddress: Reward[]}*/
+	];
+
+	let inProgressRewardsGroupedByStakeAddress: PendingReward[] = [];
+
+	for (let reward of rewards) {
+		let pendingReward: PendingReward | undefined;
+		const isNew = reward.TransactionHash === null || reward.TransactionHash === '';
+
+		// let pendingReward = newRewardsGroupedByStakeAddress.find(r => r.stakeAddress === reward.StakeAddress);
+
+		if (isNew) {
+			pendingReward = newRewardsGroupedByStakeAddress.find(r => r.stakeAddress === reward.StakeAddress);
+		} else {
+			pendingReward = inProgressRewardsGroupedByStakeAddress.find(r => r.stakeAddress === reward.StakeAddress);
+		}
+
+		if (pendingReward) {
+			pendingReward.rewards.push(reward);
+		} else {
+			if (isNew) {
+				newRewardsGroupedByStakeAddress.push({
+					stakeAddress: reward.StakeAddress,
+					rewards: [reward],
+				});
+			} else {
+				inProgressRewardsGroupedByStakeAddress.push({
+					stakeAddress: reward.StakeAddress,
+					rewards: [reward],
+				});
+			}
+		}
+	}
+
+	return {
+		newPendingRewards: newRewardsGroupedByStakeAddress,
+		inProgressPendingRewards: inProgressRewardsGroupedByStakeAddress,
+	};
 };
 
-const groupRewards = (pendingRewards: Reward[]): PendingReward[] => {
-    var rewardsGroupedByStakeAddress: PendingReward[] = [
-        /*{stakeAddress: Reward[]}*/
-    ];
+const filterRewards = (pendingRewards: PendingReward[], adaFee: number = 0.4 * 1_000_000, minimumCollateral: number = 1.4 * 1_000_000) => {
+	let filteredRewards: PendingReward[] = [];
 
-    for (var pendingReward of pendingRewards) {
-        var rewards = rewardsGroupedByStakeAddress.find((r) => r.stakeAddress === pendingReward.stakeAddress);
-        if (rewards) {
-            rewards.rewards.push(pendingReward);
-        } else {
-            rewardsGroupedByStakeAddress.push({
-                stakeAddress: pendingReward.stakeAddress,
-                rewards: [pendingReward],
-            });
-        }
-    }
-    return rewardsGroupedByStakeAddress;
+	for (var pendingReward of pendingRewards) {
+		let totalAdaRewards = 0.0;
+		for (let reward of pendingReward.rewards) {
+			if (reward.RewardType === RewardType.ConclaveOwnerReward) {
+				totalAdaRewards += reward.RewardAmount as number;
+			} else {
+				reward.RewardAmount = Math.trunc(reward.RewardAmount);
+			}
+		}
+
+		if (totalAdaRewards < adaFee + minimumCollateral) continue;
+
+		filteredRewards.push(pendingReward);
+	}
+
+	return filteredRewards;
 };
 
-const filterRewards = (pendingRewards: PendingReward[], adaFee: number = 0.4, minimumCollateral: number = 1.4) => {
-    let filteredRewards: PendingReward[] = [];
+// Reward -> stakeAddress, transactionhash, etc. etc.
+// Reward1 -> 1, 123
+// Reward2 -> 1, null
 
-    for (var pendingReward of pendingRewards) {
-        let totalAdaRewards = 0.0;
-        for (const reward of pendingReward.rewards) {
-            if (reward.rewardType === RewardType.ConclaveOwnerReward) {
-                totalAdaRewards += reward.rewardAmount as number;
-            }
-        }
+// 1, Reward[Reward1, Reward2]
+// InProgress -> InProgress -> batch by transaction hash
+// New -> Batch By Algorithm
 
-        if (totalAdaRewards < adaFee + minimumCollateral) continue;
-
-        filteredRewards.push(pendingReward);
-    }
-
-    return filteredRewards;
-};
+// PendingReward[] -> InProgess
+// PendingReward[] -> NewPendingReward[] | InProgressPendingReward[] | batch by transaction hash

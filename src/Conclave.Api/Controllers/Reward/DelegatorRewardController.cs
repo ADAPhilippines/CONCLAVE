@@ -72,7 +72,7 @@ public class DelegatorRewardController : ControllerBase
         return Ok(result);
     }
 
-    [HttpPut]
+    [HttpPut("{id}")]
     public async Task<IActionResult> Update(Guid id, DelegatorReward entity)
     {
         entity.DateUpdated = DateUtils.AddOffsetToUtc(DateTime.UtcNow);

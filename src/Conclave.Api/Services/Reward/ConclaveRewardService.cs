@@ -15,18 +15,21 @@ public class ConclaveRewardService : IConclaveRewardService
     private readonly INFTRewardService _nftRewardService;
     private readonly IOperatorRewardService _opeartorRewardService;
     private readonly IConclaveOwnerRewardService _conclaveOwnerRewardService;
+    private readonly ILogger<ConclaveRewardService> _logger;
 
     public ConclaveRewardService(IOptions<ConclaveDistributionParameters> options,
                                  IDelegatorRewardService delegatorRewardService,
                                  INFTRewardService nftRewardService,
                                  IOperatorRewardService operatorRewardService,
-                                 IConclaveOwnerRewardService conclaveOwnerRewardService)
+                                 IConclaveOwnerRewardService conclaveOwnerRewardService,
+                                 ILogger<ConclaveRewardService> logger)
     {
         _options = options.Value;
         _delegatorRewardService = delegatorRewardService;
         _nftRewardService = nftRewardService;
         _opeartorRewardService = operatorRewardService;
         _conclaveOwnerRewardService = conclaveOwnerRewardService;
+        _logger = logger;
     }
 
 
@@ -156,56 +159,109 @@ public class ConclaveRewardService : IConclaveRewardService
     public IEnumerable<Reward> GetAllUnpaidRewards()
     {
         var unpaidRewards = new List<Reward>();
-        var delegatorRewards = _delegatorRewardService.GetAllByAirdropStatus(AirdropStatus.New) ?? new List<DelegatorReward>();
-        var nftRewards = _nftRewardService.GetAllByAirdropStatus(AirdropStatus.New) ?? new List<NFTReward>();
-        var operatorRewards = _opeartorRewardService.GetAllByAirdropStatus(AirdropStatus.New) ?? new List<OperatorReward>();
-        var conclaveOwnerRewards = _conclaveOwnerRewardService.GetAllByAirdropStatus(AirdropStatus.New) ?? new List<ConclaveOwnerReward>();
+        var newDelegatorRewards = _delegatorRewardService.GetAllByAirdropStatus(AirdropStatus.New) ?? new List<DelegatorReward>();
+        var inProgressDelegatorRewards = _delegatorRewardService.GetAllByAirdropStatus(AirdropStatus.InProgress) ?? new List<DelegatorReward>();
+        var newNftRewards = _nftRewardService.GetAllByAirdropStatus(AirdropStatus.New) ?? new List<NFTReward>();
+        var inProgressNftRewards = _nftRewardService.GetAllByAirdropStatus(AirdropStatus.InProgress) ?? new List<NFTReward>();
+        var newOperatorRewards = _opeartorRewardService.GetAllByAirdropStatus(AirdropStatus.New) ?? new List<OperatorReward>();
+        var inProgressOperatorRewards = _opeartorRewardService.GetAllByAirdropStatus(AirdropStatus.InProgress) ?? new List<OperatorReward>();
+        var newConclaveOwnerRewards = _conclaveOwnerRewardService.GetAllByAirdropStatus(AirdropStatus.New) ?? new List<ConclaveOwnerReward>();
+        var inProgressConclaveOwnerRewards = _conclaveOwnerRewardService.GetAllByAirdropStatus(AirdropStatus.InProgress) ?? new List<ConclaveOwnerReward>();
 
-        foreach (var delegatorReward in delegatorRewards)
+        foreach (var newDelegatorReward in newDelegatorRewards)
         {
-            unpaidRewards.Add(new Reward(delegatorReward.Id,
+            unpaidRewards.Add(new Reward(newDelegatorReward.Id,
                                          RewardType.DelegatorReward,
-                                         delegatorReward.RewardAmount,
-                                         delegatorReward.DelegatorSnapshot.WalletAddress,
-                                         delegatorReward.DelegatorSnapshot.StakeAddress));
+                                         newDelegatorReward.RewardAmount,
+                                         newDelegatorReward.DelegatorSnapshot.WalletAddress,
+                                         newDelegatorReward.DelegatorSnapshot.StakeAddress,
+                                         newDelegatorReward.TransactionHash));
         }
 
-        foreach (var nftReward in nftRewards)
+        foreach (var inProgressDelegatorReward in inProgressDelegatorRewards)
         {
-            unpaidRewards.Add(new Reward(nftReward.Id,
+            unpaidRewards.Add(new Reward(inProgressDelegatorReward.Id,
+                                         RewardType.DelegatorReward,
+                                         inProgressDelegatorReward.RewardAmount,
+                                         inProgressDelegatorReward.DelegatorSnapshot.WalletAddress,
+                                         inProgressDelegatorReward.DelegatorSnapshot.StakeAddress,
+                                         inProgressDelegatorReward.TransactionHash));
+        }
+
+        foreach (var newNftReward in newNftRewards)
+        {
+            unpaidRewards.Add(new Reward(newNftReward.Id,
                                          RewardType.NFTReward,
-                                         nftReward.RewardAmount,
-                                         nftReward.NFTSnapshot.DelegatorSnapshot.WalletAddress,
-                                         nftReward.NFTSnapshot.DelegatorSnapshot.StakeAddress));
+                                         newNftReward.RewardAmount,
+                                         newNftReward.NFTSnapshot.DelegatorSnapshot.WalletAddress,
+                                         newNftReward.NFTSnapshot.DelegatorSnapshot.StakeAddress,
+                                         newNftReward.TransactionHash));
         }
 
-        foreach (var operatorReward in operatorRewards)
+        foreach (var inProgressNftReward in inProgressNftRewards)
         {
-            unpaidRewards.Add(new Reward(operatorReward.Id,
+            unpaidRewards.Add(new Reward(inProgressNftReward.Id,
+                                         RewardType.NFTReward,
+                                         inProgressNftReward.RewardAmount,
+                                         inProgressNftReward.NFTSnapshot.DelegatorSnapshot.WalletAddress,
+                                         inProgressNftReward.NFTSnapshot.DelegatorSnapshot.StakeAddress,
+                                         inProgressNftReward.TransactionHash));
+        }
+
+        foreach (var newOperatorReward in newOperatorRewards)
+        {
+            unpaidRewards.Add(new Reward(newOperatorReward.Id,
                                          RewardType.OperatorReward,
-                                         operatorReward.RewardAmount,
-                                         operatorReward.OperatorSnapshot.WalletAddress,
-                                         operatorReward.OperatorSnapshot.StakeAddress));
+                                         newOperatorReward.RewardAmount,
+                                         newOperatorReward.OperatorSnapshot.WalletAddress,
+                                         newOperatorReward.OperatorSnapshot.StakeAddress,
+                                         newOperatorReward.TransactionHash));
         }
 
-        foreach (var conclaveOwnerReward in conclaveOwnerRewards)
+        foreach (var inProgressOperatorReward in inProgressOperatorRewards)
         {
-            unpaidRewards.Add(new Reward(conclaveOwnerReward.Id,
+            unpaidRewards.Add(new Reward(inProgressOperatorReward.Id,
+                                         RewardType.OperatorReward,
+                                         inProgressOperatorReward.RewardAmount,
+                                         inProgressOperatorReward.OperatorSnapshot.WalletAddress,
+                                         inProgressOperatorReward.OperatorSnapshot.StakeAddress,
+                                         inProgressOperatorReward.TransactionHash));
+        }
+
+        foreach (var newConclaveOwnerReward in newConclaveOwnerRewards)
+        {
+            unpaidRewards.Add(new Reward(newConclaveOwnerReward.Id,
                                          RewardType.ConclaveOwnerReward,
-                                         conclaveOwnerReward.RewardAmount,
-                                         conclaveOwnerReward.ConclaveOwnerSnapshot.DelegatorSnapshot.WalletAddress,
-                                         conclaveOwnerReward.ConclaveOwnerSnapshot.DelegatorSnapshot.StakeAddress));
+                                         newConclaveOwnerReward.RewardAmount * 1_000_000,
+                                         newConclaveOwnerReward.ConclaveOwnerSnapshot.DelegatorSnapshot.WalletAddress,
+                                         newConclaveOwnerReward.ConclaveOwnerSnapshot.DelegatorSnapshot.StakeAddress,
+                                         newConclaveOwnerReward.TransactionHash));
+        }
+
+
+        foreach (var inProgressConclaveOwnerReward in inProgressConclaveOwnerRewards)
+        {
+            unpaidRewards.Add(new Reward(inProgressConclaveOwnerReward.Id,
+                                         RewardType.ConclaveOwnerReward,
+                                         inProgressConclaveOwnerReward.RewardAmount * 1_000_000,
+                                         inProgressConclaveOwnerReward.ConclaveOwnerSnapshot.DelegatorSnapshot.WalletAddress,
+                                         inProgressConclaveOwnerReward.ConclaveOwnerSnapshot.DelegatorSnapshot.StakeAddress,
+                                         inProgressConclaveOwnerReward.TransactionHash));
         }
 
         return unpaidRewards;
     }
 
-    public async Task<IEnumerable<Reward>> UpdateRewardStatus(IEnumerable<Reward> rewards, AirdropStatus status)
+    public async Task<IEnumerable<Reward>> UpdateRewardStatus(IEnumerable<Reward> rewards, AirdropStatus status, string txHash)
     {
+
         var updatedRewardStatus = new List<Reward>();
+
+        _logger.LogCritical($"Rewards Count: {rewards.Count()}");
 
         foreach (var reward in rewards)
         {
+            _logger.LogCritical($"Updating reward status to {status} for {reward.Id} of {reward.RewardType}");
             switch (reward.RewardType)
             {
                 case RewardType.DelegatorReward:
@@ -214,6 +270,7 @@ public class ConclaveRewardService : IConclaveRewardService
                     if (delegatorReward is null) break;
 
                     delegatorReward.AirdropStatus = status;
+                    delegatorReward.TransactionHash = txHash;
                     await _delegatorRewardService.UpdateAsync(delegatorReward.Id, delegatorReward);
 
                     break;
@@ -223,24 +280,29 @@ public class ConclaveRewardService : IConclaveRewardService
                     if (nftReward is null) break;
 
                     nftReward.AirdropStatus = status;
+                    nftReward.TransactionHash = txHash;
                     await _nftRewardService.UpdateAsync(nftReward.Id, nftReward);
 
                     break;
                 case RewardType.OperatorReward:
+                    _logger.LogError($"**************Operator");
                     var operatorReward = _opeartorRewardService.GetById(reward.Id);
 
                     if (operatorReward is null) break;
 
                     operatorReward.AirdropStatus = status;
+                    operatorReward.TransactionHash = txHash;
                     await _opeartorRewardService.UpdateAsync(operatorReward.Id, operatorReward);
 
                     break;
                 case RewardType.ConclaveOwnerReward:
+                    _logger.LogError($"**************ConclaveOwnerReward");
                     var conclaveOwnerReward = _conclaveOwnerRewardService.GetById(reward.Id);
 
                     if (conclaveOwnerReward is null) break;
 
                     conclaveOwnerReward.AirdropStatus = status;
+                    conclaveOwnerReward.TransactionHash = txHash;
                     await _conclaveOwnerRewardService.UpdateAsync(conclaveOwnerReward.Id, conclaveOwnerReward);
 
                     break;

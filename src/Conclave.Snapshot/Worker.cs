@@ -16,7 +16,6 @@ public class Worker : BackgroundService
     private ConclaveEpoch? NewConclaveEpoch { get; set; }
 
     // services
-
     private IConclaveEpochsService EpochsService { get; set; }
     private IConclaveCardanoService CardanoService { get; set; }
     private IConclaveSchedulerService SnapshotSchedulerService { get; set; }
@@ -36,7 +35,6 @@ public class Worker : BackgroundService
     // options
     private SnapshotOptions SnapshotOptions { get; }
     private ApplicationOptions ApplicationOptions { get; }
-
 
     public Worker(ILogger<Worker> logger, IServiceProvider provider)
     {
@@ -76,10 +74,14 @@ public class Worker : BackgroundService
                 // Prepare snapshot
                 await ExecuteSeedEpochGetterOrSetterAsync();
                 await ExecuteCurrentEpochGetterOrSetterAsync();
+<<<<<<< HEAD
+                // await ExecuteSnapshotSchedulerAsync();
+=======
 
                 // Scheduler
                 if (!ApplicationOptions.IsDevelopment) await ExecuteSnapshotSchedulerAsync();
 
+>>>>>>> main
                 await ExecuteNewEpochGetterOrSetterAsync();
 
                 if (NewConclaveEpoch is null)
@@ -98,10 +100,25 @@ public class Worker : BackgroundService
                 await DelegatorRewardHandler.HandleAsync(NewConclaveEpoch);
                 await OperatorRewardHandler.HandleAsync(NewConclaveEpoch);
                 await NftRewardHandler.HandleAsync(NewConclaveEpoch);
+<<<<<<< HEAD
+                await ConcalveOwnerRewardHandler.HandleAsync(NewConclaveEpoch);
+
+                // end conclave epoch cycle
+                await ExecuteSnapshotEndSchedulerAsync();
+ 
+                if (CurrentConclaveEpoch is null)
+                {
+                    await Task.Delay(60 * 5 * 1000, stoppingToken);
+                    return;
+                } // 5 minutes
+
+                // CurrentConclaveEpoch = NewConclaveEpoch;
+=======
                 await ConcalveOwnerRewardHandler.HandleAsync();
 
                 // end conclave epoch cycle
                 await ExecuteSnapshotEndSchedulerAsync();
+>>>>>>> main
             }
             catch (Exception e)
             {

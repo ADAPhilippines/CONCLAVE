@@ -1,143 +1,109 @@
-// import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
-// import CardanoWasm from '@emurgo/cardano-serialization-lib-nodejs';
-// import axios from 'axios';
-// import { mnemonicToEntropy } from 'bip39';
-// import fetch from 'node-fetch';
-// import { getLatestProtocolParametersAsync } from './config/network.config';
-// import { getTransactionBuilder } from './config/transaction.config';
-// import RewardType from './enums/reward-type';
-// import { Reward } from './types/database-types';
-// import { PendingReward } from './types/helper-types';
-// import { UTXO } from './types/response-types';
-// import { getCurrentEpochsAsync, getProtocolParametersAsync } from './utils/epoch-utils';
-// import { getUnpaidRewardAsync } from './utils/reward-utils';
-// import { getPureAdaUtxos, getUtxosWithAsset } from './utils/utxo-utils';
+import { divideUTXOsAsync } from './utils/manageUTXOs/divideUTXO-utils';
+import { TxBodyInput, AirdropBatch, ProtocolParametersResponse } from './types/response-types';
+import { displayUTXOs, getAllUTXOsAsync, queryAllUTXOsAsync } from './utils/utxo-utils';
+import { getLatestProtocolParametersAsync } from './config/network.config';
+import { PendingReward } from './types/helper-types';
+import { isEmpty, isNull } from './utils/boolean-utils';
+import { getAllPendingEligibleRewardsAsync } from './utils/reward-utils';
+import { setTimeout } from 'timers/promises';
+import ConclaveAirdropper from './models/ConclaveAirdropper';
+import { POLICY_STRING, SHELLEY_CHANGE_ADDRESS } from './config/walletKeys.config';
+import AirdropWorker from './models/AirdropWorker';
+import { getTotalQuantity, getTotalRewardQuantity, lovelaceInputSum, lovelaceOutputSum } from './utils/sum-utils';
+import { generateWorkerBatchesWithThreshold } from './utils/worker-utils';
+import { dummyDataOutput, dummyInProgress } from './utils/txBody-utils';
 
-import { accountKey, addressBech32, privKey, rootKey, shelleyChangeAddress, utxoPrvKey, utxoPubKey } from "./config/walletKeys.config";
-import { divideUTXOsAsync } from "./utils/manageUTXOs/divideUTXO-utils";
+const main = async () => {
+	while (true) {
+		let { newPendingRewards, inProgressPendingRewards } = await getAllPendingEligibleRewardsAsync(); // InProgress included
+		// let newPendingRewards: Array<PendingReward> = dummyDataOutput(); // InProgress included
+		// let inProgressPendingRewards: Array<PendingReward> = []; // InProgress included
 
-// const blockfrostAPI = new BlockFrostAPI({
-//     projectId: process.env.PROJECT_ID as string,
-//     isTestnet: true,
-// });
+		console.log('PENDING REWARDS COUNT: ' + newPendingRewards.length);
+		console.log('IN PROGRESS REWARDS COUNT: ' + inProgressPendingRewards.length);
 
-// const main = async () => {
-//     var pendingRewards: Reward[] = await getUnpaidRewardAsync();
-//     var rewardsGroupedByStakeAddress: PendingReward[] = groupRewards(pendingRewards);
-//     var eligibleRewards: PendingReward[] = filterRewards(rewardsGroupedByStakeAddress);
+		if (!isEmpty(newPendingRewards) || !isEmpty(inProgressPendingRewards)) {
+			// Start airdropper
+			await startAirdropper(newPendingRewards, []);
+		}
+		const AIRDROPPER_INTERVAL = 1000 * 60 * 60 * 6;
+		console.log(`Airdropper will rerun in ${AIRDROPPER_INTERVAL / 24.0} hours `);
+		await setTimeout(AIRDROPPER_INTERVAL); // Check every 6 hourse
+	}
+};
 
-//     console.log(eligibleRewards);
+const startAirdropper = async (newPendingRewards: PendingReward[], inProgressPendingRewards: PendingReward[]): Promise<void> => {
+	let protocolParameter = await getLatestProtocolParametersAsync();
 
-//     while (true) {
-//         // get all utxos
-//         var utxosWithAsset: UTXO = await getUtxosWithAsset(
-//             blockfrostAPI,
-//             process.env.BASE_ADDRESS as string,
-//             process.env.CONCLAVE_UNIT_ID as string
-//         );
-//         var pureAdaUtxos: UTXO = await getPureAdaUtxos(blockfrostAPI, process.env.BASE_ADDRESS as string);
+	// Divide UTXOs
+	await divideUTXOsAsync(protocolParameter);
 
-//         console.log({ utxosWithAsset, pureAdaUtxos });
+	// Display UTXOs
+	let utxos = await queryAllUTXOsAsync(SHELLEY_CHANGE_ADDRESS.to_bech32());
+	await displayUTXOs(utxos!);
 
-//         // total amount of assets
-//         var totalAda: number =
-//             utxosWithAsset
-//                 .map((x) => Number(x.amount.find((u) => u.unit === 'lovelace')?.quantity))
-//                 .reduce((acc, val) => acc + val) +
-//             pureAdaUtxos
-//                 .map((u) => Number(u.amount.find((x) => x.unit === 'lovelace')?.quantity))
-//                 .reduce((acc, val) => acc + val);
+	let utxosInWallet: Array<TxBodyInput> = await getAllUTXOsAsync(SHELLEY_CHANGE_ADDRESS.to_bech32());
+	console.log('UTXOs in wallet: ' + utxosInWallet.length);
+	// Divide pending rewards into batches
+	let airdropBatches: Array<AirdropBatch> = await generateWorkerBatchesWithThreshold(
+		utxosInWallet,
+		newPendingRewards,
+		inProgressPendingRewards,
+		20 //batch size
+	);
 
-//         var totalConclaveTokens: number = utxosWithAsset
-//             .map((x) => Number(x.amount.find((u) => u.unit === (process.env.CONCLAVE_UNIT_ID as string))?.quantity))
-//             .reduce((acc, val) => acc + val);
+	//initialize workers
+	const conclaveAirdropper = new ConclaveAirdropper(10);
 
-//         console.log({ totalAda, totalConclaveTokens });
-//         // build transaction
-//         var currentEpoch = await getCurrentEpochsAsync(blockfrostAPI);
-//         var transactionParams = await getLatestProtocolParametersAsync(blockfrostAPI);
-//         var transacionBuilder = getTransactionBuilder(transactionParams);
+	let index = 0;
+	for (let airdropBatch of airdropBatches) {
+		airdropBatch.index = ++index;
+		await executeAirdropWorkerAsync(conclaveAirdropper, airdropBatch, protocolParameter);
+	}
+};
 
-//         // holds rewards included in the transaction
-//         var includedEligibleRewards: PendingReward[] = [];
+// helpers
+const executeAirdropWorkerAsync = async (
+	conclaveAirdropper: ConclaveAirdropper,
+	batch: AirdropBatch,
+	protocolParameter: ProtocolParametersResponse
+): Promise<void> => {
+	let airdropWorker: AirdropWorker | null = null;
 
-//         // TODO: tx outputs
-//         for (var eligibleReward of eligibleRewards) {
-//             // add in the transaction builder until max output is reached
-//         }
+	while (airdropWorker === null) {
+		airdropWorker = conclaveAirdropper.getFirstAvailableWorker();
 
-//         // TODO: tx inputs to cover rewards set
+		if (isNull(airdropWorker)) {
+			console.log('waiting available worker');
+			await setTimeout(1000 * 60 * 2); // wait 2 minutes
+			continue;
+		}
+		airdropWorker!.execute(batch, protocolParameter);
+		break;
+	}
+};
 
-//         // TODO: send transaction
-
-//         // TODO: update reward status of rewards included in the transaction
-//     }
+// const displayPendingRewards = (pendingRewards: PendingReward[]) => {
+// 	pendingRewards.forEach(pendingReward => {
+// 		console.table(
+// 			pendingReward.rewards.forEach(reward => {
+// 				console.table(reward);
+// 			})
+// 		);
+// 	});
 // };
 
-// const groupRewards = (pendingRewards: Reward[]): PendingReward[] => {
-//     var rewardsGroupedByStakeAddress: PendingReward[] = [
-//         /*{stakeAddress: Reward[]}*/
-//     ];
+// const displayInputOutputTotals = (inputOutputBatches: Array<AirdropBatch>) => {
+// 	inputOutputBatches.forEach((e, index) => {
+// 		console.log('BATCH #' + index);
+// 		console.log('INPUT LOVELACE SUM: ' + getTotalQuantity('lovelace', e.txInputs));
+// 		console.log('INPUT CONCLAVE SUM: ' + getTotalQuantity(POLICY_STRING!, e.txInputs));
+// 		console.log('OUTPUT LOVELACE SUM: ' + getTotalRewardQuantity(true, e.txOutputs));
 
-//     for (var pendingReward of pendingRewards) {
-//         var rewards = rewardsGroupedByStakeAddress.find((r) => r.stakeAddress === pendingReward.stakeAddress);
-//         if (rewards) {
-//             rewards.rewards.push(pendingReward);
-//         } else {
-//             rewardsGroupedByStakeAddress.push({
-//                 stakeAddress: pendingReward.stakeAddress,
-//                 rewards: [pendingReward],
-//             });
-//         }
-//     }
-//     return rewardsGroupedByStakeAddress;
+// 		console.log('OUTPUT CONCLAVE SUM: ' + getTotalRewardQuantity(false, e.txOutputs));
+// 		console.log('INPUT UTXO COUNT: ' + e.txInputs.length);
+// 		console.log('OUTPUT ACCOUNT COUNT: ' + e.txOutputs.length);
+// 	});
 // };
 
-// const filterRewards = (pendingRewards: PendingReward[], adaFee: number = 0.4, minimumCollateral: number = 1.4) => {
-//     let filteredRewards: PendingReward[] = [];
-
-//     for (var pendingReward of pendingRewards) {
-//         let totalConclaveTokenRewards = 0.0;
-//         let totalAdaRewards = 0.0;
-//         for (const reward of pendingReward.rewards) {
-//             if (reward.rewardType === RewardType.ConclaveOwnerReward) {
-//                 totalAdaRewards += reward.rewardAmount as number;
-//             } else {
-//                 totalConclaveTokenRewards += reward.rewardAmount as number;
-//             }
-//         }
-
-//         if (totalAdaRewards < adaFee + minimumCollateral) continue;
-
-//         filteredRewards.push(pendingReward);
-//     }
-
-//     return filteredRewards;
-// };
-
-// main();
-// divideUTXOsAsync();
-
-import { TxBodyInput, WorkerBatch } from "./types/response-types";
-import { getBatchesPerWorker } from "./utils/txBody/txInput-utils";
-import { executeWorkers } from "./utils/worker-utils";
-import { queryAllUTXOsAsync } from "./utils/utxo-utils";
-import { blockfrostAPI } from "./config/network.config";
-import { getAllUTXOsAsync } from "./utils/airdrop-utils";
-import { dummyDataOutput } from "./utils/txBody/txOutput-utils";
-import { PendingReward } from "./types/helper-types";
-
-
-const airdropFunction = async () => {
-    let utxos = await queryAllUTXOsAsync(blockfrostAPI, shelleyChangeAddress.to_bech32());
-    await divideUTXOsAsync(utxos);
-
-    let utxosInWallet : Array<TxBodyInput> = await getAllUTXOsAsync();
-    let pendingRewards : Array<PendingReward> = dummyDataOutput(); //replace with RJ's function
-
-    let InputOutputBatches: Array<WorkerBatch> = await getBatchesPerWorker(utxosInWallet, pendingRewards);
-
-    await executeWorkers(InputOutputBatches); //execute code to send transaction for each worker
-}
-
-airdropFunction();
+main();
