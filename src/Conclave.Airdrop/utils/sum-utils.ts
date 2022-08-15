@@ -1,5 +1,4 @@
 import { POLICY_STRING } from '../config/walletKeys.config';
-import { Reward } from '../types/database-types';
 import { PendingReward } from '../types/helper-types';
 import { TxBodyInput } from '../types/response-types';
 
@@ -7,8 +6,29 @@ export const getOutputLovelaceSum = (currentOutputBatch: Array<PendingReward>): 
 	if (currentOutputBatch === null || currentOutputBatch === undefined) return 0;
 
 	let _partialSum = 0;
-	currentOutputBatch.forEach(reward => {
-		_partialSum += reward.rewards.find(e => e.rewardType === 3)?.rewardAmount ?? 0;
+	currentOutputBatch.forEach(pendingReward => {
+		pendingReward.rewards
+			.filter(e => e.RewardType === 3)
+			.forEach(lovelaceAmount => {
+				_partialSum += lovelaceAmount.RewardAmount;
+			});
+	});
+
+	return _partialSum;
+};
+
+export const getOutputPureLovelaceSum = (currentOutputBatch: Array<PendingReward>): number => {
+	if (currentOutputBatch === null || currentOutputBatch === undefined) return 0;
+
+	let _partialSum = 0;
+	currentOutputBatch.forEach(pendingReward => {
+		if (pendingReward.rewards.find(e => e.RewardType !== 3) === undefined) {
+			pendingReward.rewards
+				.filter(e => e.RewardType === 3)
+				.forEach(lovelaceAmount => {
+					_partialSum += lovelaceAmount.RewardAmount;
+				});
+		}
 	});
 
 	return _partialSum;
@@ -20,9 +40,9 @@ export const getOutputConclaveSum = (currentConclaveOutputBatch: Array<PendingRe
 	let _partialSum = 0;
 	currentConclaveOutputBatch.forEach(reward => {
 		reward.rewards
-			.filter(e => e.rewardType !== 3)
+			.filter(e => e.RewardType !== 3)
 			.forEach(conclaveAmount => {
-				_partialSum += conclaveAmount.rewardAmount;
+				_partialSum += conclaveAmount.RewardAmount;
 			});
 	});
 
@@ -70,6 +90,34 @@ export const lovelaceOutputSum = (outputs: Array<PendingReward>): number => {
 	return getOutputLovelaceSum(outputs);
 };
 
+export const purelovelaceOutputSum = (outputs: Array<PendingReward>): number => {
+	return getOutputPureLovelaceSum(outputs);
+};
+
 export const reserveLovelaceSum = (reservedInputs: Array<TxBodyInput>): number => {
 	return getInputAssetUTXOSum(reservedInputs);
+};
+
+export const getTotalQuantity = (unit: string, data: TxBodyInput[]) => {
+	return data
+		.map(input =>
+			Number(
+				input.asset
+					.filter(asset => asset.unit === unit)
+					.map(asset => Number(asset.quantity))
+					.reduce((acc, next) => acc + next)
+			)
+		)
+		.reduce((acc, next) => acc + next);
+};
+
+export const getTotalRewardQuantity = (isAda: boolean, data: PendingReward[]) => {
+	return data
+		.map(out =>
+			out.rewards
+				.filter(reward => (isAda ? reward.RewardType === 3 : reward.RewardType !== 3))
+				.map(reward => Number(reward.RewardAmount))
+				.reduce((acc, next) => acc + next)
+		)
+		.reduce((acc, next) => acc + next);
 };

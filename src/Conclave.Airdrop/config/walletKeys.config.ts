@@ -1,23 +1,23 @@
 import CardanoWasm from '@dcspark/cardano-multiplatform-lib-nodejs';
 import { fromHex } from '../utils/string-utils';
 import cbor from 'cbor';
-// export const SIGN_KEY = CardanoWasm.PrivateKey.from_bech32(process.env.SIGN_KEY_BECH32!);
-// export const VERIFY_KEY = CardanoWasm.PublicKey.from_bech32(process.env.VERIFY_KEY_BECH32!);
-// export const SHELLEY_CHANGE_ADDRESS = CardanoWasm.Address.from_bech32(process.env.SHELLEY_CHANGE_ADDRESS!);
+export const SIGN_KEY = CardanoWasm.PrivateKey.from_bech32(process.env.SIGN_KEY_BECH32!);
+export const VERIFY_KEY = CardanoWasm.PublicKey.from_bech32(process.env.VERIFY_KEY_BECH32!);
+export const SHELLEY_CHANGE_ADDRESS = CardanoWasm.Address.from_bech32(process.env.SHELLEY_CHANGE_ADDRESS!);
 
-const cbor_hex_key = '582007e4fc2151ff929ff906a48815d4707c715dbdd227bef6f8e0818407e59fd583';
-const unhex = fromHex(cbor_hex_key);
-const decode = cbor.decode(unhex);
-const privKey = CardanoWasm.PrivateKey.from_normal_bytes(decode);
+// const cbor_hex_key = '582007e4fc2151ff929ff906a48815d4707c715dbdd227bef6f8e0818407e59fd583';
+// const unhex = fromHex(cbor_hex_key);
+// const decode = cbor.decode(unhex);
+// const privKey = CardanoWasm.PrivateKey.from_normal_bytes(decode);
 
-export const SIGN_KEY = CardanoWasm.PrivateKey.from_bech32(privKey.to_bech32());
-export const VERIFY_KEY = CardanoWasm.PublicKey.from_bech32(privKey.to_public().to_bech32());
-export const SHELLEY_CHANGE_ADDRESS = CardanoWasm.Address.from_bech32(
-	'addr_test1vrhcq70gslwqchcerumm0uqu08zy68qg2mdmh95ar5t545c7avx8t'
-);
+// export const SIGN_KEY = CardanoWasm.PrivateKey.from_bech32(privKey.to_bech32());
+// export const VERIFY_KEY = CardanoWasm.PublicKey.from_bech32(privKey.to_public().to_bech32());
+// export const SHELLEY_CHANGE_ADDRESS = CardanoWasm.Address.from_bech32(
+// 	'addr_test1vrhcq70gslwqchcerumm0uqu08zy68qg2mdmh95ar5t545c7avx8t'
+// );
 
 export const SHELLEY_OUTPUT_ADDRESS = CardanoWasm.Address.from_bech32(
-	'addr_test1qqkazed34gqdp3sy989p2xp3qdpvs0slex7umj35xdmzvcqa6g53xrnnhkv47txfj9vf6k8s4ulktgk7mlkfpxjflf2s3p9md5'
+	'addr_test1vrhcq70gslwqchcerumm0uqu08zy68qg2mdmh95ar5t545c7avx8t'
 );
 
 export const POLICY_ID = process.env.POLICY_ID;

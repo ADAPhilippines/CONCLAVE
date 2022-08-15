@@ -1,13 +1,10 @@
 import { ProtocolParametersResponse } from '../types/response-types';
-import { getCurrentEpochsAsync, getProtocolParametersAsync } from '../utils/epoch-utils';
-import CardanoWasm from '@dcspark/cardano-multiplatform-lib-nodejs';
+import { getCurrentEpochsAsync, getProtocolParametersAsync } from '../utils/blockFrost-tools';
 import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
 
-export const getLatestProtocolParametersAsync = async (
-	blockfrostAPI: BlockFrostAPI
-): Promise<ProtocolParametersResponse> => {
-	const currentEpoch = await getCurrentEpochsAsync(blockfrostAPI);
-	const protocolParams = await getProtocolParametersAsync(blockfrostAPI, currentEpoch.epoch);
+export const getLatestProtocolParametersAsync = async (): Promise<ProtocolParametersResponse> => {
+	const currentEpoch = await getCurrentEpochsAsync();
+	const protocolParams = await getProtocolParametersAsync(currentEpoch.epoch);
 
 	return {
 		min_fee_a: protocolParams.min_fee_a.toString(),

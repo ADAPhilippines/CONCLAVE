@@ -72,7 +72,7 @@ public class Worker : BackgroundService
                 // prepare snapshot
                 await ExecuteSeedEpochGetterOrSetterAsync();
                 await ExecuteCurrentEpochGetterOrSetterAsync();
-                await ExecuteSnapshotSchedulerAsync();
+                // await ExecuteSnapshotSchedulerAsync();
                 await ExecuteNewEpochGetterOrSetterAsync();
 
                 if (NewConclaveEpoch is null)
@@ -91,13 +91,11 @@ public class Worker : BackgroundService
                 await DelegatorRewardHandler.HandleAsync(NewConclaveEpoch);
                 await OperatorRewardHandler.HandleAsync(NewConclaveEpoch);
                 await NftRewardHandler.HandleAsync(NewConclaveEpoch);
-
-                // TODO: calculate conclave owner rewards without blocking the worker
-                _ = ConcalveOwnerRewardHandler.HandleAsync(NewConclaveEpoch);
+                await ConcalveOwnerRewardHandler.HandleAsync(NewConclaveEpoch);
 
                 // end conclave epoch cycle
                 await ExecuteSnapshotEndSchedulerAsync();
-
+ 
                 if (CurrentConclaveEpoch is null)
                 {
                     await Task.Delay(60 * 5 * 1000, stoppingToken);

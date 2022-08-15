@@ -1,20 +1,16 @@
-import { BlockFrostAPI, BlockfrostServerError, Responses } from '@blockfrost/blockfrost-js';
+import { BlockfrostServerError } from '@blockfrost/blockfrost-js';
 import CardanoWasm from '@dcspark/cardano-multiplatform-lib-nodejs';
 import { fromHex, toHex } from './string-utils';
 import { CardanoAssetResponse, RewardTxBodyDetails, TxBodyInput, UTXO } from '../types/response-types';
 import { Reward } from '../types/database-types';
-import { submitTransactionAsync } from './transaction-utils';
 import { getInputAssetUTXOSum } from './sum-utils';
-import { isNull, isZero } from './boolean-utils';
-import { blockfrostAPI } from '../config/network.config';
+import { isZero } from './boolean-utils';
 import { PendingReward } from '../types/helper-types';
-import { setTimeout } from 'timers/promises';
-import { parentPort } from 'worker_threads';
-import AirdropTransactionStatus from '../enums/airdrop-transaction-status';
-import { SHELLEY_CHANGE_ADDRESS } from '../config/walletKeys.config';
+import { POLICY_STRING, SHELLEY_CHANGE_ADDRESS } from '../config/walletKeys.config';
+import { getUTXOsfromAddress } from './blockFrost-tools';
 
-export const getUtxosAsync = async (blockfrostApi: BlockFrostAPI, publicAddr: string) => {
-	const utxosResults = await blockfrostApi.addressesUtxosAll(publicAddr);
+export const getUtxosAsync = async (publicAddr: string) => {
+	const utxosResults = await getUTXOsfromAddress(publicAddr);
 
 	let utxos: CardanoWasm.TransactionUnspentOutput[] = [];
 
@@ -69,10 +65,37 @@ export const assetValue = (
 	return value;
 };
 
-export const queryAllUTXOsAsync = async (blockfrostApi: BlockFrostAPI, address: string): Promise<UTXO> => {
+export const getAllUTXOsAsync = async (walletAddress: string): Promise<Array<TxBodyInput>> => {
+	let utxos = await queryAllUTXOsAsync(walletAddress);
+	let txBodyInputs: Array<TxBodyInput> = [];
+
+	utxos.forEach(utxo => {
+		let assetArray: Array<CardanoAssetResponse> = [];
+		utxo.amount.forEach(asset => {
+			const cardanoAsset: CardanoAssetResponse = {
+				unit: asset.unit,
+				quantity: asset.quantity,
+			};
+
+			assetArray.push(cardanoAsset);
+		});
+
+		const utxoInput: TxBodyInput = {
+			txHash: utxo.tx_hash,
+			outputIndex: utxo.output_index.toString(),
+			asset: assetArray,
+		};
+
+		txBodyInputs.push(utxoInput);
+	});
+
+	return txBodyInputs;
+};
+
+export const queryAllUTXOsAsync = async (address: string): Promise<UTXO> => {
 	let utxos: UTXO = [];
 	try {
-		utxos = await blockfrostApi.addressesUtxosAll(address);
+		utxos = await getUTXOsfromAddress(address);
 	} catch (error) {
 		if (error instanceof BlockfrostServerError && error.status_code === 404) {
 			utxos = [];
@@ -89,8 +112,8 @@ export const queryAllUTXOsAsync = async (blockfrostApi: BlockFrostAPI, address: 
 	return utxos;
 };
 
-export const getUtxosWithAsset = async (blockfrostApi: BlockFrostAPI, address: string, unit: string): Promise<UTXO> => {
-	let utxos: UTXO = await blockfrostApi.addressesUtxosAll(address);
+export const getUtxosWithAsset = async (address: string, unit: string): Promise<UTXO> => {
+	let utxos: UTXO = await getUTXOsfromAddress(address);
 	let utxosWithAsset: UTXO = [];
 
 	if (utxos.length < 0) return utxos;
@@ -106,8 +129,8 @@ export const getUtxosWithAsset = async (blockfrostApi: BlockFrostAPI, address: s
 	return utxosWithAsset;
 };
 
-export const getPureAdaUtxos = async (blockfrostApi: BlockFrostAPI, address: string): Promise<UTXO> => {
-	let utxos: UTXO = await blockfrostApi.addressesUtxosAll(address);
+export const getPureAdaUtxos = async (address: string): Promise<UTXO> => {
+	let utxos: UTXO = await getUTXOsfromAddress(address);
 	if (utxos.length < 0) return utxos;
 
 	let pureAdaUtxos: UTXO = [];
@@ -125,217 +148,316 @@ export const getPureAdaUtxos = async (blockfrostApi: BlockFrostAPI, address: str
 	return pureAdaUtxos;
 };
 
-export const awaitChangeInUTXOAsync = async (
-	blockfrostAPI: BlockFrostAPI,
-	txHashString: string
-): Promise<{ status: number; message: string; txHashString: string }> => {
-	let maxSlot = await getMaximumSlotAsync(blockfrostAPI);
-	const MAX_NUMBER_OF_RETRIES = 30;
-	let retryCount = 0;
+function getLovelaceAboveThreshold(utxos: UTXO, threshold: number): Array<TxBodyInput> {
+	let txBodyInputs: Array<TxBodyInput> = [];
 
-	if (maxSlot == 0) {
-		return {
-			status: AirdropTransactionStatus.Failed,
-			message: 'Maximum number of retries reached',
-			txHashString,
-		};
-	}
-
-	while (retryCount <= MAX_NUMBER_OF_RETRIES) {
-		try {
-			let latestBlock = await blockfrostAPI.blocksLatest();
-			let utxos = await queryAllUTXOsAsync(blockfrostAPI, SHELLEY_CHANGE_ADDRESS.to_bech32());
-			let commonHash = utxos.find(u => u.tx_hash === txHashString);
-			console.log('Waiting for change in UTXO for txhash: ' + txHashString);
-			if (commonHash !== undefined && latestBlock.slot != null && latestBlock.slot <= maxSlot) {
-				return {
-					status: AirdropTransactionStatus.Success,
-					message: 'UTXO updated',
-					txHashString,
+	utxos.forEach(utxo => {
+		if (
+			utxo.amount.length == 1 &&
+			utxo.amount[0].unit == 'lovelace' &&
+			parseInt(utxo.amount.find(f => f.unit == 'lovelace')!.quantity) >= threshold
+		) {
+			let assetArray: Array<CardanoAssetResponse> = [];
+			utxo.amount.forEach(asset => {
+				const cardanoAsset: CardanoAssetResponse = {
+					unit: asset.unit,
+					quantity: asset.quantity,
 				};
-			} else if (latestBlock.slot != null && latestBlock.slot > maxSlot && commonHash === undefined) {
-				return {
-					status: AirdropTransactionStatus.Failed,
-					message: 'UTXO Update Failed',
-					txHashString,
+
+				assetArray.push(cardanoAsset);
+			});
+
+			const utxoInput: TxBodyInput = {
+				txHash: utxo.tx_hash,
+				outputIndex: utxo.output_index.toString(),
+				asset: assetArray,
+			};
+
+			txBodyInputs.push(utxoInput);
+		}
+	});
+
+	return txBodyInputs;
+}
+
+function getConclaveAboveThreshold(utxos: UTXO, threshold: number): Array<TxBodyInput> {
+	let txBodyInputs: Array<TxBodyInput> = [];
+
+	utxos.forEach(utxo => {
+		if (
+			utxo.amount.length != 1 &&
+			utxo.amount.find(e => e.unit == POLICY_STRING) &&
+			parseInt(utxo.amount.find(f => f.unit == POLICY_STRING)!.quantity) >= threshold
+		) {
+			let assetArray: Array<CardanoAssetResponse> = [];
+			utxo.amount.forEach(asset => {
+				const cardanoAsset: CardanoAssetResponse = {
+					unit: asset.unit,
+					quantity: asset.quantity,
 				};
-			}
-			const interval = parseInt((20000 * Math.random()).toFixed());
-			await setTimeout(interval + 20000);
-		} catch (error) {
-			const interval = parseInt((3000 * Math.random()).toFixed());
-			console.log(`error updating UTXO, retrying in ${5000 + interval} ms...\nNumber of retries: ${retryCount}`);
-			console.log(error);
-			await setTimeout(interval + 5000);
-			retryCount++;
+
+				assetArray.push(cardanoAsset);
+			});
+
+			const utxoInput: TxBodyInput = {
+				txHash: utxo.tx_hash,
+				outputIndex: utxo.output_index.toString(),
+				asset: assetArray,
+			};
+
+			txBodyInputs.push(utxoInput);
 		}
-	}
+	});
 
-	return {
-		status: AirdropTransactionStatus.Failed,
-		message: 'Maximum number of retries reached',
-		txHashString,
-	};
-};
-
-export const getMaximumSlotAsync = async (blockfrostAPI: BlockFrostAPI): Promise<number> => {
-	const MAX_NUMBER_OF_RETRIES = 30;
-	let retryCount = 0;
-
-	while (retryCount <= MAX_NUMBER_OF_RETRIES) {
-		try {
-			let latestBlock = await blockfrostAPI.blocksLatest();
-			if (!isNull(latestBlock) && !isNull(latestBlock.slot)) return latestBlock.slot! + 20 * 1;
-		} catch (error) {
-			const interval = parseInt((3000 * Math.random()).toFixed());
-			console.log(
-				`error getting maximum slot, retrying in ${5000 + interval} ms...\nNumber of retries: ${retryCount}`
-			);
-			await setTimeout(5000 + interval);
-		}
-	}
-	return 0;
-};
+	return txBodyInputs;
+}
 
 export const partitionUTXOs = (
 	utxos: UTXO,
-	threshold: number
+	lovelaceThreshold: number = 500_000_000,
+	conclaveThreshold: number = 200_000_000
 ): {
 	txInputs: Array<TxBodyInput>;
 	txOutputs: Array<PendingReward>;
 } | null => {
 	let txBodyInputs: Array<TxBodyInput> = [];
 	let txBodyOutputs: Array<PendingReward> = [];
-	let utxoDivider: number = 1;
 
-	utxos.forEach(utxo => {
-		if (
-			utxo.amount.length == 1 &&
-			utxo.amount[0].unit == 'lovelace' &&
-			parseInt(utxo.amount.find(f => f.unit == 'lovelace')!.quantity) > threshold
-		) {
-			let assetArray: Array<CardanoAssetResponse> = [];
-			utxo.amount.forEach(asset => {
-				const cardanoAsset: CardanoAssetResponse = {
-					unit: asset.unit,
-					quantity: asset.quantity,
-				};
+	txBodyInputs.push(...getLovelaceAboveThreshold(utxos, lovelaceThreshold));
+	txBodyInputs.push(...getConclaveAboveThreshold(utxos, conclaveThreshold));
+	txBodyInputs = txBodyInputs.splice(0, 40);
 
-				assetArray.push(cardanoAsset);
-			});
+	let lovelaceSum = getInputAssetUTXOSum(txBodyInputs);
+	let conclaveSum = getInputAssetUTXOSum(txBodyInputs, POLICY_STRING);
+	if (isZero(lovelaceSum) && isZero(conclaveSum)) return null;
 
-			const utxoInput: TxBodyInput = {
-				txHash: utxo.tx_hash,
-				outputIndex: utxo.output_index.toString(),
-				asset: assetArray,
+	let lovelaceDivider = parseInt((lovelaceSum / (lovelaceThreshold / 2)).toFixed());
+	let conclaveDivider = parseInt((conclaveSum / (conclaveThreshold / 2)).toFixed());
+	let lovelaceRemainder = parseInt((lovelaceSum % (lovelaceThreshold / 2)).toFixed());
+	let conclaveRemainder = parseInt((conclaveSum % (conclaveThreshold / 2)).toFixed());
+
+	for (let i: number = 0; i < Math.max(conclaveDivider - 1, lovelaceDivider - 1); i++) {
+		let pendingReward: PendingReward;
+
+		if (i < conclaveDivider) {
+			const conclaveReward: Reward = {
+				Id: i.toString(),
+				RewardType: 2,
+				RewardAmount: conclaveThreshold / 2,
+				WalletAddress: SHELLEY_CHANGE_ADDRESS.to_bech32(),
+				StakeAddress: ' ',
+				TransactionHash: null, // dito
 			};
 
-			txBodyInputs.push(utxoInput);
+			if (i >= lovelaceDivider - 1) {
+				if (!isZero(lovelaceRemainder)) lovelaceRemainder -= 2_100_000;
+			}
+
+			const lovelaceReward: Reward = {
+				Id: i.toString(),
+				RewardType: 3,
+				RewardAmount: i >= lovelaceDivider - 1 ? 2_100_000 : lovelaceThreshold / 2,
+				WalletAddress: SHELLEY_CHANGE_ADDRESS.to_bech32(),
+				StakeAddress: ' ',
+				TransactionHash: null,
+			};
+
+			pendingReward = {
+				stakeAddress: ' ',
+				rewards: [conclaveReward, lovelaceReward],
+			};
+
+			txBodyOutputs.push(pendingReward);
+		} else {
+			const lovelaceReward: Reward = {
+				Id: i.toString(),
+				RewardType: 3,
+				RewardAmount: lovelaceThreshold / 2,
+				WalletAddress: SHELLEY_CHANGE_ADDRESS.to_bech32(),
+				StakeAddress: ' ',
+				TransactionHash: null,
+			};
+
+			pendingReward = {
+				stakeAddress: ' ',
+				rewards: [lovelaceReward],
+			};
+
+			txBodyOutputs.push(pendingReward);
 		}
-	});
-	txBodyInputs = txBodyInputs.splice(0, 10);
-
-	let utxoSum = getInputAssetUTXOSum(txBodyInputs);
-	if (isZero(utxoSum)) return null;
-
-	utxoDivider = parseInt((utxoSum / 251000000).toFixed());
-
-	for (let i: number = 0; i < utxoDivider; i++) {
-		const reward: Reward = {
-			id: i.toString(),
-			rewardType: 3,
-			rewardAmount: 251000000,
-			walletAddress: SHELLEY_CHANGE_ADDRESS.to_bech32(),
-			stakeAddress: ' ',
-		};
-
-		const pendingReward: PendingReward = {
-			stakeAddress: ' ',
-			rewards: [reward],
-		};
-
-		txBodyOutputs.push(pendingReward);
 	}
+
+	if (!isZero(lovelaceRemainder)) {
+		const lovelaceReward: Reward = {
+			Id: '',
+			RewardType: 3,
+			RewardAmount: lovelaceRemainder,
+			WalletAddress: SHELLEY_CHANGE_ADDRESS.to_bech32(),
+			StakeAddress: ' ',
+			TransactionHash: null,
+		};
+
+		if (!isZero(conclaveRemainder)) {
+			const conclaveReward: Reward = {
+				Id: '',
+				RewardType: 2,
+				RewardAmount: conclaveRemainder,
+				WalletAddress: SHELLEY_CHANGE_ADDRESS.to_bech32(),
+				StakeAddress: ' ',
+				TransactionHash: null,
+			};
+
+			txBodyOutputs.push({
+				stakeAddress: ' ',
+				rewards: [lovelaceReward, conclaveReward],
+			});
+		} else {
+			let remainining = {
+				stakeAddress: ' ',
+				rewards: [lovelaceReward],
+			};
+
+			txBodyOutputs.push(remainining);
+		}
+	}
+
 	return { txInputs: txBodyInputs, txOutputs: txBodyOutputs };
 };
 
-export const combineUTXOs = (
-	utxos: UTXO,
-	threshold: number
-): {
-	txInputs: Array<TxBodyInput>;
-	txOutputs: Array<PendingReward>;
-} | null => {
-	let txBodyInputs: Array<TxBodyInput> = [];
-	let txBodyOutputs: Array<PendingReward> = [];
-	let utxoDivider: number = 1;
+// export const combineUTXOs = (
+// 	utxos: UTXO,
+// 	lovelaceThreshold: number = 100_000_000,
+// 	conclaveThreshold: number = 1_000_000
+// ): {
+// 	txInputs: Array<TxBodyInput>;
+// 	txOutputs: Array<PendingReward>;
+// } | null => {
+// 	let txBodyInputs: Array<TxBodyInput> = [];
+// 	let txBodyOutputs: Array<PendingReward> = [];
+// 	let lovelaceDivider: number = 1;
+// 	let conclaveDivider: number = 1;
+
+// 	utxos.forEach(utxo => {
+// 		if (
+// 			utxo.amount.length == 1 &&
+// 			utxo.amount[0].unit == 'lovelace' &&
+// 			parseInt(utxo.amount.find(f => f.unit == 'lovelace')!.quantity) <= lovelaceThreshold
+// 		) {
+// 			let assetArray: Array<CardanoAssetResponse> = [];
+// 			utxo.amount.forEach(asset => {
+// 				const cardanoAsset: CardanoAssetResponse = {
+// 					unit: asset.unit,
+// 					quantity: asset.quantity,
+// 				};
+
+// 				assetArray.push(cardanoAsset);
+// 			});
+
+// 			const utxoInput: TxBodyInput = {
+// 				txHash: utxo.tx_hash,
+// 				outputIndex: utxo.output_index.toString(),
+// 				asset: assetArray,
+// 			};
+
+// 			txBodyInputs.push(utxoInput);
+// 		}
+// 	});
+// 	txBodyInputs = txBodyInputs.splice(0, 100);
+
+// 	let lovelaceSum = getInputAssetUTXOSum(txBodyInputs);
+// 	let conclaveSum = getInputAssetUTXOSum(txBodyInputs, POLICY_STRING);
+// 	if ((isZero(lovelaceSum) && isZero(conclaveSum)) || lovelaceSum <= 15_000_000) return null;
+
+// 	lovelaceDivider = parseInt((lovelaceSum / 251_000_000).toFixed());
+// 	let lovelaceRemainder = lovelaceSum % lovelaceThreshold;
+
+// 	for (let i: number = 0; i < lovelaceDivider; i++) {
+// 		const reward: Reward = {
+// 			Id: i.toString(),
+// 			RewardType: 3,
+// 			RewardAmount: 251_000_000,
+// 			WalletAddress: SHELLEY_CHANGE_ADDRESS.to_bech32(),
+// 			StakeAddress: ' ',
+// 			TransactionHash: null
+// 		};
+
+// 		const pendingReward: PendingReward = {
+// 			stakeAddress: ' ',
+// 			rewards: [reward],
+// 		};
+
+// 		txBodyOutputs.push(pendingReward);
+// 	}
+
+// 	if (txBodyOutputs.length == 0 && lovelaceRemainder > 15_000_000) {
+// 		const reward: Reward = {
+// 			Id: '0',
+// 			RewardType: 3,
+// 			RewardAmount: lovelaceRemainder,
+// 			WalletAddress: SHELLEY_CHANGE_ADDRESS.to_bech32(),
+// 			TransactionHash: null,
+// 		};
+
+// 		const pendingReward: PendingReward = {
+// 			stakeAddress: ' ',
+// 			rewards: [reward],
+// 		};
+
+// 		txBodyOutputs.push(pendingReward);
+// 	}
+
+// 	if (conclaveSum > 0) {
+// 		const lovelaceReward: Reward = {
+// 			Id: '0',
+// 			RewardType: 3,
+// 			RewardAmount: 2_200_000,
+// 			WalletAddress: SHELLEY_CHANGE_ADDRESS.to_bech32(),
+// 			StakeAddress: ' ',
+// 		};
+
+// 		const conclaveReward: Reward = {
+// 			Id: '0',
+// 			RewardType: 2,
+// 			RewardAmount: conclaveSum,
+// 			WalletAddress: SHELLEY_CHANGE_ADDRESS.to_bech32(),
+// 			StakeAddress: ' ',
+// 		};
+
+// 		const pendingReward: PendingReward = {
+// 			stakeAddress: ' ',
+// 			rewards: [lovelaceReward, conclaveReward],
+// 		};
+
+// 		txBodyOutputs.push(pendingReward);
+// 	}
+
+// 	return { txInputs: txBodyInputs, txOutputs: txBodyOutputs };
+// };
+
+export const displayUTXOs = async (utxos: UTXO) => {
+	console.log('Displaying All Available utxos');
+	let displayUTXO: Array<displayUTXO> = [];
 
 	utxos.forEach(utxo => {
-		if (
-			utxo.amount.length == 1 &&
-			utxo.amount[0].unit == 'lovelace' &&
-			parseInt(utxo.amount.find(f => f.unit == 'lovelace')!.quantity) <= threshold
-		) {
-			let assetArray: Array<CardanoAssetResponse> = [];
-			utxo.amount.forEach(asset => {
-				const cardanoAsset: CardanoAssetResponse = {
-					unit: asset.unit,
-					quantity: asset.quantity,
-				};
+		let assetArray: Array<string> = [];
+		utxo.amount.forEach(asset => {
+			assetArray.push(asset.quantity + ' ' + asset.unit);
+		});
 
-				assetArray.push(cardanoAsset);
-			});
-
-			const utxoInput: TxBodyInput = {
-				txHash: utxo.tx_hash,
-				outputIndex: utxo.output_index.toString(),
-				asset: assetArray,
-			};
-
-			txBodyInputs.push(utxoInput);
-		}
+		displayUTXO.push({
+			txHash: utxo.tx_hash,
+			outputIndex: utxo.output_index.toString(),
+			assets: assetArray.join(' + '),
+		});
 	});
-	txBodyInputs = txBodyInputs.splice(0, 100);
 
-	let utxoSum = getInputAssetUTXOSum(txBodyInputs);
-	if (isZero(utxoSum)) return null;
+	console.table(displayUTXO);
+	console.log(' ');
+	console.log(' ');
+};
 
-	utxoDivider = parseInt((utxoSum / 251000000).toFixed());
-	let utxoRemainder = utxoSum % 251000000;
-
-	for (let i: number = 0; i < utxoDivider; i++) {
-		const reward: Reward = {
-			id: i.toString(),
-			rewardType: 3,
-			rewardAmount: 251000000,
-			walletAddress: SHELLEY_CHANGE_ADDRESS.to_bech32(),
-			stakeAddress: ' ',
-		};
-
-		const pendingReward: PendingReward = {
-			stakeAddress: ' ',
-			rewards: [reward],
-		};
-
-		txBodyOutputs.push(pendingReward);
-	}
-
-	if (txBodyOutputs.length == 0 && utxoRemainder > 0) {
-		const reward: Reward = {
-			id: '0',
-			rewardType: 3,
-			rewardAmount: utxoRemainder,
-			walletAddress: SHELLEY_CHANGE_ADDRESS.to_bech32(),
-			stakeAddress: ' ',
-		};
-
-		const pendingReward: PendingReward = {
-			stakeAddress: ' ',
-			rewards: [reward],
-		};
-
-		txBodyOutputs.push(pendingReward);
-	}
-
-	return { txInputs: txBodyInputs, txOutputs: txBodyOutputs };
+type displayUTXO = {
+	txHash: string;
+	outputIndex: string;
+	assets: string;
 };

@@ -10,10 +10,12 @@ namespace Conclave.Api.Controllers;
 public class RewardController : ControllerBase
 {
     private readonly IConclaveRewardService _service;
+    private readonly ILogger<RewardController> _logger;
 
-    public RewardController(IConclaveRewardService service)
+    public RewardController(IConclaveRewardService service, ILogger<RewardController> logger)
     {
         _service = service;
+        _logger = logger;
     }
 
     [HttpGet("unpaid")]
@@ -30,11 +32,17 @@ public class RewardController : ControllerBase
         return Ok(res);
     }
 
-    [HttpPost("update")]
-    public IActionResult UpdateRewardStatus(List<Reward> pendingRewards, AirdropStatus status)
+    [HttpPut("update/{txHash}/{status}")]
+    public async Task<IActionResult> UpdateRewardStatus([FromBody]IEnumerable<Reward> pendingRewards, string txHash, AirdropStatus status)
     {
-        var res = _service.UpdateRewardStatus(pendingRewards, status);
-        return Ok(res);
-    }
+        _logger.LogInformation($"Updating reward status for {txHash} to {status}");
+
+        try {
+            var res = await _service.UpdateRewardStatus(pendingRewards, status, txHash);
+            return Ok(res);
+        } catch (Exception e) {
+            return BadRequest();
+        }
+    }   
 
 }

@@ -9,11 +9,21 @@ export type DelegatorReward = {
 };
 
 export type Reward = {
+	Id: string;
+	RewardType: number;
+	RewardAmount: number;
+	WalletAddress: string;
+	StakeAddress: string;
+	TransactionHash: string | null;
+};
+
+export type RawReward = {
 	id: string;
 	rewardType: number;
 	rewardAmount: number;
 	walletAddress: string;
 	stakeAddress: string;
+	transactionHash: string | null;
 };
 
 export type ConclaveAmount = {

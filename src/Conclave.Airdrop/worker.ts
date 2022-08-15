@@ -1,67 +1,45 @@
-import { AirdropBatch, AirdropWorkerParameter, ProtocolParametersResponse } from './types/response-types';
-import { updateRewardListStatusAsync } from './utils/reward-utils';
-import { coinSelectionAsync } from './utils/coin-utils';
-import { isNull, isUndefined } from './utils/boolean-utils';
-import { getInputAssetUTXOSum, getOutputConclaveSum, getOutputLovelaceSum } from './utils/sum-utils';
-import { createAndSignRewardTxAsync, submitTransactionAsync, transactionConfirmation } from './utils/transaction-utils';
+import { AirdropWorkerParameter, RewardTxBodyDetails } from './types/response-types';
+import { getAllRewards, updateRewardListStatusAsync } from './utils/reward-utils';
+import { isEmpty, isNull, isUndefined } from './utils/boolean-utils';
+import { getInputAssetUTXOSum, getOutputConclaveSum, getOutputLovelaceSum, lovelaceInputSum, lovelaceOutputSum } from './utils/sum-utils';
+import { createAndSignTxAsync, submitTransactionAsync, transactionConfirmation, coinSelectionAsync } from './utils/transaction-utils';
 import AirdropTransactionStatus from './enums/airdrop-transaction-status';
 import { parentPort } from 'worker_threads';
 import { toHex } from './utils/string-utils';
-import { blockfrostAPI } from './config/network.config';
-import { awaitChangeInUTXOAsync } from './utils/utxo-utils';
 import { POLICY_STRING } from './config/walletKeys.config';
+import AirdropStatus from './enums/airdrop-status';
+import { setTimeout } from 'timers/promises';
+import { ConsoleWithWorkerId } from './utils/worker-utils';
 
 const { v1: uuidv1 } = require('uuid');
 
-parentPort!.on('message', async (workerparameter: AirdropWorkerParameter) => {
-	let workerId = uuidv1().substring(0, 5);
+let workerId = uuidv1().substring(0, 5);
+export const consoleWithWorkerId = new ConsoleWithWorkerId(workerId);
 
-	// if (!isNull(workerparameter.batch.txHash) && !isUndefined(workerparameter.batch.txHash)) {
-	// 	let confirmationResult = await transactionConfirmation(blockfrostAPI, workerparameter.batch.txHash!);
-	// 	return parentPort!.postMessage({
-	// 		...confirmationResult,
-	// 		batch: workerparameter.batch,
-	// 		txHashString: workerparameter.batch.txHash!,
-	// 	});
-	// }
+parentPort?.on('message', async (workerparameter: AirdropWorkerParameter) => {
+	let txHashString: string | null;
+	let txInputOutputs: RewardTxBodyDetails | null;
 
-	let txInputOutputs = await coinSelectionAsync(
-		workerparameter.batch.txInputs,
-		workerparameter.batch.txOutputs,
-		workerId,
-		workerparameter.protocolParameter
-	);
+	consoleWithWorkerId.log(`Started working on Batch ${workerparameter.batch.index}`);
 
-	if (isNull(txInputOutputs)) {
-		return parentPort!.postMessage({
-			status: AirdropTransactionStatus.Failed,
-			batch: workerparameter.batch,
-			txHashString: null,
-		});
-	}
+	if (!workerparameter.batch.isProcessing) {
+		txInputOutputs = await coinSelectionAsync(workerparameter.batch.txInputs, workerparameter.batch.txOutputs, workerparameter.protocolParameter);
 
-	console.log();
-	txInputOutputs!.txInputs.forEach((e, i) => {
-		console.log(
-			'Txinput #' +
-				i +
-				' ' +
-				e.txHash +
-				' ' +
-				e.asset.find(f => f.unit == 'lovelace')!.quantity +
-				' ' +
-				e.asset.find(f => f.unit == 'lovelace')!.unit +
-				' ' +
-				e.asset.find(f => f.unit != 'lovelace')?.quantity
-		);
-	});
+		if (isNull(txInputOutputs) || isEmpty(txInputOutputs!.txOutputs)) {
+			consoleWithWorkerId.log('Ending worker on Batch ' + workerparameter.batch.index);
+			return parentPort!.postMessage({
+				status: AirdropTransactionStatus.New,
+				batch: workerparameter.batch,
+				txHashString: '',
+				message: 'Batch Error: Not enough funds',
+			});
+		}
+		workerparameter.batch.txOutputs = txInputOutputs!.txOutputs;
 
-	console.log(
-		'<========Details for Worker#' +
-			workerId +
-			'\n Currently working on Batch#' +
+		let txInputStrings: string = '';
+		let otherDetails: string =
+			'Currently working on Batch#' +
 			workerparameter.batch.index +
-			' ========> \n' +
 			'TxInputLovelace sum: ' +
 			getInputAssetUTXOSum(txInputOutputs!.txInputs) +
 			'\n' +
@@ -74,44 +52,60 @@ parentPort!.on('message', async (workerparameter: AirdropWorkerParameter) => {
 			'TxOutputConclave sum: ' +
 			getOutputConclaveSum(txInputOutputs!.txOutputs) +
 			'\n' +
-			'<========End of Details for Batch#' +
-			workerparameter.batch.index +
-			' ========>'
-	);
-	console.log();
-
-	let transaction = await createAndSignRewardTxAsync(txInputOutputs!, workerparameter.protocolParameter);
-	if (transaction == null || transaction.txHash == null) {
-		console.log('exiting worker ' + workerId);
-		return parentPort!.postMessage({
-			status: AirdropTransactionStatus.Failed,
-			batch: workerparameter.batch,
-			txHashString: null,
+			'<========End of Details for Worker#' +
+			workerId +
+			' ========>';
+		txInputOutputs!.txInputs.forEach((e, i) => {
+			txInputStrings += `Txinput #${i} ${e.txHash} ${e.outputIndex} ${e.asset.find(f => f.unit == 'lovelace')!.quantity} ${
+				e.asset.find(f => f.unit == 'lovelace')!.unit
+			} ${e.asset.find(f => f.unit != 'lovelace') ? e.asset.find(f => f.unit != 'lovelace')?.quantity : ''} ${
+				e.asset.find(f => f.unit != 'lovelace') ? 'conclave' : ''
+			}\n`;
 		});
+		consoleWithWorkerId.log('\n<========Details for Worker' + ' ========>\n' + `${txInputStrings}` + `${otherDetails}`);
+		console.log();
+
+		let transaction = await createAndSignTxAsync(txInputOutputs!, workerparameter.protocolParameter);
+		if (isNull(transaction)) {
+			consoleWithWorkerId.log('Ending worker on Batch ' + workerparameter.batch.index);
+			return parentPort!.postMessage({
+				status: AirdropTransactionStatus.New,
+				batch: workerparameter.batch,
+				txHashString: '',
+				message: 'Transaction Error: Failed to create transaction',
+			});
+		}
+
+		txHashString = toHex(transaction!.txHash.to_bytes());
+		consoleWithWorkerId.log(
+			'Transaction hash' + ' ' + toHex(transaction!.txHash.to_bytes()) + ' fee ' + transaction!.transaction.body().fee().to_str()
+		);
+
+		consoleWithWorkerId.log('Updating airdrop status to InProgress for batch#' + workerparameter.batch.index);
+		await updateRewardListStatusAsync(getAllRewards(txInputOutputs!.txOutputs), AirdropStatus.InProgress, txHashString);
+
+		// let submitResult = await submitTransactionAsync(transaction!.transaction, txHashString);
+		// if (submitResult!.status != AirdropTransactionStatus.Success) {
+		// 	let randomInterval = 5000 * Math.floor(Math.random());
+		// 	await setTimeout(randomInterval + 3000);
+		// 	return parentPort!.postMessage({
+		// 		...submitResult,
+		// 		batch: workerparameter.batch,
+		// 	});
+		// }
+	} else {
+		//skip coin selection and submit transaction
+		txHashString = workerparameter.batch.txHash;
+		consoleWithWorkerId.log('Skipping coin selection for txhash ' + txHashString + '...');
+		consoleWithWorkerId.log('Starting tx confirmation for txhash ' + txHashString + '...');
 	}
 
-	let txHashString = toHex(transaction.txHash.to_bytes());
-
-	let submitResult = await submitTransactionAsync(blockfrostAPI, transaction!.transaction, txHashString);
-	if (submitResult!.status != AirdropTransactionStatus.Success) {
-		return parentPort!.postMessage({
-			...submitResult,
-			batch: workerparameter.batch,
-			txHashString: txHashString,
-		});
+	let confirmationResult = await transactionConfirmation(txHashString!, 20 /*confirmationCount*/);
+	if (confirmationResult!.status != AirdropTransactionStatus.Success && workerparameter.batch.isProcessing === true) {
+		confirmationResult.txHashString = '';
 	}
-
-	let confirmationResult = await transactionConfirmation(blockfrostAPI, txHashString);
 	return parentPort!.postMessage({
 		...confirmationResult,
 		batch: workerparameter.batch,
-		txHashString: txHashString,
 	});
-	console.log('exiting worker ' + workerId);
-	// parentPort!.postMessage({
-	// 	status: AirdropTransactionStatus.Success,
-	// 	message: 'confirmation completed',
-	// 	batch: workerparameter.batch,
-	// 	txHashString: '',
-	// });
 });

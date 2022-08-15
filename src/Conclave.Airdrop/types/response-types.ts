@@ -46,6 +46,7 @@ export type AirdropWorkerResponse = {
 	status: number;
 	txHashString: string;
 	batch: AirdropBatch;
+	message: string;
 };
 
 export type AirdropWorkerParameter = {

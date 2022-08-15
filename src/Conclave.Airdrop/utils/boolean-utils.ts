@@ -1,12 +1,11 @@
 import { Reward } from '../types/database-types';
 import { ProtocolParametersResponse, RewardTxBodyDetails, TxBodyInput } from '../types/response-types';
 import { lovelaceOutputSum } from './sum-utils';
-import { setTTLAsync } from './transaction-utils';
-import { createRewardTxBodyAsync, createRewardTxBodywithFee, setRewardTxBodyDetailsAsync } from './txBody/txBody-utils';
+import { setRewardTxBodyDetailsAsync } from './txBody-utils';
 import { initReward, initRewardTxBodyDetails } from './type-utils';
-import CardanoWasm from '@dcspark/cardano-multiplatform-lib-nodejs';
 import { PendingReward } from '../types/helper-types';
 import { SHELLEY_CHANGE_ADDRESS } from '../config/walletKeys.config';
+import { consoleWithWorkerId } from '../worker';
 
 export const isNull = (item: any | null): boolean => {
 	if (item === null) return true;
@@ -18,6 +17,11 @@ export const isUndefined = (item: any | undefined): boolean => {
 	else return false;
 };
 
+export const isNullOrUndefined = (item: any | null | undefined): boolean => {
+	if (item === null || item === undefined) return true;
+	else return false;
+};
+
 export const isEmpty = (batch: Array<any>): boolean => {
 	if (batch.length <= 0) return true;
 	else return false;
@@ -26,7 +30,6 @@ export const isEmpty = (batch: Array<any>): boolean => {
 export const isWithinTxSizeLimit = async (
 	txInputs: Array<TxBodyInput>,
 	txOutputs: Array<PendingReward>,
-	id: string,
 	protocolParameters: ProtocolParametersResponse
 ): Promise<boolean | null> => {
 	let outputSum = lovelaceOutputSum(txOutputs);
@@ -42,11 +45,11 @@ export const isWithinTxSizeLimit = async (
 
 			e.rewards.forEach(reward => {
 				let _reward: Reward = initReward(
-					reward.id,
-					2000000,
-					reward.rewardType,
-					reward.walletAddress,
-					reward.stakeAddress
+					reward.Id,
+					reward.RewardType === 3 ? 2_100_000 : reward.RewardAmount,
+					reward.RewardType,
+					reward.WalletAddress,
+					reward.StakeAddress
 				);
 				_pendingReward.rewards.push(_reward);
 			});
@@ -59,13 +62,13 @@ export const isWithinTxSizeLimit = async (
 		if (txBuilder === null) return null;
 
 		txBuilder.add_change_if_needed(SHELLEY_CHANGE_ADDRESS);
-		console.log('WORKER ' + id + ' ' + 'CurrentTxSize for worker #' + id + ': ' + txBuilder.full_size().toString());
-		if (txBuilder.full_size() > protocolParameters.maxTxSize) {
-			return false;
-		}
+		consoleWithWorkerId.log(`Transaction size: ${txBuilder.full_size()}`);
+
+		if (txBuilder.full_size() > 16384) return false;
+
 		return true;
 	} catch (error) {
-		console.log('WORKER ' + id + ' ' + 'Rebuilding TxBody for index#' + id + ': ' + error);
+		consoleWithWorkerId.log(`Rebuilding Transaction`);
 		return false;
 	}
 };
