@@ -232,7 +232,7 @@ public class ConclaveRewardService : IConclaveRewardService
         {
             unpaidRewards.Add(new Reward(newConclaveOwnerReward.Id,
                                          RewardType.ConclaveOwnerReward,
-                                         newConclaveOwnerReward.RewardAmount*1_000_000,
+                                         newConclaveOwnerReward.RewardAmount * 1_000_000,
                                          newConclaveOwnerReward.ConclaveOwnerSnapshot.DelegatorSnapshot.WalletAddress,
                                          newConclaveOwnerReward.ConclaveOwnerSnapshot.DelegatorSnapshot.StakeAddress,
                                          newConclaveOwnerReward.TransactionHash));
@@ -243,7 +243,7 @@ public class ConclaveRewardService : IConclaveRewardService
         {
             unpaidRewards.Add(new Reward(inProgressConclaveOwnerReward.Id,
                                          RewardType.ConclaveOwnerReward,
-                                         inProgressConclaveOwnerReward.RewardAmount*1_000_000,
+                                         inProgressConclaveOwnerReward.RewardAmount * 1_000_000,
                                          inProgressConclaveOwnerReward.ConclaveOwnerSnapshot.DelegatorSnapshot.WalletAddress,
                                          inProgressConclaveOwnerReward.ConclaveOwnerSnapshot.DelegatorSnapshot.StakeAddress,
                                          inProgressConclaveOwnerReward.TransactionHash));

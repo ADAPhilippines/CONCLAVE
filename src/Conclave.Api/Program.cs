@@ -6,12 +6,25 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 var conclaveOptions = builder.Configuration.GetSection("Conclave").Get<ConclaveOptions>();
+var applicationOptions = new ApplicationOptions()
+{
+    IsDevelopment = builder.Environment.IsDevelopment()
+};
 
 // Add services to the container.
 builder.Services.AddConclaveDb(builder.Configuration.GetConnectionString("PostgresSQL"))
-                .AddBlockfrost(builder.Configuration.GetValue<string>("Blockfrost:Network"), builder.Configuration.GetValue<string>("Blockfrost:ProjectId"))
-                .AddConclaveApi(conclaveOptions)
+                .AddConclaveApi(conclaveOptions, applicationOptions)
                 .AddControllers();
+
+// BLOCKFROST CONFIG
+if (applicationOptions.IsDevelopment)
+{
+    builder.Services.AddBlockfrost("testnet", Environment.GetEnvironmentVariable("BLOCKFROST_TESTNET_PROJECT_ID"));
+}
+else
+{
+    builder.Services.AddBlockfrost("mainnet", Environment.GetEnvironmentVariable("BLOCKFROST_MAINNET_PROJECT_ID"));
+}
 
 //Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
