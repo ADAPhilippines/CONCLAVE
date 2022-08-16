@@ -1,7 +1,7 @@
 {
   "name": "javascript",
   "version": "1.0.0",
-  "description": "",
+  "description": "Reward distributor for Conclave",
   "main": "server.js",
   "scripts": {
     "start": "ts-node server.ts",

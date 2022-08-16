@@ -18,24 +18,25 @@ const main = async () => {
     const baseAddress = CardanoWasm.Address.from_bech32(process.env.BASE_ADDRESS as string);
     const signingKey = CardanoWasm.PrivateKey.from_bech32(process.env.PRIVATE_KEY as string);
     const policyId = process.env.CONCLAVE_POLICY_ID as string;
-    const blockfrostAPI = new BlockFrostAPI({
-        projectId: process.env.PROJECT_ID as string,
-    });
 
-    while (true) {
-        let { newPendingRewards, inProgressPendingRewards } = await getAllPendingEligibleRewardsAsync(); // InProgress included
+    // const blockfrostAPI = new BlockFrostAPI({
+    //     projectId: process.env.PROJECT_ID as string,
+    // });
 
-        console.log('PENDING REWARDS COUNT: ' + newPendingRewards.length);
-        console.log('IN PROGRESS REWARDS COUNT: ' + inProgressPendingRewards.length);
+    // while (true) {
+    //     let { newPendingRewards, inProgressPendingRewards } = await getAllPendingEligibleRewardsAsync(); // InProgress included
 
-        if (!isEmpty(newPendingRewards) || !isEmpty(inProgressPendingRewards))
-            // Start airdropper
-            await startAirdropper(blockfrostAPI, newPendingRewards, [], baseAddress, signingKey, policyId);
+    //     console.log('PENDING REWARDS COUNT: ' + newPendingRewards.length);
+    //     console.log('IN PROGRESS REWARDS COUNT: ' + inProgressPendingRewards.length);
 
-        const AIRDROPPER_INTERVAL = 1000 * 60 * 60 * 6;
-        console.log(`Airdropper will rerun in ${AIRDROPPER_INTERVAL / 24.0} hours `);
-        await setTimeout(AIRDROPPER_INTERVAL); // Check every 6 hourse
-    }
+    //     if (!isEmpty(newPendingRewards) || !isEmpty(inProgressPendingRewards))
+    //         // Start airdropper
+    //         await startAirdropper(blockfrostAPI, newPendingRewards, [], baseAddress, signingKey, policyId);
+
+    //     const AIRDROPPER_INTERVAL = 1000 * 60 * 60 * 6;
+    //     console.log(`Airdropper will rerun in ${AIRDROPPER_INTERVAL / 24.0} hours `);
+    //     await setTimeout(AIRDROPPER_INTERVAL); // Check every 6 hourse
+    // }
 };
 
 const startAirdropper = async (
