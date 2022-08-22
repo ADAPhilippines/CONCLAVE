@@ -8,7 +8,7 @@
     }
   },
   "profiles": {
-    "Conclave.Snapshot.Server": {
+    "Conclave.Snapshot": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,

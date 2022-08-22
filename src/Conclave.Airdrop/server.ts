@@ -13,30 +13,56 @@ import { getLatestProtocolParametersAsync } from './utils/transaction-utils';
 import CardanoWasm from '@dcspark/cardano-multiplatform-lib-nodejs';
 import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
 import { divideUTXOsAsync } from './utils/conclave-utils';
-import { generateEntropy } from '@adaph/cardano-utils/utils/wallet-utils';
+import CardanoUtils from '@adaph/cardano-utils';
 
 const main = async () => {
-    const entropy = generateEntropy(process.env.MNEMONIC as string);
-    console.log(entropy);
+    const entropy = CardanoUtils.Wallet.generateEntropy(process.env.MNEMONIC as string);
+    const rootKey = CardanoUtils.Wallet.getRootKeyFromEntropy(entropy);
+    const wallet = CardanoUtils.Wallet.getWalletFromRootKey(rootKey);
+    const utxoKeys = CardanoUtils.Wallet.getUtxoPubKeyFromAccountKey(wallet);
+    const stakeKey = CardanoUtils.Wallet.getStakeKeyFromAccountKey(wallet);
+    const baseAddress = CardanoUtils.Wallet.getBaseAddress(
+        utxoKeys.utxoPubkey,
+        stakeKey,
+        (process.env.NODE_ENV as string) === 'test'
+            ? CardanoWasm.NetworkInfo.testnet()
+            : CardanoWasm.NetworkInfo.mainnet()
+    );
 
-    // const blockfrostAPI = new BlockFrostAPI({
-    //     projectId: process.env.PROJECT_ID as string,
-    // });
+    console.log(baseAddress.to_address().to_bech32());
 
-    // while (true) {
-    //     let { newPendingRewards, inProgressPendingRewards } = await getAllPendingEligibleRewardsAsync(); // InProgress included
+    const blockfrostAPI = new BlockFrostAPI({
+        projectId: process.env.PROJECT_ID as string,
+    });
 
-    //     console.log('PENDING REWARDS COUNT: ' + newPendingRewards.length);
-    //     console.log('IN PROGRESS REWARDS COUNT: ' + inProgressPendingRewards.length);
+    const PENIDNG_REWARD_THRESHHOLD = 50;
 
-    //     if (!isEmpty(newPendingRewards) || !isEmpty(inProgressPendingRewards))
-    //         // Start airdropper
-    //         await startAirdropper(blockfrostAPI, newPendingRewards, [], baseAddress, signingKey, policyId);
+    while (true) {
+        let { newPendingRewards, inProgressPendingRewards } = await getAllPendingEligibleRewardsAsync(); // InProgress included
 
-    //     const AIRDROPPER_INTERVAL = 1000 * 60 * 60 * 6;
-    //     console.log(`Airdropper will rerun in ${AIRDROPPER_INTERVAL / 24.0} hours `);
-    //     await setTimeout(AIRDROPPER_INTERVAL); // Check every 6 hourse
-    // }
+        console.log('PENDING REWARDS COUNT: ' + newPendingRewards.length);
+        console.log('IN PROGRESS REWARDS COUNT: ' + inProgressPendingRewards.length);
+
+        if (!(isEmpty(inProgressPendingRewards) && newPendingRewards.length < PENIDNG_REWARD_THRESHHOLD)) {
+            if (!isEmpty(newPendingRewards) || !isEmpty(inProgressPendingRewards)) {
+                // Start airdropper
+                await startAirdropper(
+                    blockfrostAPI,
+                    newPendingRewards,
+                    [],
+                    CardanoWasm.Address.from_bech32(baseAddress.to_address().to_bech32()),
+                    CardanoWasm.PrivateKey.from_bech32(utxoKeys.utxoPrivKey.to_raw_key().to_bech32()),
+                    process.env.CONCLAVE_POLICY_ID as string
+                );
+            }
+
+            const AIRDROPPER_INTERVAL = 1000 * 60 * 60 * 6;
+            console.log(`Airdropper will rerun in ${AIRDROPPER_INTERVAL / 24.0} hours `);
+            await setTimeout(AIRDROPPER_INTERVAL); // Check every 6 hourse
+        } else {
+            console.log('No pending rewards to process');
+        }
+    }
 };
 
 const startAirdropper = async (
@@ -49,6 +75,9 @@ const startAirdropper = async (
 ): Promise<void> => {
     let protocolParameter = await getLatestProtocolParametersAsync(blockfrostAPI);
 
+    const asset = await blockfrostAPI.assetsById(process.env.ASSET_ID as string);
+    console.log(asset);
+
     // Divide UTXOs
     await divideUTXOsAsync(
         blockfrostAPI,
@@ -56,7 +85,7 @@ const startAirdropper = async (
         2 * 1_000_000,
         1,
         conclavePolicyId,
-        process.env.ASSET_NAME as string,
+        asset.asset_name as string,
         baseAddress,
         signingKey
     );
@@ -89,7 +118,7 @@ const startAirdropper = async (
             airdropBatch,
             protocolParameter,
             conclavePolicyId,
-            process.env.ASSET_NAME as string,
+            asset.asset_name as string,
             baseAddress,
             signingKey,
             process.env.PROJECT_ID as string

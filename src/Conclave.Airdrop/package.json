@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "Reward distributor for Conclave",
   "main": "server.js",
-  "type": "module",
   "scripts": {
     "start": "ts-node server.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -11,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@adaph/cardano-utils": "^1.0.1",
+    "@adaph/cardano-utils": "^1.1.2",
     "@blockfrost/blockfrost-js": "^4.1.0",
     "@dcspark/cardano-multiplatform-lib-nodejs": "^0.3.0",
     "@emurgo/cardano-serialization-lib-nodejs": "^10.2.0",

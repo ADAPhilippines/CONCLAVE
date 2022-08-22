@@ -8,20 +8,23 @@ using Conclave.Snapshot.Handlers;
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((hostContext, services) =>
     {
-        var conclaveOptions = hostContext.Configuration.GetSection("Conclave").Get<ConclaveOptions>();
         var applicationOptions = new ApplicationOptions()
         {
-            IsDevelopment = hostContext.HostingEnvironment.IsDevelopment()
+            IsDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development",
         };
+
+        ConclaveOptions conclaveOptions;
 
         // BLOCKFROST CONFIG
         if (applicationOptions.IsDevelopment)
         {
             services.AddBlockfrost("testnet", Environment.GetEnvironmentVariable("BLOCKFROST_TESTNET_PROJECT_ID"));
+            conclaveOptions = hostContext.Configuration.GetSection("Conclave_Testnet").Get<ConclaveOptions>();
         }
         else
         {
             services.AddBlockfrost("mainnet", Environment.GetEnvironmentVariable("BLOCKFROST_MAINNET_PROJECT_ID"));
+            conclaveOptions = hostContext.Configuration.GetSection("Conclave_Mainnet").Get<ConclaveOptions>();
         }
 
         // CONCLAVE CONFIG
