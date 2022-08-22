@@ -13,11 +13,11 @@ import { getLatestProtocolParametersAsync } from './utils/transaction-utils';
 import CardanoWasm from '@dcspark/cardano-multiplatform-lib-nodejs';
 import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
 import { divideUTXOsAsync } from './utils/conclave-utils';
+import { generateEntropy } from '@adaph/cardano-utils/utils/wallet-utils';
 
 const main = async () => {
-    const baseAddress = CardanoWasm.Address.from_bech32(process.env.BASE_ADDRESS as string);
-    const signingKey = CardanoWasm.PrivateKey.from_bech32(process.env.PRIVATE_KEY as string);
-    const policyId = process.env.CONCLAVE_POLICY_ID as string;
+    const entropy = generateEntropy(process.env.MNEMONIC as string);
+    console.log(entropy);
 
     // const blockfrostAPI = new BlockFrostAPI({
     //     projectId: process.env.PROJECT_ID as string,
