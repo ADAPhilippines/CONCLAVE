@@ -1,60 +1,93 @@
+import { ProtocolParametersResponse } from '../types/response-types';
+import CardanoWasm from '@dcspark/cardano-multiplatform-lib-nodejs';
+import { partitionUTXOs, queryAllUTXOsAsync } from './utxo-utils';
+import { isNull } from './boolean-utils';
+import {
+    coinSelectionAsync,
+    createAndSignTxAsync,
+    submitTransactionAsync,
+    transactionConfirmation,
+} from './transaction-utils';
+import { conclaveOutputSum, getInputAssetUTXOSum, lovelaceOutputSum } from './sum-utils';
+import { toHex } from './string-utils';
+import AirdropTransactionStatus from '../enums/airdrop-transaction-status';
 import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
-import { TransactionBody, TransactionBuilder } from '@emurgo/cardano-serialization-lib-nodejs';
-import AirdropStatus from '../enums/airdrop-status';
-import { Reward } from '../types/database-types';
-import { PendingReward } from '../types/helper-types';
-import { UTXO } from '../types/response-types';
-import { updateRewardListStatusAsync } from './reward-utils';
 
-export const calculateTotalAda = (pureAdaUtxos: UTXO, utxosWithAsset: UTXO): number => {
-    return (
-        utxosWithAsset
-            .map((x) => Number(x.amount.find((u) => u.unit === 'lovelace')?.quantity))
-            .reduce((acc, val) => acc + val) +
-        pureAdaUtxos
-            .map((u) => Number(u.amount.find((x) => x.unit === 'lovelace')?.quantity))
-            .reduce((acc, val) => acc + val)
-    );
-};
-
-export const calculateTotalToken = (utxosWithAsset: UTXO, assetUnit: string): number => {
-    return utxosWithAsset
-        .map((x) => Number(x.amount.find((u) => u.unit === (process.env.CONCLAVE_UNIT_ID as string))?.quantity))
-        .reduce((acc, val) => acc + val);
-};
-
-export const spawnConclaveAirdropWorkerAsync = async (
+export const divideUTXOsAsync = async (
     blockfrostAPI: BlockFrostAPI,
-    utxos: UTXO,
-    pendingRewards: PendingReward[],
-    transacitonBuilder: TransactionBuilder
+    protocolParameter: ProtocolParametersResponse,
+    lovelaceThreshold: number = 500_000_000,
+    conclaveThreshold: number = 200_000_000,
+    policyId: string,
+    assetName: string,
+    shellyChangeAddress: CardanoWasm.Address,
+    signingKey: CardanoWasm.PrivateKey
 ) => {
-    // build transaction
-    const [transactionBody, includedRewards] = await buildTransactionAsync(utxos, pendingRewards, transacitonBuilder);
+    let utxos = await queryAllUTXOsAsync(blockfrostAPI, shellyChangeAddress.to_bech32());
 
-    //send transaction
-    const txHash = await sendPendingRewardsAsync(blockfrostAPI, transactionBody, pendingRewards);
+    console.log('Dividing UTXOs...');
+    if (isNull(utxos)) return;
 
-    // update reward status
-    await updateRewardListStatusAsync(includedRewards, AirdropStatus.InProgress, txHash);
+    let rewards = partitionUTXOs(utxos!, lovelaceThreshold, conclaveThreshold, policyId, shellyChangeAddress);
+    if (rewards === null || rewards.txInputs === null || rewards.txOutputs === null)
+        return console.log('No UTXOs to divide. Proceeding to sending transaction.');
 
-    // wait for transaction confirmation
-};
+    let txInputOutputs = await coinSelectionAsync(
+        blockfrostAPI,
+        rewards.txInputs,
+        rewards.txOutputs,
+        protocolParameter,
+        policyId,
+        assetName,
+        shellyChangeAddress,
+        signingKey.to_public()
+    );
+    if (txInputOutputs == null || txInputOutputs === undefined) return;
 
-// Helpers
+    console.log('<-----Details Divider Details----->');
+    txInputOutputs?.txInputs.forEach((e, i) => {
+        console.log(
+            'Txinput #' +
+                i +
+                ' ' +
+                e.txHash +
+                ' ' +
+                e.asset.find((f) => f.unit == 'lovelace')!.quantity +
+                ' ' +
+                e.asset.find((f) => f.unit == 'lovelace')!.unit
+        );
+    });
+    console.log('TxInputLovelace sum: ' + getInputAssetUTXOSum(txInputOutputs!.txInputs));
+    console.log('TxInputConclave sum: ' + getInputAssetUTXOSum(txInputOutputs!.txInputs, policyId));
+    console.log('ConclaveOutput sum: ' + conclaveOutputSum(txInputOutputs!.txOutputs));
+    console.log('LovelaceOutput sum: ' + lovelaceOutputSum(txInputOutputs!.txOutputs));
+    console.log('TxOutput count: ' + txInputOutputs!.txOutputs.length);
+    console.log('<-----End of UTXO Divider Details----->');
 
-const sendPendingRewardsAsync = async (
-    blockfrostAPI: BlockFrostAPI,
-    data: any,
-    pendingRewards: PendingReward[]
-): Promise<string> => {
-    return '';
-};
+    let transaction = await createAndSignTxAsync(
+        blockfrostAPI,
+        txInputOutputs,
+        protocolParameter,
+        signingKey,
+        shellyChangeAddress,
+        policyId,
+        assetName
+    );
+    if (transaction == null) return;
 
-const buildTransactionAsync = async (
-    utxos: UTXO,
-    pendingRewards: PendingReward[],
-    transacitonBuilder: TransactionBuilder
-): Promise<[number, Reward[]]> => {
-    return [1, []];
+    console.log('Dividing Large UTXOs');
+    console.log(
+        'Transaction ' + toHex(transaction.txHash.to_bytes()) + ' fee ' + transaction.transaction.body().fee().to_str()
+    );
+
+    //Submit Transaction
+    let txHashString = toHex(transaction.txHash.to_bytes());
+
+    let submitResult = await submitTransactionAsync(blockfrostAPI, transaction!.transaction, txHashString);
+    if (submitResult!.status != AirdropTransactionStatus.Success) {
+        return;
+    }
+
+    await transactionConfirmation(blockfrostAPI, txHashString, 20);
+    return;
 };
