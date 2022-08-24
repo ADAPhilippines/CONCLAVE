@@ -2,7 +2,6 @@ import RewardType from '../enums/reward-type';
 import { Reward, RawReward } from '../types/database-types';
 import { PendingReward } from '../types/helper-types';
 import { AirdropBatch } from '../types/response-types';
-import { consoleWithWorkerId } from '../worker';
 import { getTotalQuantity, getTotalRewardQuantity } from './sum-utils';
 
 export const updateRewardListStatusAsync = async (
@@ -10,14 +9,14 @@ export const updateRewardListStatusAsync = async (
     airdropStatus: number,
     transactionHash: string
 ): Promise<void> => {
-    consoleWithWorkerId.log('Updating database...');
+    console.log('Updating database...');
     // console.log(`${process.env.CONCLAVE_API_BASE_URL}/reward/update/${transactionHash ?? ''}/${airdropStatus}`);
     const res = await fetch(`${process.env.CONCLAVE_API_BASE_URL}/reward/update/${transactionHash}/${airdropStatus}`, {
         method: 'PUT',
         body: JSON.stringify(rewards),
         headers: { 'Content-Type': 'application/json' },
     });
-    consoleWithWorkerId.log(`Done updating airdrop status for tx hash: ${transactionHash}`);
+    console.log(`Done updating airdrop status for tx hash: ${transactionHash}`);
 };
 
 export const getUnpaidRewardAsync = async (): Promise<Reward[]> => {

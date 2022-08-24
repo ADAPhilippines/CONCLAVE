@@ -55,13 +55,23 @@ const main = async () => {
                     process.env.CONCLAVE_POLICY_ID as string
                 );
             }
-
-            const AIRDROPPER_INTERVAL = 1000 * 60 * 60 * 6;
-            console.log(`Airdropper will rerun in ${AIRDROPPER_INTERVAL / 24.0} hours `);
-            await setTimeout(AIRDROPPER_INTERVAL); // Check every 6 hourse
         } else {
             console.log('No pending rewards to process');
         }
+
+        const AIRDROPPER_INTERVAL = 1000 * 60 * 60 * 6;
+        const COUNTDOWN_INTERVAL = 1000 * 30;
+        let remainingTime = AIRDROPPER_INTERVAL;
+
+        const interval = setInterval(() => {
+            console.log(`Airdropper will rerun in ${remainingTime / 1000 / 60 / 60} hours `);
+            remainingTime -= COUNTDOWN_INTERVAL;
+            if (remainingTime <= 0) {
+                clearInterval(interval);
+            }
+        }, 1000 * 30);
+
+        await setTimeout(AIRDROPPER_INTERVAL); // Check every 6 hourse
     }
 };
 
@@ -79,16 +89,16 @@ const startAirdropper = async (
     console.log(asset);
 
     // Divide UTXOs
-    await divideUTXOsAsync(
-        blockfrostAPI,
-        protocolParameter,
-        2 * 1_000_000,
-        1,
-        conclavePolicyId,
-        asset.asset_name as string,
-        baseAddress,
-        signingKey
-    );
+    // await divideUTXOsAsync(
+    //     blockfrostAPI,
+    //     protocolParameter,
+    //     2 * 1_000_000,
+    //     1,
+    //     conclavePolicyId,
+    //     asset.asset_name as string,
+    //     baseAddress,
+    //     signingKey
+    // );
 
     // Display UTXOs
     let utxos = await queryAllUTXOsAsync(blockfrostAPI, baseAddress.to_bech32());

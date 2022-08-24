@@ -4,7 +4,6 @@ import { lovelaceOutputSum } from './sum-utils';
 import { setRewardTxBodyDetailsAsync } from './txBody-utils';
 import { initReward, initRewardTxBodyDetails } from './type-utils';
 import { PendingReward } from '../types/helper-types';
-import { consoleWithWorkerId } from '../worker';
 import CardanoWasm from '@dcspark/cardano-multiplatform-lib-nodejs';
 
 export const isNull = (item: any | null): boolean => {
@@ -72,13 +71,12 @@ export const isWithinTxSizeLimit = async (
         if (txBuilder === null) return null;
 
         txBuilder.add_change_if_needed(shellyChangeAddress);
-        consoleWithWorkerId.log(`Transaction size: ${txBuilder.full_size()}`);
 
         if (txBuilder.full_size() > 16384) return false;
 
         return true;
     } catch (error) {
-        consoleWithWorkerId.log(`Rebuilding Transaction`);
+        console.log(`Rebuilding Transaction`);
         return false;
     }
 };

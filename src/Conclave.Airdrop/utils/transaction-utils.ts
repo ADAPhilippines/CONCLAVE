@@ -41,7 +41,6 @@ import {
     getTransactionData,
     submitTransactionToChain,
 } from './cardano-utils';
-import { consoleWithWorkerId } from '../worker';
 import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
 
 export const setTTLAsync = async (blockfrostAPI: BlockFrostAPI): Promise<number> => {
@@ -115,7 +114,7 @@ export const submitTransactionAsync = async (
         try {
             await submitTransactionToChain(blockfrostAPI, transaction.to_bytes());
 
-            consoleWithWorkerId.log('Transaction Submitted Successfully');
+            console.log('Transaction Submitted Successfully');
             return {
                 status: AirdropTransactionStatus.Success,
                 message: 'Submission Successful: Transaction submitted!',
@@ -199,7 +198,7 @@ export const transactionConfirmation = async (
             break;
         } catch (err) {
             const interval = parseInt((15000 * Math.random()).toFixed());
-            consoleWithWorkerId.log(
+            console.log(
                 `Tx data not yet available for txHash: ${txHashString}, re-fetching in ${
                     (15000 + interval) / 1000
                 } seconds...`
@@ -225,14 +224,14 @@ export const transactionConfirmation = async (
         try {
             let block = await getBlock(blockfrostAPI, txData!.block);
             const interval = parseInt((30000 * Math.random()).toFixed());
-            consoleWithWorkerId.log(
+            console.log(
                 `Confirmations for txHash: ${txHashString}: ${block.confirmations}/${confirmationCount} retrying in ${
                     (interval + 20000) / 1000
                 }s...`
             );
 
             if (block.confirmations >= confirmationCount) {
-                consoleWithWorkerId.log('Transaction Confirmed for ' + txHashString);
+                console.log('Transaction Confirmed for ' + txHashString);
                 return {
                     status: AirdropTransactionStatus.Success,
                     message: 'Confirmation Success: Transaction Confirmed',
@@ -242,7 +241,7 @@ export const transactionConfirmation = async (
             await setTimeout(20000 + interval);
         } catch (error) {
             const interval = parseInt((3000 * Math.random()).toFixed());
-            consoleWithWorkerId.log(
+            console.log(
                 `error in confirmation, retrying in ${
                     5000 + interval
                 } ms...\nNumber of retries: ${retryCount}\n ${error}`

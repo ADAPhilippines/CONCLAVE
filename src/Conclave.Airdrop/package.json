@@ -20,8 +20,10 @@
     "i": "^0.3.7",
     "node-fetch": "^3.2.5",
     "npm": "^8.12.1",
+    "path": "^0.12.7",
     "pg": "^8.7.3",
-    "ts-node": "^10.8.2"
+    "ts-node": "^10.8.2",
+    "worker-threads": "^1.0.0"
   },
   "devDependencies": {
     "@types/cbor": "^6.0.0",
