@@ -12,7 +12,7 @@ import { dummyDataOutput, dummyInProgress } from './utils/txBody-utils';
 import { getLatestProtocolParametersAsync } from './utils/transaction-utils';
 import CardanoWasm from '@dcspark/cardano-multiplatform-lib-nodejs';
 import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
-import { divideUTXOsAsync } from './utils/conclave-utils';
+import { divideUTXOsAsync, startAirdropper } from './utils/conclave-utils';
 import CardanoUtils from '@adaph/cardano-utils';
 
 const main = async () => {
@@ -72,101 +72,6 @@ const main = async () => {
         }, 1000 * 30);
 
         await setTimeout(AIRDROPPER_INTERVAL); // Check every 6 hourse
-    }
-};
-
-const startAirdropper = async (
-    blockfrostAPI: BlockFrostAPI,
-    newPendingRewards: PendingReward[],
-    inProgressPendingRewards: PendingReward[],
-    baseAddress: CardanoWasm.Address,
-    signingKey: CardanoWasm.PrivateKey,
-    conclavePolicyId: string
-): Promise<void> => {
-    let protocolParameter = await getLatestProtocolParametersAsync(blockfrostAPI);
-
-    const asset = await blockfrostAPI.assetsById(process.env.ASSET_ID as string);
-    console.log(asset);
-
-    // Divide UTXOs
-    // await divideUTXOsAsync(
-    //     blockfrostAPI,
-    //     protocolParameter,
-    //     2 * 1_000_000,
-    //     1,
-    //     conclavePolicyId,
-    //     asset.asset_name as string,
-    //     baseAddress,
-    //     signingKey
-    // );
-
-    // Display UTXOs
-    let utxos = await queryAllUTXOsAsync(blockfrostAPI, baseAddress.to_bech32());
-    await displayUTXOs(utxos!);
-
-    let utxosInWallet: Array<TxBodyInput> = await getAllUTXOsAsync(blockfrostAPI, baseAddress.to_bech32());
-    console.log('UTXOs in wallet: ' + utxosInWallet.length);
-    // Divide pending rewards into batches
-    let airdropBatches: Array<AirdropBatch> = await generateWorkerBatchesWithThreshold(
-        utxosInWallet,
-        newPendingRewards,
-        inProgressPendingRewards,
-        20,
-        undefined,
-        undefined,
-        conclavePolicyId
-    );
-
-    //initialize workers
-    const conclaveAirdropper = new ConclaveAirdropper(10);
-
-    let index = 0;
-    for (let airdropBatch of airdropBatches) {
-        airdropBatch.index = ++index;
-        await executeAirdropWorkerAsync(
-            conclaveAirdropper,
-            airdropBatch,
-            protocolParameter,
-            conclavePolicyId,
-            asset.asset_name as string,
-            baseAddress,
-            signingKey,
-            process.env.PROJECT_ID as string
-        );
-    }
-};
-
-// helpers
-const executeAirdropWorkerAsync = async (
-    conclaveAirdropper: ConclaveAirdropper,
-    batch: AirdropBatch,
-    protocolParameter: ProtocolParametersResponse,
-    policyId: string,
-    assetName: string,
-    baseAddress: CardanoWasm.Address,
-    signingKey: CardanoWasm.PrivateKey,
-    blockfrostProjectId: string
-): Promise<void> => {
-    let airdropWorker: AirdropWorker | null = null;
-
-    while (airdropWorker === null) {
-        airdropWorker = conclaveAirdropper.getFirstAvailableWorker();
-
-        if (isNull(airdropWorker)) {
-            console.log('waiting available worker');
-            await setTimeout(1000 * 60 * 2); // wait 2 minutes
-            continue;
-        }
-        airdropWorker!.execute(
-            batch,
-            protocolParameter,
-            policyId,
-            assetName,
-            baseAddress,
-            signingKey,
-            blockfrostProjectId
-        );
-        break;
     }
 };
 
