@@ -1,10 +1,11 @@
-import { ProtocolParametersResponse } from '../types/response-types';
+import { AirdropBatch, ProtocolParametersResponse, TxBodyInput } from '../types/response-types';
 import CardanoWasm from '@dcspark/cardano-multiplatform-lib-nodejs';
-import { partitionUTXOs, queryAllUTXOsAsync } from './utxo-utils';
+import { displayUTXOs, getAllUTXOsAsync, partitionUTXOs, queryAllUTXOsAsync } from './utxo-utils';
 import { isNull } from './boolean-utils';
 import {
     coinSelectionAsync,
     createAndSignTxAsync,
+    getLatestProtocolParametersAsync,
     submitTransactionAsync,
     transactionConfirmation,
 } from './transaction-utils';
@@ -12,6 +13,11 @@ import { conclaveOutputSum, getInputAssetUTXOSum, lovelaceOutputSum } from './su
 import { toHex } from './string-utils';
 import AirdropTransactionStatus from '../enums/airdrop-transaction-status';
 import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
+import AirdropWorker from '../models/AirdropWorker';
+import ConclaveAirdropper from '../models/ConclaveAirdropper';
+import { PendingReward } from '../types/helper-types';
+import { generateWorkerBatchesWithThreshold } from './worker-utils';
+import { setTimeout } from 'timers/promises';
 
 export const divideUTXOsAsync = async (
     blockfrostAPI: BlockFrostAPI,
@@ -90,4 +96,99 @@ export const divideUTXOsAsync = async (
 
     await transactionConfirmation(blockfrostAPI, txHashString, 20);
     return;
+};
+
+export const startAirdropper = async (
+    blockfrostAPI: BlockFrostAPI,
+    newPendingRewards: PendingReward[],
+    inProgressPendingRewards: PendingReward[],
+    baseAddress: CardanoWasm.Address,
+    signingKey: CardanoWasm.PrivateKey,
+    conclavePolicyId: string
+): Promise<void> => {
+    let protocolParameter = await getLatestProtocolParametersAsync(blockfrostAPI);
+
+    const asset = await blockfrostAPI.assetsById(process.env.ASSET_ID as string);
+    console.log(asset);
+
+    // Divide UTXOs
+    // await divideUTXOsAsync(
+    //     blockfrostAPI,
+    //     protocolParameter,
+    //     2 * 1_000_000,
+    //     1,
+    //     conclavePolicyId,
+    //     asset.asset_name as string,
+    //     baseAddress,
+    //     signingKey
+    // );
+
+    // Display UTXOs
+    let utxos = await queryAllUTXOsAsync(blockfrostAPI, baseAddress.to_bech32());
+    await displayUTXOs(utxos!);
+
+    let utxosInWallet: Array<TxBodyInput> = await getAllUTXOsAsync(blockfrostAPI, baseAddress.to_bech32());
+    console.log('UTXOs in wallet: ' + utxosInWallet.length);
+    // Divide pending rewards into batches
+    let airdropBatches: Array<AirdropBatch> = await generateWorkerBatchesWithThreshold(
+        utxosInWallet,
+        newPendingRewards,
+        inProgressPendingRewards,
+        20,
+        undefined,
+        undefined,
+        conclavePolicyId
+    );
+
+    //initialize workers
+    const conclaveAirdropper = new ConclaveAirdropper(10);
+
+    let index = 0;
+    for (let airdropBatch of airdropBatches) {
+        airdropBatch.index = ++index;
+        await executeAirdropWorkerAsync(
+            conclaveAirdropper,
+            airdropBatch,
+            protocolParameter,
+            conclavePolicyId,
+            asset.asset_name as string,
+            baseAddress,
+            signingKey,
+            process.env.PROJECT_ID as string
+        );
+    }
+};
+
+// helpers
+export const executeAirdropWorkerAsync = async (
+    conclaveAirdropper: ConclaveAirdropper,
+    batch: AirdropBatch,
+    protocolParameter: ProtocolParametersResponse,
+    policyId: string,
+    assetName: string,
+    baseAddress: CardanoWasm.Address,
+    signingKey: CardanoWasm.PrivateKey,
+    blockfrostProjectId: string
+): Promise<void> => {
+    let airdropWorker: AirdropWorker | null = null;
+
+    while (airdropWorker === null) {
+        airdropWorker = conclaveAirdropper.getFirstAvailableWorker();
+
+        if (isNull(airdropWorker)) {
+            console.log('waiting available worker');
+            await setTimeout(1000 * 60 * 2); // wait 2 minutes
+            continue;
+        }
+        airdropWorker!.execute(
+            batch,
+            protocolParameter,
+            policyId,
+            assetName,
+            baseAddress,
+            signingKey,
+            blockfrostProjectId
+        );
+        break;
+    }
 };
