@@ -16,6 +16,16 @@ builder.Services.AddConclaveDb(builder.Configuration.GetConnectionString("Postgr
                 .AddConclaveApi(conclaveOptions, applicationOptions)
                 .AddControllers();
 
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+builder.Services.AddCors(o =>
+{
+    o.AddPolicy(name: MyAllowSpecificOrigins,
+    policy =>
+    {
+        policy.WithOrigins(Environment.GetEnvironmentVariable("CONCLAVE_DASHBOARD_ORIGIN_URL") ?? "");
+    });
+});
+
 // BLOCKFROST CONFIG
 if (applicationOptions.IsDevelopment)
 {
@@ -42,6 +52,8 @@ if (app.Environment.IsDevelopment())
 // app.UseExceptionHandler(); // 500 - Internal Server Error
 
 app.UseHttpsRedirection();
+
+app.UseCors();
 
 app.UseAuthorization();
 
