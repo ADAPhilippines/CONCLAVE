@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "Conclave.SRS"
+		},
+		{
+			"path": "Conclave.Common"
+		},
+		{
+			"path": "Conclave.Data"
+		}
+	],
+	"settings": {}
+}
