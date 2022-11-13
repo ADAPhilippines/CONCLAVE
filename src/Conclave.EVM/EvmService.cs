@@ -4,7 +4,7 @@ using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Web3;
 
-namespace Conclave.Eth;
+namespace Conclave.EVM;
 
 public class EvmService
 {

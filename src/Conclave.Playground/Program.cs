@@ -1,6 +1,6 @@
 ﻿using Nethereum.Web3;
 using Nethereum.Web3.Accounts;
-using Conclave.Eth;
+using Conclave.EVM;
 using Nethereum.RPC.Eth.DTOs;
 
 string abi = await File.ReadAllTextAsync("abi.json");

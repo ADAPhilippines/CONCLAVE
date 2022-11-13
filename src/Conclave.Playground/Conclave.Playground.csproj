@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\Conclave.Eth\Conclave.Eth.csproj" />
+    <ProjectReference Include="..\Conclave.EVM\Conclave.EVM.csproj" />
   </ItemGroup>
   
   <ItemGroup>
