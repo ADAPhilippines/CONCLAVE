@@ -45,7 +45,6 @@
         await _ethereumHostProvider.EnableProviderAsync();
 
         var web3 = await _ethereumHostProvider.GetWeb3Async();
-        var readOnlyWeb3 = new Web3("https://rpc-devnet-cardano-evm.c1.milkomeda.com/");
 
         web3.TransactionManager.UseLegacyAsDefault = true;
         web3.TransactionManager.EstimateOrSetDefaultGasIfNotSet = false;
