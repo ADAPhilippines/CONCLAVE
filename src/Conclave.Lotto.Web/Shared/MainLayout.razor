@@ -1,0 +1,21 @@
+﻿@using Conclave.Lotto.Web.Components
+@inherits LayoutComponentBase
+
+<MudThemeProvider />
+<MudDialogProvider />
+
+<div class="max-w-[1440px] m-auto">
+    <header>
+        <Header />
+    </header>
+
+    <main class="grid grid-cols-5 p-3">
+        <aside class="col-span-1 outline outline-1 w-fit">
+            <Sidebar />
+        </aside>
+
+        <article class="col-span-4">
+            @Body
+        </article>
+    </main>
+</div>

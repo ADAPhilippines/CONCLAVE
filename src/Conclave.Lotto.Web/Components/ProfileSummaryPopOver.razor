@@ -1,0 +1,41 @@
+<MudPopover Open="IsOpen" OverflowBehavior="OverflowBehavior.FlipAlways" AnchorOrigin="Origin.BottomCenter"
+    TransformOrigin="Origin.TopCenter" Paper="false">
+    <MudPaper Outlined="true" Class="pb-8">
+        <MudContainer Class="d-flex flex-row justify-center align-center mb-2">
+            <MudIcon Icon="@Icons.Material.Filled.Favorite" Title="Favorite" />
+            <MudCard>
+                <MudCardContent Class="d-flex flex-row justify-center align-center">
+                    <MudIcon Icon="@Icons.Filled.Person" Title="Favorite" />
+                    <MudText>My Bets</MudText>
+                    <MudChip>0</MudChip>
+                </MudCardContent>
+            </MudCard>
+        </MudContainer>
+        <MudContainer Class="mb-2">
+            <span>Connected</span>
+            <div class="flex justify-between items-center">
+                <p>Address</p>
+                <div>
+                    Iconsss
+                </div>
+            </div>
+            <div>
+                <p>Funds</p>
+                <ul>
+                    <li class="flex justify-between">
+                        <p>ADA</p>
+                        <p>25</p>
+                    </li>
+                    <li class="flex justify-between">
+                        <p>Conclave</p>
+                        <p>25</p>
+                    </li>
+                </ul>
+            </div>
+        </MudContainer>
+        <MudContainer Class="d-flex flex-col">
+            <MudButton Color="Color.Primary" OnClick="OnBtnAddFundsClicked">Add Funds</MudButton>
+            <MudButton Color="Color.Primary">Disconnect</MudButton>
+        </MudContainer>
+    </MudPaper>
+</MudPopover>

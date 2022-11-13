@@ -1,0 +1,14 @@
+<MudTable Items="@Elements" Hover="true">
+    <HeaderContent>
+        <MudTh>Date</MudTh>
+        <MudTh>Session ID</MudTh>
+        <MudTh>Prize</MudTh>
+        <MudTh>Status</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Date">@context.StartDate?.ToString("dd/MM/yyyy")</MudTd>
+        <MudTd DataLabel="Session ID">@context.Id</MudTd>
+        <MudTd DataLabel="Amount">@context.PrizePool</MudTd>
+        <MudTd DataLabel="Transaction Type">@context.CurrentStatus</MudTd>
+    </RowTemplate>
+</MudTable>

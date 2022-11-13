@@ -1,0 +1,58 @@
+[
+    {
+        "inputs": [
+            {
+                "internalType": "string",
+                "name": "_first_name",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "_last_name",
+                "type": "string"
+            }
+        ],
+        "name": "testSet",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "count",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "testRetrieval",
+        "outputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "string",
+                        "name": "first_name",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "last_name",
+                        "type": "string"
+                    }
+                ],
+                "internalType": "struct Sample2.Profile[]",
+                "name": "",
+                "type": "tuple[]"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+]
