@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using System.Linq;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.DTOs;
@@ -62,5 +63,34 @@ public class EvmService
         Contract _contract = _web3.Eth.GetContract(abi, contractAddress);
         Function _readFunction = _contract.GetFunction(name);
         return await _readFunction.CallAsync<T>(inputs);
+    }
+
+    public async Task ListenContractEventAsync<T>(string contractAddress, string abi, string name, Func<List<EventLog<T>>, Task<bool>> callbackAsync) where T : new()
+    {
+        ArgumentNullException.ThrowIfNull(_web3);
+        Contract _contract = _web3.Eth.GetContract(abi, contractAddress);
+        Event contractEvent = _contract.GetEvent(name);
+        HexBigInteger filterId = await contractEvent.CreateFilterAsync(BlockParameter.CreateLatest());
+        _ = Task.Run(async () =>
+        {
+            bool shouldRun = true;
+            List<EventLog<T>>? lastLogs = await contractEvent.GetAllChangesAsync<T>(filterId);
+            while (shouldRun)
+            {
+                List<EventLog<T>>? newLogs = await contractEvent.GetAllChangesAsync<T>(filterId);
+                List<EventLog<T>>? filteredLogs = newLogs.Where(newLog =>
+                    !lastLogs.Any(
+                        oldLog => oldLog.Log.TransactionHash == newLog.Log.TransactionHash &&
+                        oldLog.Log.TransactionIndex == newLog.Log.TransactionIndex)
+                ).ToList();
+
+                if (filteredLogs.Count > 0)
+                {
+                    shouldRun = await callbackAsync(filteredLogs);
+                    lastLogs = filteredLogs;
+                }
+                await Task.Delay(100);
+            }
+        });
     }
 }

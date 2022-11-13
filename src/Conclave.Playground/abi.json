@@ -13,6 +13,19 @@
 		"type": "function"
 	},
 	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "num",
+				"type": "uint256"
+			}
+		],
+		"name": "StoreEvent",
+		"type": "event"
+	},
+	{
 		"inputs": [],
 		"name": "nothing",
 		"outputs": [

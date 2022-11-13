@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "Conclave.EVM"
+		},
+		{
+			"path": "../dependencies/Nethereum"
 		}
 	],
 	"settings": {}
