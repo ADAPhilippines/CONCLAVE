@@ -65,16 +65,17 @@ public class EvmService
         return await _readFunction.CallAsync<T>(inputs);
     }
 
-    public async Task ListenContractEventAsync<T>(string contractAddress, string abi, string name, Func<List<EventLog<T>>, Task<bool>> callbackAsync) where T : new()
+    public async Task ListenContractEventAsync<T>(string contractAddress, string abi, string name, Func<List<EventLog<T>>, bool> callback) where T : new()
     {
         ArgumentNullException.ThrowIfNull(_web3);
         Contract _contract = _web3.Eth.GetContract(abi, contractAddress);
         Event contractEvent = _contract.GetEvent(name);
         HexBigInteger filterId = await contractEvent.CreateFilterAsync(BlockParameter.CreateLatest());
+        List<EventLog<T>>? lastLogs = await contractEvent.GetAllChangesAsync<T>(filterId);
+
         _ = Task.Run(async () =>
         {
             bool shouldRun = true;
-            List<EventLog<T>>? lastLogs = await contractEvent.GetAllChangesAsync<T>(filterId);
             while (shouldRun)
             {
                 List<EventLog<T>>? newLogs = await contractEvent.GetAllChangesAsync<T>(filterId);
@@ -86,8 +87,11 @@ public class EvmService
 
                 if (filteredLogs.Count > 0)
                 {
-                    shouldRun = await callbackAsync(filteredLogs);
-                    lastLogs = filteredLogs;
+                    _ = Task.Run(() =>
+                    {
+                        shouldRun = callback(filteredLogs);
+                        lastLogs = filteredLogs;
+                    });
                 }
                 await Task.Delay(100);
             }

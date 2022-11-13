@@ -22,7 +22,7 @@ await ethService.ListenContractEventAsync<StoreEvent>(contractAddress, abi, "Sto
         Console.WriteLine("StoreEvent: {0}, BlockNumber: {1}, Tx: {2}", log.Event.Num, log.Log.BlockNumber, log.Log.TransactionHash);
         Console.ForegroundColor = ConsoleColor.White;
     }
-    return Task.Run<bool>(() => true);
+    return true;
 });
 Console.WriteLine("Listening for events...");
 while (true)
