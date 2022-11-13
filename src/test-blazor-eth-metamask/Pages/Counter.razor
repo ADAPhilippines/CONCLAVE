@@ -1,0 +1,114 @@
+﻿@page "/counter"
+@using Nethereum.Hex.HexTypes
+@using Nethereum.RPC.Eth.DTOs
+@using Nethereum.Signer
+@using Nethereum.UI
+@using Nethereum.Util
+@using Nethereum.Web3
+@using Nethereum.Web3.Accounts
+@using System.Numerics
+@using Nethereum.Metamask
+@using Nethereum.Hex.HexConvertors.Extensions
+
+@inject MetamaskHostProvider MetamaskHostProvider
+@inject HttpClient HttpClient
+
+<PageTitle>Counter</PageTitle>
+
+<h1>Counter</h1>
+
+<p role="status">Current count: @currentCount</p>
+
+<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+
+@code {
+    private int currentCount = 0;
+    IEthereumHostProvider? _ethereumHostProvider { get; set; }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _ethereumHostProvider = MetamaskHostProvider;
+            Console.WriteLine(_ethereumHostProvider);
+        }
+        base.OnAfterRender(firstRender);
+    }
+
+    private async Task IncrementCount()
+    {
+        currentCount++;
+
+        if (_ethereumHostProvider is null) return;
+        var connectResult = await _ethereumHostProvider.CheckProviderAvailabilityAsync();
+        Console.WriteLine(connectResult);
+        await _ethereumHostProvider.EnableProviderAsync();
+
+        var web3 = await _ethereumHostProvider.GetWeb3Async();
+        var readOnlyWeb3 = new Web3("https://rpc-devnet-cardano-evm.c1.milkomeda.com/");
+
+        web3.TransactionManager.UseLegacyAsDefault = true;
+        web3.TransactionManager.EstimateOrSetDefaultGasIfNotSet = false;
+        web3.TransactionManager.CalculateOrSetDefaultGasPriceFeesIfNotSet = false;
+
+
+        @* var account = new Account("b6a7d8da08eb39e61f45ce373345656b05bff78b7746d46153ed52c83d5ab53d");
+            var web3 = new Web3(account, "https://rpc-devnet-cardano-evm.c1.milkomeda.com"); *@
+
+        var accountAddress = web3.TransactionManager.Account != null ? web3.TransactionManager.Account.Address :
+                await _ethereumHostProvider.GetProviderSelectedAccountAsync();
+
+        Console.WriteLine("Connected Account: {0}", accountAddress);
+
+        var balance = await web3.Eth.GetBalance.SendRequestAsync(accountAddress);
+        Console.WriteLine($"Balance in Wei: {balance.Value}");
+
+        var etherAmount = Web3.Convert.FromWei(balance.Value);
+        Console.WriteLine($"Balance in Ether: {etherAmount}");
+        var currentNonce = await web3.Eth.Transactions.GetTransactionCount.SendRequestAsync(accountAddress,
+        BlockParameter.CreatePending());
+        Console.WriteLine("Nonce {0}", currentNonce);
+
+        var abi = await HttpClient.GetStringAsync("abi.json");
+
+        var nonce = await web3.Eth.Transactions.GetTransactionCount.SendRequestAsync(accountAddress);
+        var gasPrice = await web3.Eth.GasPrice.SendRequestAsync();
+        var time = DateTimeOffset.Now.ToUnixTimeSeconds();
+
+        Console.WriteLine("Nonce: {0}", nonce);
+        Console.WriteLine("Gas Price: {0}", gasPrice);
+        Console.WriteLine("Timestamp: {0}", time);
+
+        var contract = web3.Eth.GetContract(abi, "0xCA77372a728C09610BCf68a47C71c419888b380D");
+        var retrieveFunction = contract.GetFunction("retrieve");
+        var storeFunction = contract.GetFunction("store");
+        var gas = await storeFunction.EstimateGasAsync(time);
+        var data = storeFunction.GetData(time);
+
+        Console.WriteLine("Estimate Gas: {0}", gas);
+
+        var tx = new LegacyTransaction(
+        "0xCA77372a728C09610BCf68a47C71c419888b380D",
+        Nethereum.Util.UnitConversion.Convert.ToWei(0),
+        nonce,
+        gasPrice,
+        gas,
+        data);
+
+        Console.WriteLine("Test Store: {0}", data);
+        Console.WriteLine("Unsigned Raw Tx: {0}", $"0x{tx.GetRLPEncoded().ToHex()}");
+
+        var txReceipt = await web3.Eth.TransactionManager.SendTransactionAndWaitForReceiptAsync(new TransactionInput(
+            data,
+            "0xCA77372a728C09610BCf68a47C71c419888b380D",
+            accountAddress,
+            gas, gasPrice,
+            new HexBigInteger(Nethereum.Util.UnitConversion.Convert.ToWei(0)))
+        );
+
+        Console.WriteLine("TxHash: {0}", txReceipt.TransactionHash);
+        Console.WriteLine("Fee: {0}", Nethereum.Util.UnitConversion.Convert.FromWei(txReceipt.GasUsed.Value *
+        txReceipt.EffectiveGasPrice.Value));
+        Console.WriteLine("Retrieve: {0}", await retrieveFunction.CallAsync<int>());
+    }
+}

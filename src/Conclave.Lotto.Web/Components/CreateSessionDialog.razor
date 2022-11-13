@@ -1,0 +1,21 @@
+<div class="w-[550px]">
+    <MudDialog>
+        <DialogContent>
+            <MudTextField T="string" @bind-Value="@sessionDetails.Name" Label="Session Name"></MudTextField>
+            <MudTextField T="int" @bind-Value="@sessionDetails.PrizePool" Label="Initial Prize Pool"></MudTextField>
+            <MudTextField class="flex-1" T="int" @bind-Value="@sessionDetails.TicketPrice" Label="Ticket Price">
+            </MudTextField>
+            <MudTextField T="int" @bind-Value="@sessionDetails.Combinations" Label="Number of Combinations">
+            </MudTextField>
+            <MudSlider @bind-Value="@sessionDetails.Margin" Min="1" Max="100" Color="Color.Info">Margin:
+                @sessionDetails.Margin.ToString()%</MudSlider>
+            <MudTextField T="int" @bind-Value="@sessionDetails.MaxValue" Label="Maximum Value"></MudTextField>
+            <MudDatePicker Label="Only Calendar" @bind-Date="@sessionDetails.StartDate" DisableToolbar="true"
+                MinDate="@date" />
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="OnBtnCancelClicked">Cancel</MudButton>
+            <MudButton Color="Color.Primary" OnClick="OnBtnSubmitClicked">Ok</MudButton>
+        </DialogActions>
+    </MudDialog>
+</div>

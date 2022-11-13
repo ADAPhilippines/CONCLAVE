@@ -1,0 +1,16 @@
+<MudTable Items="Elements" Hover="true">
+    <HeaderContent>
+        <MudTh>Date</MudTh>
+        <MudTh>Session ID</MudTh>
+        <MudTh>Combination</MudTh>
+        <MudTh>Price</MudTh>
+        <MudTh>Status</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Date">@context.Date</MudTd>
+        <MudTd DataLabel="Session ID">@context.SessionId</MudTd>
+        <MudTd DataLabel="Combination">@context.Combination</MudTd>
+        <MudTd DataLabel="Price">@context.Price</MudTd>
+        <MudTd DataLabel="Status">@context.Status</MudTd>
+    </RowTemplate>
+</MudTable>

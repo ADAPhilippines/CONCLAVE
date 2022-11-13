@@ -1,0 +1,25 @@
+@if (string.IsNullOrEmpty(Address))
+{
+    <MudButton OnClick="OnBtnConnectWalletClicked" Variant="Variant.Filled" Color="Color.Primary"> 
+        Connect Wallet
+    </MudButton>
+}
+else
+{
+    <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined">
+        <MudButton OnClick="OnBtnAddFundsClicked">
+            Add Funds
+        </MudButton>
+        <MudButton OnClick="OnBtnProfileClicked">
+            <div class="flex">
+                <div class="flex flex-col">
+                    <p class="block w-[100px] overflow-hidden whitespace-nowrap text-ellipsis">
+                        @Address
+                    </p>
+                    <p class="text-xs">0</p>
+                </div>
+            </div>
+        </MudButton>
+        @ChildContent
+    </MudButtonGroup>
+}

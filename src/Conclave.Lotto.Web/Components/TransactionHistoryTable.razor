@@ -1,0 +1,14 @@
+<MudTable Items="Elements" Hover="true">
+    <HeaderContent>
+        <MudTh>Date</MudTh>
+        <MudTh>Transaction Hash</MudTh>
+        <MudTh>Amount</MudTh>
+        <MudTh>Transaction Type</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Date">@context.Date</MudTd>
+        <MudTd DataLabel="Transaction Hash">@context.TxHash</MudTd>
+        <MudTd DataLabel="Amount">@context.Amount</MudTd>
+        <MudTd DataLabel="Transaction Type">@context.TxType</MudTd>
+    </RowTemplate>
+</MudTable>

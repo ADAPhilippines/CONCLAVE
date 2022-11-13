@@ -1,0 +1,29 @@
+<MudDialog Class="w-[500px]">
+    <DialogContent>
+        <div>
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <MudImage Class="max-w-[40px]" Src="images/metamask-logo.svg" Alt="Metamask logo" />
+                    <p class="font-bold text-[20px]">Metamask</p>
+                </div>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary">
+                    Connect Wallet
+                </MudButton>
+            </div>
+
+            <div class="flex justify-between items-center mt-3">
+                <div class="flex items-center gap-3">
+                    <MudImage Class="max-w-[40px]" Src="images/cardano-logo.svg" Alt="Cardano logo" />
+                    <p class="font-bold text-[20px]">Cardano</p>
+                </div>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary">
+                    Connect Wallet
+                </MudButton>
+            </div>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Ok</MudButton>
+    </DialogActions>
+</MudDialog>

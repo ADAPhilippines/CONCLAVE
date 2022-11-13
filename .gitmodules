@@ -1,0 +1,3 @@
+[submodule "dependencies/Nethereum"]
+	path = dependencies/Nethereum
+	url = git@github.com:ADAPhilippines/Nethereum.git

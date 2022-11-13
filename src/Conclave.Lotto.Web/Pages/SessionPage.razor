@@ -1,0 +1,40 @@
+﻿@page "/"
+@page "/sessions"
+
+@using Conclave.Lotto.Web.Components
+
+<PageTitle>Index</PageTitle>
+
+<div class="flex gap-x-4">
+    <div>
+        <SessionList>
+            <SessionCard Interval="100" />
+            <SessionCard Interval="3765" />
+            <SessionCard Interval="10" />
+            <SessionCard Interval="356" />
+            <SessionCard Interval="60" />
+            <SessionCard Interval="60" />
+        </SessionList>
+    </div>
+
+    <div>
+        <div>
+            <MudButton @onclick="OpenDialog" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
+                Create Session
+            </MudButton>
+        </div>
+
+        <div class="outline outline-1 mt-4">
+            <LottoWinnersList>
+                @foreach (var lottoWinner in LottoWinners)
+                {
+                    <LottoWinnerCard Address="@lottoWinner.Address" PrizeWon="@lottoWinner.PrizeWon" />
+                }
+            </LottoWinnersList>
+        </div>
+
+        <div class="mt-4 outline outline-1">
+            <TicketList />
+        </div>
+    </div>
+</div>
