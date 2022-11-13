@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\dependencies\Nethereum\src\Nethereum.Web3\Nethereum.Web3.csproj" />
+    <ProjectReference Include="..\..\dependencies\Nethereum\src\Nethereum.RPC\Nethereum.RPC.csproj" />
+    <ProjectReference Include="..\..\dependencies\Nethereum\src\Nethereum.Contracts\Nethereum.Contracts.csproj" />
+    <ProjectReference Include="..\..\dependencies\Nethereum\src\Nethereum.Hex\Nethereum.Hex.csproj" />
+  </ItemGroup>
+
+</Project>
