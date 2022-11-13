@@ -13,4 +13,9 @@
     <PackageReference Include="MudBlazor" Version="6.0.18" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\dependencies\Nethereum\src\Nethereum.Metamask.Blazor\Nethereum.Metamask.Blazor.csproj" />
+    <ProjectReference Include="..\..\dependencies\Nethereum\src\Nethereum.Web3\Nethereum.Web3.csproj" />
+  </ItemGroup>
+  
 </Project>
