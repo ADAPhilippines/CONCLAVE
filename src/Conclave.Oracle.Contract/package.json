@@ -18,7 +18,7 @@
     "approve-all": "npm run approve-consumer && npm run approve-nodes",
     "approve-node-and-stake": "npm run approve-nodes && npm run stake-nodes",
     "transfer-all": "npm run transfer-consumer-ada && npm run transfer-consumer-token",
-    "complete-setup": "npm run deploy-all && npm run airdrop-token && npm run approve-all && npm run transfer-all && npm run stake-nodes"
+    "complete-setup": "npm run deploy-all && npm run airdrop-token && npm run approve-all && npm run transfer-all && npm run stake-nodes && npm run delegate-node"
   },
   "keywords": [],
   "author": "",
