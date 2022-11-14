@@ -71,4 +71,6 @@ contract OracleConsumer {
     function approve() external {
         s_token.approve(address(s_oracle), 2**256 - 1);
     }
+
+    receive() external payable {}
 }
