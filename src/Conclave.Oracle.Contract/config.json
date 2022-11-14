@@ -1,9 +1,9 @@
 {
-  "tokenAddress": "0x921aC4ACb1Ae3cbfFa7c1d30E8016F0F3Bfb0f60",
+  "tokenAddress": "0x0F5E37262dE398C3db7c90c95B27eA62C54Ea745",
   "decimal": "18",
   "ticker": "tCNCLV",
   "name": "ConclaveTestToken",
   "totalSupply": "1000000000",
-  "oracleAddress": "0xB253dFaE27238Fd6c623380f5d26aCcE8D75228C",
-  "consumerAddress": "0x5FA8261f527461D44C714c96af11b9d62FbB41b3"
+  "oracleAddress": "0xeD0B5FEB3aAA58Bae00bA7fD7d2e4A4939b8A755",
+  "consumerAddress": "0x2CdaBAc1D584738d5eF112d5450Fa486B515d076"
 }
