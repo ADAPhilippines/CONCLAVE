@@ -3,7 +3,6 @@ pragma solidity ^0.8.17;
 
 import "./abstracts/ConclaveOracleOperator.sol";
 import "./interfaces/IConclaveOracle.sol";
-import "./interfaces/IConclaveOracleConsumer.sol";
 
 contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
     uint32 s_minNumCount = 1;
@@ -116,7 +115,7 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         override
         onlyExistingRequest(jobId)
         onlyWithinTimeLimit(_getJobRequest(jobId).jobFulfillmentExpiration)
-        returns (uint256[] memory randomNumbers)
+        returns (uint256[] memory randomNumbers, uint status)
     {
         JobRequest storage jobRequest = s_jobRequests[jobId];
 
@@ -126,6 +125,10 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
 
         if (jobRequest.minValidator < jobRequest.responseCount) {
             _refundFees(jobId);
+            uint256[] memory numbers = new uint256[](jobRequest.numCount);
+            randomNumbers = numbers;
+            status = uint(RequestStatus.Refunded);
+            jobRequest.status = RequestStatus.Refunded;
         } else {
             uint256 finalDataId;
             uint32 maxResponses;
@@ -143,8 +146,9 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
 
             // finalize request properties
             jobRequest.finalResultDataId = finalDataId;
-            jobRequest.isFulfilled = true;
+            jobRequest.status = RequestStatus.Fulfilled;
             randomNumbers = _getRandomNumbers(finalDataId);
+            status = uint(RequestStatus.Fulfilled);
             s_totalFulfilled++;
 
             s_feesCollected += _calculateShare(
@@ -165,7 +169,6 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
                 jobRequest.baseTokenFee,
                 jobRequest.tokenFeePerNum
             );
-            return randomNumbers;
         }
     }
 
@@ -215,7 +218,6 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
 
         _token.transfer(jobRequest.requester, totalTokenFee);
         payable(jobRequest.requester).transfer(totalFee);
-        IConclaveOracleConsumer(jobRequest.requester).refundRequest(jobId);
     }
 
     function _getJobId(
