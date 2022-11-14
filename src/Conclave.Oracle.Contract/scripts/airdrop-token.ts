@@ -1,7 +1,6 @@
 import chalk from 'chalk';
 import { ethers } from 'hardhat';
 import config from '../config.json';
-import { token } from '../typechain-types/@openzeppelin/contracts';
 
 async function main() {
     try {
