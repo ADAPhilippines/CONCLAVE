@@ -40,7 +40,39 @@ export default async function fixture() {
     // deploy consumer
     const Consumer = await ethers.getContractFactory('OracleConsumer');
     const consumer = await Consumer.deploy(oracle.address, token.address);
-    await consumer.deployed();
+
+    // transfer assets to consumer
+    const ethAmount = ethers.utils.parseEther('10');
+    const cnclvAmount = ethers.utils.parseUnits('1000000', decimal);
+
+    await accounts[0].sendTransaction({
+        to: consumer.address,
+        value: ethAmount,
+    });
+
+    token.transfer(consumer.address, cnclvAmount);
+
+    // approvals
+    await consumer.approve();
+    for (const account of accounts) {
+        await token.connect(account).approve(oracle.address, ethers.constants.MaxUint256);
+    }
+
+    // stake nodes
+    for (const account of accounts) {
+        const minStake = ethers.utils.formatUnits((await oracle.s_minStake()).toString(), decimal);
+        const maxStake = ethers.utils.formatUnits(await token.balanceOf(account.address), decimal);
+        const amount = ethers.utils.parseUnits(
+            (Math.random() * (Number(maxStake) - Number(minStake)) + Number(minStake)).toString(),
+            decimal
+        );
+        await oracle.connect(account).stake(amount);
+    }
+
+    // delegate nodes
+    for (const account of accounts) {
+        await oracle.connect(account).delegateNode(account.address);
+    }
 
     return { accounts, token, decimal, oracle, consumer };
 }

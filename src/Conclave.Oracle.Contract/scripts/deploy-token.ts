@@ -6,7 +6,7 @@ import chalk from 'chalk';
 async function main() {
     const name = 'ConclaveTestToken';
     const ticker = 'tCNCLV';
-    const totalSupply = 1_000_000_000;
+    const totalSupply = 1_000_000_000_000_000;
     const Token = await ethers.getContractFactory('Token');
     console.log(
         chalk.yellow(

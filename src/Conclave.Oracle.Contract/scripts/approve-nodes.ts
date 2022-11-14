@@ -4,6 +4,7 @@ import config from '../config.json';
 
 async function main() {
     try {
+        let nodeApprovals = [];
         const accounts = await ethers.getSigners();
         const token = await ethers.getContractAt('Token', config.tokenAddress);
         console.log(
@@ -12,9 +13,12 @@ async function main() {
         for (const account of accounts) {
             console.log(chalk.yellow(`Approving ${chalk.blue(account.address)}...`));
             const approve = await token.connect(account).approve(config.oracleAddress, ethers.constants.MaxUint256);
-            await approve.wait();
+            const approval = approve.wait();
+            nodeApprovals.push(approval);
             console.log(chalk.green(`Approved successfully!\n`));
         }
+
+        await Promise.all(nodeApprovals);
     } catch (err) {
         console.log(chalk.red('Consumer contract not found on this network.'));
         console.log(err);

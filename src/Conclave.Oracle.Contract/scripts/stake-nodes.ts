@@ -20,7 +20,6 @@ async function main() {
                 decimal
             );
             const formattedAmount = ethers.utils.formatUnits(amount, decimal);
-            console.log(formattedAmount);
             console.log(chalk.yellow(`Staking ${chalk.blue(formattedAmount)} for ${chalk.blue(account.address)}...`));
             await oracle.connect(account).stake(amount);
             console.log(chalk.green(`Staked successfully!\n`));

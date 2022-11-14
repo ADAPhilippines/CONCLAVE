@@ -120,7 +120,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
     }
 
     function delegateNode(address node) external override {
-        if (s_nodeToOwner[node] != msg.sender) {
+        if (s_nodeToOwner[node] != msg.sender && s_nodeToOwner[node] != address(0)) {
             revert NodeRegisteredToAdifferentOperator(s_nodeToOwner[node]);
         }
 
