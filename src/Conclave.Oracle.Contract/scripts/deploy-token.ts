@@ -1,20 +1,22 @@
 import { ethers } from 'hardhat';
-import chalk from 'chalk';
+import { deployTokenFixture } from '../fixtures/token';
+import { writeFileSync } from 'fs';
+import config from '../config.json';
+import hardhatConfig from '../hardhat.config';
 
 async function main() {
-    const name = 'ConclaveTestToken';
-    const ticker = 'tCNCLV';
-    const totalSupply = 1_000_000_000;
-    const Token = await ethers.getContractFactory('Token');
-    console.log(
-        chalk.yellow(
-            `Deploying token with: 
-            \nname: ${chalk.blue(name)} \nticker: ${chalk.blue(ticker)} \ntotalSupply: ${chalk.blue(totalSupply)}`
-        )
-    );
-    const token = await Token.deploy(name, ticker, totalSupply);
-    await token.deployed();
-    console.log(chalk.green(`Token deployed to: ${chalk.blue(token.address)}`));
+    const { token, decimal, ticker, name, totalSupply } = await deployTokenFixture();
+
+    const network = await ethers.provider.getNetwork();
+
+    if (network.chainId !== hardhatConfig.networks?.hardhat?.chainId) {
+        config.tokenAddress = token.address;
+        config.decimal = decimal.toString();
+        config.ticker = ticker;
+        config.name = name;
+        config.totalSupply = totalSupply.toString();
+        writeFileSync('./config.json', JSON.stringify(config, null, 2));
+    }
 }
 
 main();
