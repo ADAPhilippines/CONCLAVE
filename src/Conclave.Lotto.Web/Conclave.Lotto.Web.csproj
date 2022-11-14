@@ -8,14 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Conclave.EVM" Version="0.0.1" />
+    <PackageReference Include="Conclave.Nethereum.Metamask.Blazor" Version="4.11.0" />
+    <PackageReference Include="Conclave.Nethereum.Web3" Version="4.11.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="7.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.0" PrivateAssets="all" />
     <PackageReference Include="MudBlazor" Version="6.0.18" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\dependencies\Nethereum\src\Nethereum.Metamask.Blazor\Nethereum.Metamask.Blazor.csproj" />
-    <ProjectReference Include="..\..\dependencies\Nethereum\src\Nethereum.Web3\Nethereum.Web3.csproj" />
   </ItemGroup>
   
 </Project>
