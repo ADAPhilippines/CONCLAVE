@@ -4,7 +4,9 @@ import '@nomicfoundation/hardhat-toolbox';
 const config: HardhatUserConfig = {
     solidity: '0.8.17',
     networks: {
-        hardhat: {},
+        hardhat: {
+            chainId: 31337,
+        },
         milkomeda: {
             url: process.env.MILKOMEDA_TESTNET_URL,
             chainId: Number(process.env.MILKOMEDA_TESTNET_CHAIN_ID),
