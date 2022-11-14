@@ -1,12 +1,11 @@
 using Conclave.Oracle.Node.Models;
 using Conclave.Oracle.Node.Services.Bases;
 using Microsoft.Extensions.Options;
-using Conclave.Oracle.Node.Services.Interfaces;
-using Nethereum.Contracts;
-using Nethereum.Hex.HexTypes;
-using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Web3;
 using Nethereum.Web3.Accounts;
+using Nethereum.Hex.HexTypes;
+using Nethereum.Contracts;
+using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Util;
 
 namespace Conclave.Oracle.Node.Services;
@@ -23,16 +22,16 @@ public class EthereumWalletServices : WalletServiceBase
         Web3 = new Web3(Account, settings.Value.EthereumRPC);
         Address = Account.Address;
     }
-
+    
     public async Task<HexBigInteger> GetBalance()
     {
         return await Web3.Eth.GetBalance.SendRequestAsync(Account.Address);
     }
 
     public async Task<T> CallContractReadFunctionAsync<T>(
-        string contractAddress, 
-        string abi, 
-        string functionName, 
+        string contractAddress,
+        string abi,
+        string functionName,
         params object[]? inputs)
     {
         Contract contract = Web3.Eth.GetContract(abi, contractAddress);
@@ -65,16 +64,15 @@ public class EthereumWalletServices : WalletServiceBase
             data,
             contractAddress,
             from,
-            gas, 
+            gas,
             gasPrice,
-            new HexBigInteger(Nethereum.Util.UnitConversion.Convert.ToWei(0)))
+            new HexBigInteger(UnitConversion.Convert.ToWei(0)))
         );
     }
 
-    
+
     public async Task ListenContractEventAsync<T>(string contractAddress, string abi, string functionName, Func<List<EventLog<T>>, bool> callback) where T : new()
     {
-        ArgumentNullException.ThrowIfNull(Web3);
         Contract contract = Web3.Eth.GetContract(abi, contractAddress);
         Event contractEvent = contract.GetEvent(functionName);
         HexBigInteger filterId = await contractEvent.CreateFilterAsync(BlockParameter.CreateLatest());

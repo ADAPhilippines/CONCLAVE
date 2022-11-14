@@ -10,14 +10,8 @@
     <PackageReference Include="Blockfrost.Api" Version="1.0.1" />
     <PackageReference Include="PuppeteerSharp" Version="8.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
-    <ProjectReference Include="..\..\dependencies\Nethereum\src\Nethereum.Web3\Nethereum.Web3.csproj" />
-    <ProjectReference Include="..\..\dependencies\Nethereum\src\Nethereum.RPC\Nethereum.RPC.csproj" />
-    <ProjectReference Include="..\..\dependencies\Nethereum\src\Nethereum.Contracts\Nethereum.Contracts.csproj" />
-    <ProjectReference Include="..\..\dependencies\Nethereum\src\Nethereum.Hex\Nethereum.Hex.csproj" />
-    <ProjectReference Include="..\..\dependencies\Nethereum\src\Nethereum.Accounts\Nethereum.Accounts.csproj" />
-    <ProjectReference Include="..\..\dependencies\Nethereum\src\Nethereum.Signer\Nethereum.Signer.csproj" />
-    <ProjectReference Include="..\..\dependencies\Nethereum\src\Nethereum.JsonRpc.Client\Nethereum.JsonRpc.Client.csproj" />
-    <ProjectReference Include="..\..\dependencies\Nethereum\src\Nethereum.Util\Nethereum.Util.csproj" />
   </ItemGroup>
-
+  <ItemGroup>
+    <PackageReference Include="Conclave.Nethereum.Web3" Version="4.11.0" />
+  </ItemGroup>
 </Project>
