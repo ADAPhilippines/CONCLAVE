@@ -11,6 +11,7 @@
     <ProjectReference Include="..\..\dependencies\Nethereum\src\Nethereum.RPC\Nethereum.RPC.csproj" />
     <ProjectReference Include="..\..\dependencies\Nethereum\src\Nethereum.Contracts\Nethereum.Contracts.csproj" />
     <ProjectReference Include="..\..\dependencies\Nethereum\src\Nethereum.Hex\Nethereum.Hex.csproj" />
+    <!-- <ProjectReference Include="..\..\de" -->
   </ItemGroup>
 
 </Project>
