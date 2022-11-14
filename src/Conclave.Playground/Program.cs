@@ -3,11 +3,12 @@ using Nethereum.Web3.Accounts;
 using Conclave.EVM;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Contracts;
+using System.Numerics;
 
 string abi = await File.ReadAllTextAsync("abi.json");
 string privateKey = "0xb5b1870957d373ef0eeffecc6e4812c0fd08f554b37b233526acc331bf1544f7";
 string contractAddress = "0xB28F2452F811161C637A886dC0dF665071eBe441";
-Account account = new Account(privateKey, 200101);
+Account account = new(privateKey, 200101);
 Web3 web3 = new(account, "https://rpc-devnet-cardano-evm.c1.milkomeda.com/");
 
 EvmService ethService = new() { Web3 = web3 };
@@ -32,11 +33,12 @@ while (true)
     Console.WriteLine("Store Contract Call: {0}", time);
     txReceipt = await ethService.CallContractWriteFunctionAsync(
         contractAddress,
-        account.Address, abi, "store", 0,
+        account.Address, abi, 0,
+        name: "store",
         inputs: time
     );
     Console.WriteLine("Store TxHash: {0}", txReceipt.TransactionHash);
     Console.WriteLine("Contract Read Call Result: {0}",
-        await ethService.CallContractReadFunctionAsync<int>(contractAddress, abi, "retrieve"));
+        await ethService.CallContractReadFunctionAsync<BigInteger>(contractAddress, abi, "retrieve"));
     Console.WriteLine();
 }

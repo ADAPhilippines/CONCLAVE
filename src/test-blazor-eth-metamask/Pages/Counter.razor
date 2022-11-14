@@ -45,15 +45,9 @@
         await _ethereumHostProvider.EnableProviderAsync();
 
         var web3 = await _ethereumHostProvider.GetWeb3Async();
-        var readOnlyWeb3 = new Web3("https://rpc-devnet-cardano-evm.c1.milkomeda.com/");
-
         web3.TransactionManager.UseLegacyAsDefault = true;
         web3.TransactionManager.EstimateOrSetDefaultGasIfNotSet = false;
         web3.TransactionManager.CalculateOrSetDefaultGasPriceFeesIfNotSet = false;
-
-
-        @* var account = new Account("b6a7d8da08eb39e61f45ce373345656b05bff78b7746d46153ed52c83d5ab53d");
-            var web3 = new Web3(account, "https://rpc-devnet-cardano-evm.c1.milkomeda.com"); *@
 
         var accountAddress = web3.TransactionManager.Account != null ? web3.TransactionManager.Account.Address :
                 await _ethereumHostProvider.GetProviderSelectedAccountAsync();
