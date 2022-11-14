@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "deploy-all": "npx hardhat run scripts/deploy-token.ts --network milkomeda && npx hardhat run scripts/deploy-oracle.ts --network milkomeda && npx hardhat run scripts/deploy-consumer.ts --network milkomeda",
+    "deploy-oracle-and-consumer": "npx hardhat run scripts/deploy-oracle.ts --network milkomeda && npx hardhat run scripts/deploy-consumer.ts --network milkomeda", 
+    "airdrop-token": "npx hardhat run scripts/airdrop-token.ts --network milkomeda"
   },
   "keywords": [],
   "author": "",
