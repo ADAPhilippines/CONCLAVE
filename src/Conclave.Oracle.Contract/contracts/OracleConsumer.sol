@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {IConclaveOracle} from "./interfaces/IConclaveOracle.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract OracleConsumer {
     enum RequestStatus {
@@ -16,11 +17,13 @@ contract OracleConsumer {
         RequestStatus status;
     }
 
+    IERC20 public immutable s_token;
     IConclaveOracle s_oracle;
     mapping(uint256 => Request) public s_results;
 
-    constructor(address _oracle) {
-        s_oracle = IConclaveOracle(_oracle);
+    constructor(address oracle, address token) {
+        s_oracle = IConclaveOracle(oracle);
+        s_token = IERC20(token);
     }
 
     function requestRandomNumbers(
@@ -63,5 +66,9 @@ contract OracleConsumer {
         } else {
             // draw logic
         }
+    }
+
+    function approve() external {
+        s_token.approve(address(s_oracle), 2**256 - 1);
     }
 }
