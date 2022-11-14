@@ -6,6 +6,7 @@ namespace Conclave.Oracle.Node.Services.Bases;
 public class WalletServiceBase : IWalletService
 {
     public string PrivateKey { get; init; }
+    public string Address { get; init; } = string.Empty;
     public string RPC { get; init; }
     public WalletServiceBase(string privateKey, string rpc)
     {

@@ -2,6 +2,8 @@ using Conclave.Oracle.Node.Services;
 using Conclave.Oracle.Node.Models;
 using Conclave.Oracle.Node.Constants;
 using Conclave.Oracle.Node.Utils;
+using Nethereum.Hex.HexTypes;
+using System.Numerics;
 
 namespace Conclave.Oracle;
 
@@ -23,47 +25,23 @@ public class OracleWorker : BackgroundService
         _logger = logger;
         _oracleContractService = oracleContractService;
         _ethereumWalletServices = ethereumWalletServices;
-
-        _oracleContractService.RequestCreatedEvent += async (sender, e) =>
-        {
-            await _oracleContractService.WaitBrowserReadyAsync();
-            //create utils for hex conversion
-            _logger.LogInformation($"Received request Id# {e.RequestId}");
-            int slot = NetworkConstants.Preview.UnixTimeMsToSlot(e.Timestamp);
-            //get nearest slot
-
-            string blockhash = await _cardanoService.GetNearestBlockHashFromSlot(slot);
-            //get next blocks;
-            List<string> blockhashes = await _cardanoService.GetNextBlocksFromCurrentHash(blockhash, e.NumberOfdecimals - 1);
-            //create utils for this
-            List<string> decimalStrings = blockhashes.Select(r => StringUtils.HexToDecimalString(r)).ToList();
-
-            // await SubmitResult(e.RequestId, decimalStrings);
-            _logger.LogInformation($"Submitted {decimalStrings.Count} value/s to request Id# {e.RequestId}");
-        };
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        await _ethereumWalletServices.WaitBrowserReadyAsync();
-        nonce = await _ethereumWalletServices.GetTransactionCount();
-        string? balance = await _ethereumWalletServices.GetBalance();
-        _logger.LogInformation($"nonce is {nonce.ToString()}");
-        _logger.LogInformation($"balance is {balance}");
         //create script for ubuntu for this
-        DateTimeOffset dto = new DateTimeOffset(DateTime.UtcNow);
-        string unixTimeMs = dto.ToUnixTimeMilliseconds().ToString();
-
-        _logger.LogInformation(unixTimeMs);
-        _ = Task.Run(async () =>
-        {
-            _logger.LogInformation("Starting Oracle Node...");
-            await _oracleContractService.WaitBrowserReadyAsync();
-
-            await _oracleContractService.ExposeRequestTrigger("requestnumbers", _oracleContractService.RequestNumbers);
-            _logger.LogInformation("Oracle Node Started...");
-            await CheckPrivateKeyDelegationAsync();
+        // DateTimeOffset dto = new DateTimeOffset(DateTime.UtcNow);
+        // string unixTimeMs = dto.ToUnixTimeMilliseconds().ToString();
+        // HexBigInteger res = await _ethereumWalletServices.GetBalance();
+        // _logger.LogInformation("Current Balance is {0}:", res.ToString());
+        await CheckPrivateKeyDelegationAsync();
+        _ = Task.Run(async () => {
+            await GetPendingRequestsAsync();
         });
+
+        // _ = Task.Run(async () => {
+
+        // });
     }
 
     public async Task CheckPrivateKeyDelegationAsync()
@@ -74,33 +52,23 @@ public class OracleWorker : BackgroundService
 
         if (isDelegated) _logger.LogInformation($"The Private Key Is Delegated!");
         else _logger.LogInformation($"The Private Key Is not Delegated. Please delegate");
-
-        _ = Task.Run(async () =>
-        {
-            await GetPendingRequestsAsync();
-        });
-
-        _ = Task.Run(async () =>
-        {
-            await ListenToRequestAsync();
-        });
     }
 
     public async Task GetPendingRequestsAsync()
     {
         _logger.LogInformation("Checking for pending Requests...");
         //Todo: Error Handling;
-        List<JSBigNumber>? pendingRequests = await _oracleContractService.GetPendingRequestsAsync();
+        List<BigInteger>? pendingRequests = await _oracleContractService.GetPendingRequestsAsync();
         _logger.LogInformation($"Number of Pending requests: {pendingRequests?.Count ?? 0}");
         // run process for generating number from blockhash for pending       
     }
 
-    public async Task ListenToRequestAsync()
-    {
-        _logger.LogInformation("Listening to contract events...");
-        await _oracleContractService.ListenToRequestCreatedEventAsync();
-        _logger.LogInformation("Currently Listening to Requests...");
-    }
+    // public async Task ListenToRequestAsync()
+    // {
+    //     _logger.LogInformation("Listening to contract events...");
+    //     await _oracleContractService.ListenToRequestCreatedEventAsync();
+    //     _logger.LogInformation("Currently Listening to Requests...");
+    // }
 
     // public async Task SubmitResult(string requestId, List<string> decimalStrings)
     // {
