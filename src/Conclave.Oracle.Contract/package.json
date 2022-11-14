@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "deploy-all": "npx hardhat run scripts/deploy-token.ts --network milkomeda && npx hardhat run scripts/deploy-oracle.ts --network milkomeda && npx hardhat run scripts/deploy-consumer.ts --network milkomeda",
-    "deploy-oracle-and-consumer": "npx hardhat run scripts/deploy-oracle.ts --network milkomeda && npx hardhat run scripts/deploy-consumer.ts --network milkomeda", 
-    "airdrop-token": "npx hardhat run scripts/airdrop-token.ts --network milkomeda"
+    "deploy-all": "npx hardhat run scripts/deploy-token.ts --network milkomedaDev && npx hardhat run scripts/deploy-oracle.ts --network milkomedaDev && npx hardhat run scripts/deploy-consumer.ts --network milkomedaDev",
+    "deploy-oracle-and-consumer": "npx hardhat run scripts/deploy-oracle.ts --network milkomedaDev && npx hardhat run scripts/deploy-consumer.ts --network milkomedaDev", 
+    "airdrop-token": "npx hardhat run scripts/airdrop-token.ts --network milkomedaDev"
   },
   "keywords": [],
   "author": "",

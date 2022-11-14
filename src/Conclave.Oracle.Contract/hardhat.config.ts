@@ -7,7 +7,7 @@ const config: HardhatUserConfig = {
         hardhat: {
             chainId: 31337,
         },
-        milkomeda: {
+        milkomedaDev: {
             url: 'https://rpc-devnet-cardano-evm.c1.milkomeda.com/',
             chainId: 200101,
             accounts: [
