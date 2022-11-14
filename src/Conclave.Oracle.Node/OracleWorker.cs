@@ -2,14 +2,12 @@ using Conclave.Oracle.Node.Services;
 using Conclave.Oracle.Node.Models;
 using Conclave.Oracle.Node.Constants;
 using Conclave.Oracle.Node.Utils;
-using Nethereum.Hex.HexTypes;
 using System.Numerics;
 
 namespace Conclave.Oracle;
 
 public class OracleWorker : BackgroundService
 {
-    private static int nonce;
     private readonly ILogger<OracleWorker> _logger;
     private readonly OracleContractService _oracleContractService;
     private readonly CardanoServices _cardanoService;
@@ -29,19 +27,21 @@ public class OracleWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        //create script for ubuntu for this
-        // DateTimeOffset dto = new DateTimeOffset(DateTime.UtcNow);
-        // string unixTimeMs = dto.ToUnixTimeMilliseconds().ToString();
-        // HexBigInteger res = await _ethereumWalletServices.GetBalance();
-        // _logger.LogInformation("Current Balance is {0}:", res.ToString());
+        DateTimeOffset dto = new DateTimeOffset(DateTime.UtcNow);
+        string unixTimeMs = dto.ToUnixTimeMilliseconds().ToString();
+
+        _logger.LogInformation(unixTimeMs);
+        //Error Handling
         await CheckPrivateKeyDelegationAsync();
-        _ = Task.Run(async () => {
+        _ = Task.Run(async () =>
+        {
             await GetPendingRequestsAsync();
         });
 
-        // _ = Task.Run(async () => {
-
-        // });
+        _ = Task.Run(async () =>
+        {
+            await ListenToRequestAsync();
+        });
     }
 
     public async Task CheckPrivateKeyDelegationAsync()
@@ -59,34 +59,34 @@ public class OracleWorker : BackgroundService
         _logger.LogInformation("Checking for pending Requests...");
         //Todo: Error Handling;
         List<BigInteger>? pendingRequests = await _oracleContractService.GetPendingRequestsAsync();
-        _logger.LogInformation($"Number of Pending requests: {pendingRequests?.Count ?? 0}");
+        _logger.LogInformation("Number of Pending requests: {0}", pendingRequests?.Count ?? 0);
         // run process for generating number from blockhash for pending       
     }
 
-    // public async Task ListenToRequestAsync()
-    // {
-    //     _logger.LogInformation("Listening to contract events...");
-    //     await _oracleContractService.ListenToRequestCreatedEventAsync();
-    //     _logger.LogInformation("Currently Listening to Requests...");
-    // }
+    public async Task ListenToRequestAsync()
+    {
+        _logger.LogInformation("Listening to contract events...");
+        await _oracleContractService.ListenToRequestNumberEventAsync(GenerateAndSubmitDecimalsAsync);
+        _logger.LogInformation("Currently Listening to Requests...");
+    }
 
-    // public async Task SubmitResult(string requestId, List<string> decimalStrings)
-    // {
-    //     int trial = 0;
-    //     const int maxTrial = 10;
+    public async Task GenerateAndSubmitDecimalsAsync(BigInteger requestId, BigInteger unixTimeMs, BigInteger numberOfdecimals)
+    {
+        int slot = NetworkUtils.Preview.UnixTimeMsToSlot(unixTimeMs);
+        string firstBlockHash = await _cardanoService.GetNearestBlockHashFromSlot(slot);
+        List<string> blockHashesList = await _cardanoService.GetNextBlocksFromCurrentHash(firstBlockHash, numberOfdecimals);
+        List<BigInteger> decimalsList = blockHashesList.Select((dec) => StringUtils.HexStringToBigInteger(dec)).ToList();
+        await SubmitDecimals(requestId, decimalsList);
+    }
 
-    //     while (trial < maxTrial)
-    //     {
-    //         try
-    //         {
-    //             await _oracleContractService.SubmitResultAsync(requestId, decimalStrings);
-    //         }
-    //         catch (Exception e)
-    //         {
-    //             _logger.LogCritical("Error submitting transaction... retrying in 5s");
-    //         }
-    //         if (trial is maxTrial) break;
-    //         trial++;
-    //     }
-    // }
+    public async Task SubmitDecimals(BigInteger requestId, List<BigInteger> decimalsList)
+    {
+        Console.ForegroundColor = ConsoleColor.DarkYellow;
+        Console.WriteLine("Submitting requestId {0}...", requestId);
+        Console.ForegroundColor = ConsoleColor.White;
+        await _oracleContractService.SubmitResultAsync(requestId, decimalsList);
+        Console.ForegroundColor = ConsoleColor.DarkGreen;
+        Console.WriteLine("RequestId {0} Submitted!", requestId);
+        Console.ForegroundColor = ConsoleColor.White;
+    }
 }
