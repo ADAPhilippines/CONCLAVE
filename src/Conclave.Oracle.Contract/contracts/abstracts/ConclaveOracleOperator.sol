@@ -127,7 +127,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         if (s_ownerToNode[msg.sender] == node) {
             revert NodeAlreadyRegistered();
         }
-
+        s_nodeToOwner[s_ownerToNode[msg.sender]] = address(0);
         s_ownerToNode[msg.sender] = node;
         s_nodeToOwner[node] = msg.sender;
 
