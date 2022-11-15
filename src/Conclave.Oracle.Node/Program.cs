@@ -2,10 +2,12 @@ using Conclave.Oracle;
 using Conclave.Oracle.Node.Extensions;
 using Conclave.Oracle.Node.Services;
 using Conclave.Oracle.Node.Models;
+using Conclave.Oracle.Node.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
 
 IConfiguration config = builder.Configuration.GetSection("NodeSettings");
+// SettingsHelpers.AddOrUpdateAppSetting<string>("Hello:JM", "hi");
 string? network = config.GetValue<string>("BlockFrostNetwork");
 string? apiKey = config.GetValue<string>("BlockFrostAPIKey");
 

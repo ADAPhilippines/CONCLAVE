@@ -2,25 +2,12 @@ using Conclave.Oracle.Node.Models;
 using Microsoft.Extensions.Options;
 using Conclave.Oracle.Node.Services.Bases;
 using System.Numerics;
-using Nethereum.ABI.FunctionEncoding.Attributes;
 using Nethereum.Contracts;
-
+using Conclave.Oracle.Node.Contracts.Definition;
 namespace Conclave.Oracle.Node.Services;
 
 public class OracleContractService : ContractServiceBase
 {
-    [Event("RequestCreated")]
-    class RequestNumberEvent
-    {
-        [Parameter("uint256", "requestId", 1, true)]
-        public BigInteger RequestId { get; set; }
-
-        [Parameter("uint256", "timestamp", 2, true)]
-        public BigInteger TimeStamp { get; set; }
-
-        [Parameter("uint256", "numberOfdecimals", 3, true)]
-        public BigInteger NumberOfDecimals { get; set; }
-    }
     private readonly ILogger<OracleContractService> _logger;
     private readonly CardanoServices _cardanoService;
     private readonly EthereumWalletServices _ethereumWalletServices;
@@ -45,9 +32,9 @@ public class OracleContractService : ContractServiceBase
         return await _ethereumWalletServices.CallContractReadFunctionNoParamsAsync<bool>(ContractAddress, ABI, "isDelegated");
     }
 
-    public async Task<List<BigInteger>?> GetPendingRequestsAsync()
+    public async Task<List<PendingRequestOutputDTO>?> GetPendingRequestsAsync()
     {
-        return await _ethereumWalletServices.CallContractReadFunctionNoParamsAsync<List<BigInteger>>(ContractAddress, ABI, "getPendingRequests");
+        return await _ethereumWalletServices.CallContractReadFunctionNoParamsAsync<List<PendingRequestOutputDTO>>(ContractAddress, ABI, "getPendingRequests");
     }
 
     public async Task SubmitResultAsync(BigInteger requestId, List<BigInteger> decimals)
@@ -55,20 +42,24 @@ public class OracleContractService : ContractServiceBase
         await _ethereumWalletServices.CallContractWriteFunctionAsync(ContractAddress, _ethereumWalletServices.Address!, ABI, "submitResult", 0, requestId, decimals);
     }
 
-    public async Task ListenToRequestNumberEventAsync(Func<BigInteger, BigInteger, BigInteger, Task> generateDecimalFunction)
+    public async Task ListenToRequestNumberEventWithCallbackAsync(Func<BigInteger, BigInteger, BigInteger, Task> generateDecimalFunction)
     {
-        await _ethereumWalletServices.ListenContractEventAsync<RequestNumberEvent>(ContractAddress, ABI, "RequestCreated", (logs) =>
+        await _ethereumWalletServices.ListenContractEventAsync<RequestCreatedEventDTO>(ContractAddress, ABI, "RequestCreated", (logs) =>
         {
-            foreach (EventLog<RequestNumberEvent> log in logs)
+            foreach (EventLog<RequestCreatedEventDTO> log in logs)
             {
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
-                Console.WriteLine("Received Event RequestId: {0} ...", log.Event.RequestId);
                 _ = Task.Run(async () =>
                 {
+                    Console.WriteLine();
+                    Console.ForegroundColor = ConsoleColor.DarkYellow;
+                    Console.WriteLine("--------- RECEIVED Request Id #: {0} (Details)---------", log.Event.RequestId);
+                    Console.WriteLine("RequestId : {0}", log.Event.RequestId);
+                    Console.WriteLine("TimeStamp in seconds : {0}", log.Event.TimeStamp);
+                    Console.WriteLine("Number of Decimals : {0}", log.Event.NumberOfDecimals);
+                    Console.ForegroundColor = ConsoleColor.White;
                     await generateDecimalFunction(log.Event.RequestId, log.Event.TimeStamp, log.Event.NumberOfDecimals);
                 });
-                // Console.WriteLine(decimalsList[0]);
-                Console.ForegroundColor = ConsoleColor.White;
             }
             return true;
         });

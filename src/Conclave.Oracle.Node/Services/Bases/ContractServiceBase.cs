@@ -1,4 +1,3 @@
-using Conclave.Oracle.Node.Interfaces;
 using Conclave.Oracle.Node.Services.Interfaces;
 
 namespace Conclave.Oracle.Node.Services.Bases;

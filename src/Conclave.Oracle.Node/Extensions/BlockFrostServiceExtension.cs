@@ -14,9 +14,11 @@ public static class BlockFrostServiceExtension
             var blockService = serviceProvider.GetRequiredService<IBlockService>();
 
             CardanoServices blockFrostService;
-            blockFrostService = new CardanoServices(blockService);
+            ILogger<CardanoServices>? logger = null;
+            blockFrostService = new CardanoServices(blockService, logger!);
             return blockFrostService;
         });
+        
         return serviceCollection;
     }
 }

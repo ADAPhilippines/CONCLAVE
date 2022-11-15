@@ -16,16 +16,16 @@ public class EthereumWalletServices : WalletServiceBase
     private readonly Account Account;
     private readonly AccountOfflineTransactionSigner TransactionSigner = new AccountOfflineTransactionSigner();
     public EthereumWalletServices(
-        IOptions<SettingsParameters> settings) : base(settings.Value.PrivateKey, settings.Value.EthereumRPC)
+        IOptionsMonitor<SettingsParameters> settings) : base(settings.CurrentValue.PrivateKey, settings.CurrentValue.EthereumRPC)
     {
-        Account = new Account(settings.Value.PrivateKey);
-        Web3 = new Web3(Account, settings.Value.EthereumRPC);
+        Account = new Account(settings.CurrentValue.PrivateKey);
+        Web3 = new Web3(Account, settings.CurrentValue.EthereumRPC);
         Address = Account.Address;
     }
-    
+
     public async Task<HexBigInteger> GetBalance()
     {
-        return await Web3.Eth.GetBalance.SendRequestAsync(Account.Address);
+        return await Web3.Eth.GetBalance.SendRequestAsync(Address);
     }
 
     public async Task<T> CallContractReadFunctionAsync<T>(
@@ -44,6 +44,13 @@ public class EthereumWalletServices : WalletServiceBase
         Contract contract = Web3.Eth.GetContract(abi, contractAddress);
         Function readFunction = contract.GetFunction(functionName);
         return await readFunction.CallAsync<T>();
+    }
+
+    public async Task<dynamic> CallContractReadFunctionNoParamsAsync(string contractAddress, string abi, string functionName)
+    {
+        Contract contract = Web3.Eth.GetContract(abi, contractAddress);
+        Function readFunction = contract.GetFunction(functionName);
+        return await readFunction.CallAsync<dynamic>();
     }
 
     public async Task<TransactionReceipt> CallContractWriteFunctionAsync(
