@@ -1,0 +1,20 @@
+@page "/session/{SessionId}"
+@using Conclave.Lotto.Web.Components
+
+<PageTitle>Session @SessionDetails.Name</PageTitle>
+
+<MudContainer Fixed="true" Class="mt-9">
+    <MudText Typo="Typo.h5" Align="Align.Center">Current Prize:</MudText>
+    <MudText Typo="Typo.h2" Align="Align.Center">₳ @SessionDetails.PrizePool</MudText>
+    <MudContainer Class="my-5" MaxWidth="MaxWidth.Small">
+        <CountdownTimer ContainerType="Page" StartDateTime="@SessionDetails.StartDate"
+            DateCreated="@SessionDetails.DateCreated" />
+    </MudContainer>
+    <div class="mt-10 flex flex-col justify-center items-center">
+        <MudText Class="mb-5" Typo="Typo.h5" Align="Align.Center">Last Winning Combination:</MudText>
+        <CombinationResult ContainerType="Page" />
+    </div>
+    <div class="float-right">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary">Buy Ticket Now</MudButton>
+    </div>
+</MudContainer>
