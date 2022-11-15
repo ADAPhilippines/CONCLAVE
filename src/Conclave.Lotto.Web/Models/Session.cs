@@ -28,6 +28,7 @@ public record Session
     public int Margin { get; set; }
 
     public DateTime? StartDate { get; set; } = DateTime.Today;
-    
+
+    public DateTime? DateCreated { get; set; } = DateTime.Today;
     public int Interval { get; set; }
 }
