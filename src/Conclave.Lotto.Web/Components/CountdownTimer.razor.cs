@@ -1,11 +1,18 @@
 using Microsoft.AspNetCore.Components;
-
+using MudBlazor;
 namespace Conclave.Lotto.Web.Components;
 
 public partial class CountdownTimer
 {
     [Parameter]
     public int Interval { get; set; }
+
+    [Parameter]
+    public string ContainerType { get; set; } = "Card";
+
+    private string PaperSize => ContainerType == "Card" ? "35px" : "50px";
+
+    private Typo TextSize => ContainerType == "Card" ? Typo.body2 : Typo.h5;
 
     public int Hours { get; set; }
 

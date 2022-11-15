@@ -1,29 +1,25 @@
-<MudCard Class="border-2 mb-5 pa-3">
+<MudCard Class="border-2 mb-5 pa-5">
     <MudText Align="Align.Center" Typo="Typo.body1">UPCOMING DRAW</MudText>
     <MudProgressLinear Size="Size.Large" Color="Color.Primary" Value="@Value" Class="my-5" Max="MaxValue" />
-
     <div class="flex justify-between items-center">
-        <MudText Typo="Typo.body2">Starting In:</MudText>
-        <div class="flex justify-between items-center w-7/12">
+        <MudText Typo="TextSize">Starting In:</MudText>
+        <div class="flex justify-around items-center ">
             <div class="flex flex-col justify-center">
-                <MudPaper Class="d-flex justify-center items-center mud-theme-primary" Width="30px" Height="30px">
+                <MudPaper Class="d-flex justify-center items-center mud-theme-primary" Width="@PaperSize" Height="@PaperSize">
                     <MudText Typo="Typo.h5">@Hours.ToString("D2")</MudText>
                 </MudPaper>
-                @* <span class="text-center">HH</span> *@
             </div>
             <MudText Typo="Typo.h5">:</MudText>
             <div class="flex flex-col justify-center">
-                <MudPaper Class="d-flex justify-center items-center mud-theme-primary" Width="30px" Height="30px">
+                <MudPaper Class="d-flex justify-center items-center mud-theme-primary" Width="@PaperSize" Height="@PaperSize">
                     <MudText Typo="Typo.h5">@Minutes.ToString("D2")</MudText>
                 </MudPaper>
-                @* <span class="text-center">MM</span> *@
             </div>
             <MudText Typo="Typo.h5">:</MudText>
             <div class="flex flex-col justify-center">
-                <MudPaper Class="d-flex justify-center items-center mud-theme-primary" Width="30px" Height="30px">
+                <MudPaper Class="d-flex justify-center items-center mud-theme-primary" Width="@PaperSize" Height="@PaperSize">
                     <MudText Typo="Typo.h5">@Seconds.ToString("D2")</MudText>
                 </MudPaper>
-                @* <span class="text-center">SS</span> *@
             </div>
         </div>
     </div>

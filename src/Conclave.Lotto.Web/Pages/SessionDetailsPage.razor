@@ -1,0 +1,12 @@
+@page "/session/{SessionId}"
+@using Conclave.Lotto.Web.Components
+
+<PageTitle>Session @SessionDetails.Name</PageTitle>
+
+<MudContainer Fixed="true" Class="pa-9">
+    <MudText Typo="Typo.h5" Align="Align.Center">Current Prize:</MudText>
+    <MudText Typo="Typo.h2" Align="Align.Center">₳ @SessionDetails.PrizePool</MudText>
+    <MudContainer MaxWidth="MaxWidth.Small">
+        <CountdownTimer Interval="SessionDetails.Interval" ContainerType="Page"/>
+    </MudContainer>
+</MudContainer>
