@@ -18,11 +18,4 @@ public partial class SessionCard
       return "border-2 border-rose-600";
     return "border-2";
   }
-
-  private string UpcomingSessionClass()
-  {
-    if (SessionDetails.CurrentStatus == Status.OnGoing)
-        return "hidden";
-    return "block";
-  }
 }
