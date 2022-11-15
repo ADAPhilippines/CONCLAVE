@@ -39,7 +39,7 @@ public class EvmService
         );
     }
 
-    public async Task<TransactionReceipt> CallContractWriteFunctionAsync(string contractAddress, string from, string abi, string name, decimal value, params object[] inputs)
+    public async Task<TransactionReceipt> CallContractWriteFunctionAsync(string contractAddress, string from, string abi, decimal value, string name, params object[] inputs)
     {
         ArgumentNullException.ThrowIfNull(_web3);
         Contract _contract = _web3.Eth.GetContract(abi, contractAddress);

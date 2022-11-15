@@ -4,17 +4,17 @@
 <MudThemeProvider />
 <MudDialogProvider />
 
-<div class="max-w-[1440px] m-auto">
+<div class="max-w-[1440px] m-auto px-4">
     <header>
         <Header />
     </header>
-
-    <main class="grid grid-cols-5 p-3">
-        <aside class="col-span-1 outline outline-1 w-fit">
+    
+    <main class="flex gap-3 mt-4">
+        <aside class="outline outline-1 w-fit 1xl:mr-2">
             <Sidebar />
         </aside>
 
-        <article class="col-span-4">
+        <article class="w-full">
             @Body
         </article>
     </main>

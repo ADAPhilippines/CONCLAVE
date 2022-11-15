@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Nethereum.Metamask;
 using Nethereum.Metamask.Blazor;
-using Nethereum.UI;
 using test_blazor_eth_metamask;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);

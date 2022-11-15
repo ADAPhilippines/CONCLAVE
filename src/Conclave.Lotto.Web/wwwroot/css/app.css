@@ -1,3 +1,7 @@
 ﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.cardano-wallets > .mud-dialog-title {
+    padding: 0 !important;
+}
