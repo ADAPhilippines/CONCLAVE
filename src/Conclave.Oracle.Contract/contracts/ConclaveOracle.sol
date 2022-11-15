@@ -141,11 +141,9 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
 
             for (uint256 i = 0; i < jobRequest.dataIds.length; i++) {
                 if (
-                    jobRequest.dataIdVotes[jobRequest.dataIds[i]] > maxResponses
+                    s_dataIdVotes[jobId][jobRequest.dataIds[i]] > maxResponses
                 ) {
-                    maxResponses = jobRequest.dataIdVotes[
-                        jobRequest.dataIds[i]
-                    ];
+                    maxResponses = s_dataIdVotes[jobId][jobRequest.dataIds[i]];
                     finalDataId = jobRequest.dataIds[i];
                 }
             }

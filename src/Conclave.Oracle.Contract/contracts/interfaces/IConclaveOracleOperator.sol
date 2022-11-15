@@ -9,19 +9,6 @@ interface IConclaveOracleOperator {
     function submitResponse(uint256 jobIb, uint256[] calldata response)
         external;
 
-    function getJobDetails(uint256 jobId)
-        external
-        view
-        returns (
-            uint256 fee,
-            uint256 feePerNum,
-            uint256 tokenFee,
-            uint256 tokenFeePerNum,
-            uint256 numCount,
-            uint256 acceptanceTimeLimit,
-            address[] memory validators
-        );
-
     function isJobReady(uint256 jobId) external view returns (bool);
 
     function isResponseSubmitted(uint256 jobId) external view returns (bool);
