@@ -17,13 +17,7 @@ public partial class Header
         DialogOptions closeOnEscapeKey = new DialogOptions() { CloseOnEscapeKey = true };
         DialogService?.Show<ConnectWalletsDialog>("Connect Wallets", closeOnEscapeKey);
     }
-
-    private async Task OnBtnConnectWalletClicked()
-    {
-        Address = await Interop.GetWalletAddress();
-        await InvokeAsync(StateHasChanged);
-    }
-
+    
     private void OnBtnAddFundsClicked()
     {
         DialogOptions closeOnEscapeKey = new DialogOptions() { CloseOnEscapeKey = true };

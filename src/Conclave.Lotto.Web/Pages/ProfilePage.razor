@@ -1,0 +1,33 @@
+@page "/profile"
+@using Conclave.Lotto.Web.Components
+
+<PageTitle>Profile Page</PageTitle>
+
+<div class="flex flex-row justify-between mb-7">
+    <div class="flex flex-row items-center">
+        <img class="max-w-[100px] object-cover border-2 rounded-full p-2" src="images/metamask-logo.svg"
+            alt="Flint logo">
+        <div class="flex flex-col max-w-[180px]">
+            <MudChip>
+                <p class="truncate">0x63a1a029C1CbDD8E12b1A2477349330e489Fe7f5</p>
+            </MudChip>
+            <MudText Class="ml-4" Typo="Typo.caption">Joined October 2022</MudText>
+        </div>
+    </div>
+    <div class="flex items-center border-3 rounded p-2">
+        <div class="mr-5 text-center">
+            <MudText>My Balance</MudText>
+            <MudText>$0.00</MudText>
+        </div>
+        <div>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary">Active Tickets</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary">Winnings</MudButton>
+        </div>
+    </div>
+</div>
+<UserAccountSummary />
+<div class="float-right mt-5 flex items-center">
+    <MudText Class="mr-5" Typo="Typo.body1">$0.00</MudText>
+    <MudButton Class="mr-5" Variant="Variant.Filled" Color="Color.Primary">Withdraw to the wallet</MudButton>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary">Transfer to my balance</MudButton>
+</div>
