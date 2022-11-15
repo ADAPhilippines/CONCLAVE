@@ -12,13 +12,7 @@ public partial class MainLayout
     [Inject] IDialogService? DialogService { get; set; } = default;
 
     private bool IsOpen { get; set; }
-
-    private async Task OnBtnConnectWalletClicked()
-    {
-        Address = await Interop.GetWalletAddress();
-        await InvokeAsync(StateHasChanged);
-    }
-
+    
     private void OnBtnAddFundsClicked()
     {
         DialogOptions closeOnEscapeKey = new DialogOptions() { CloseOnEscapeKey = true };
