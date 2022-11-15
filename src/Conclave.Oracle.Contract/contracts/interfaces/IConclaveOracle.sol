@@ -15,7 +15,7 @@ interface IConclaveOracle {
     function aggregateResult(uint256 jobId)
         external
         payable
-        returns (uint256[] memory);
+        returns (uint256[] memory, uint status);
 
     function getAverageOracleFees()
         external

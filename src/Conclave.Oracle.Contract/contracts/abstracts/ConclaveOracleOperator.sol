@@ -38,7 +38,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
 
     modifier onlyUnfilfilledRequests(uint256 jobId) {
         JobRequest storage request = _getJobRequest(jobId);
-        if (request.isFulfilled) {
+        if (request.status == RequestStatus.Fulfilled) {
             revert RequestAlreadyFulfilled();
         }
         _;
@@ -60,6 +60,12 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         uint256 token;
     }
 
+    enum RequestStatus {
+        Pending,
+        Refunded,
+        Fulfilled
+    }
+
     /* ORACLE PROPERTIES */
     struct JobRequest {
         uint256 jobId;
@@ -71,11 +77,11 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         uint256 jobAcceptanceExpiration;
         uint256 jobFulfillmentExpiration;
         uint256 finalResultDataId; /* data ID result */
+        RequestStatus status;
         uint24 responseCount;
         uint24 numCount;
         uint24 minValidator;
         uint24 maxValidator;
-        bool isFulfilled;
         address requester;
         address[] validators;
         uint256[] dataIds;
@@ -114,7 +120,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
     }
 
     function delegateNode(address node) external override {
-        if (s_nodeToOwner[node] != msg.sender) {
+        if (s_nodeToOwner[node] != msg.sender && s_nodeToOwner[node] != address(0)) {
             revert NodeRegisteredToAdifferentOperator(s_nodeToOwner[node]);
         }
 
