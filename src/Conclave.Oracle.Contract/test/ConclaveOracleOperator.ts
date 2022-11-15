@@ -148,4 +148,33 @@ describe('ConclaveOperator Contract', function () {
             expect(pendingRewardIds[0]).to.equal(sampleRequestId);
         });
     });
+
+    describe.only('SubmitResult function', function () {
+        it('Should submit result', async function () {
+            const {
+                oracle,
+                nodes: [node],
+                operators: [operator],
+                sampleRequestId,
+                getResponse,
+            } = await loadFixture(operatorFixture);
+
+            await oracle.connect(node).acceptJob(sampleRequestId);
+            const jobDetails = await oracle.getJobDetails(sampleRequestId);
+            await ethers.provider.send('evm_increaseTime', [61]);
+            const response = getResponse(jobDetails.numCount);
+            await oracle.connect(node).submitResponse(sampleRequestId, response);
+
+            const nodeSubmission = await oracle.s_nodeDataId(sampleRequestId, operator.address);
+            const dataHash = ethers.utils.keccak256(
+                ethers.utils.solidityPack(
+                    ['uint256', 'uint256[]', 'uint256', 'address'],
+                    [jobDetails.jobId, response, jobDetails.timestamp, jobDetails.requester]
+                )
+            );
+            const dataId = ethers.BigNumber.from(dataHash);
+
+            expect(nodeSubmission).to.equal(dataId);
+        });
+    });
 });
