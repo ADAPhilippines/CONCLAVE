@@ -26,7 +26,11 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
     error NotAuthorized();
     error InvalidValidatorRange();
 
-    event JobRequestCreated(uint256 jobId, uint32 indexed numCount);
+    event JobRequestCreated(
+        uint256 jobId,
+        uint32 indexed numCount,
+        uint256 indexed timestamp
+    );
 
     mapping(uint256 => JobRequest) /* jobId => jobRequest */
         private s_jobRequests;
@@ -99,6 +103,8 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         jobRequest.baseTokenFee = tokenFee;
         jobRequest.tokenFeePerNum = tokenFeePerNum;
         jobRequest.timestamp = block.timestamp;
+        jobRequest.maxValidator = maxValidator;
+        jobRequest.minValidator = minValidator;
         jobRequest.jobAcceptanceExpiration = jobAcceptanceTimeLimit;
         jobRequest.jobFulfillmentExpiration = jobFulfillmentLimit;
         jobRequest.requester = msg.sender;
@@ -106,7 +112,7 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
 
         nonce++;
 
-        emit JobRequestCreated(jobId, numCount);
+        emit JobRequestCreated(jobId, numCount, block.timestamp);
     }
 
     function aggregateResult(uint256 jobId)
