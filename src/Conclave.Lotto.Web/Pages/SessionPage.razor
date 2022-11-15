@@ -8,15 +8,23 @@
 <div class="flex justify-between gap-3 1xl:gap-0">
     <div>
         <SessionList>
-             @foreach (var item in Sessions)
+            @foreach (var item in Sessions)
             {
-                <SessionCard OnSessionCardClicked="() => OnSessionCardClicked(item)" SessionDetails="item" />
+                <SessionCard OnSessionCardClicked="() => OnSessionCardClicked(item)" SessionDetails="item"
+                OnBtnBuyTicketClicked="() => OnBtnBuyTicketClicked(item)" />
             }
         </SessionList>
+        <div>
+            <h5>Ticket Entry</h5>
+            <div class="userInput">
+                <MudTextField MaxLength="2" T="string" Variant="Variant.Text" OnKeyUp="OnInputKeyPressed"></MudTextField>
+                <MudTextField MaxLength="2" T="string" Variant="Variant.Text" OnKeyUp="OnInputKeyPressed"></MudTextField>
+            </div>
+        </div>
     </div>
     <div>
         <div>
-            <MudButton @onclick="OpenDialog" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
+            <MudButton OnClick="OpenDialog" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
                 Create Session
             </MudButton>
         </div>
