@@ -1,1 +1,30 @@
-<h1 class="text-4xl">@Hours.ToString("D2"): @Minutes.ToString("D2") : @Seconds.ToString("D2") </h1>
+<MudCard Class="border-2 mb-5 pa-3">
+    <MudText Align="Align.Center" Typo="Typo.body1">UPCOMING DRAW</MudText>
+    <MudProgressLinear Size="Size.Large" Color="Color.Primary" Value="@Value" Class="my-5" Max="MaxValue" />
+
+    <div class="flex justify-between items-center">
+        <MudText Typo="Typo.body2">Starting In:</MudText>
+        <div class="flex justify-between items-center w-7/12">
+            <div class="flex flex-col justify-center">
+                <MudPaper Class="d-flex justify-center items-center mud-theme-primary" Width="30px" Height="30px">
+                    <MudText Typo="Typo.h5">@Hours.ToString("D2")</MudText>
+                </MudPaper>
+                @* <span class="text-center">HH</span> *@
+            </div>
+            <MudText Typo="Typo.h5">:</MudText>
+            <div class="flex flex-col justify-center">
+                <MudPaper Class="d-flex justify-center items-center mud-theme-primary" Width="30px" Height="30px">
+                    <MudText Typo="Typo.h5">@Minutes.ToString("D2")</MudText>
+                </MudPaper>
+                @* <span class="text-center">MM</span> *@
+            </div>
+            <MudText Typo="Typo.h5">:</MudText>
+            <div class="flex flex-col justify-center">
+                <MudPaper Class="d-flex justify-center items-center mud-theme-primary" Width="30px" Height="30px">
+                    <MudText Typo="Typo.h5">@Seconds.ToString("D2")</MudText>
+                </MudPaper>
+                @* <span class="text-center">SS</span> *@
+            </div>
+        </div>
+    </div>
+</MudCard>

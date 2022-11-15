@@ -13,10 +13,15 @@ public partial class CountdownTimer
 
     public int Seconds { get; set; }
 
+    public int Value { get; set; } = 0;
+
+    public int MaxValue { get; set; }
+
     protected async override Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
+            MaxValue = Interval + 1;
             _ = Task.Run(async () =>
             {
                 while (Interval >= 0)
@@ -35,6 +40,8 @@ public partial class CountdownTimer
         Minutes = (interval % 3600) / 60;
         Seconds = (interval % 3600) % 60;
         Interval--;
+        Value++;
+
         await InvokeAsync(StateHasChanged);
     }
 }

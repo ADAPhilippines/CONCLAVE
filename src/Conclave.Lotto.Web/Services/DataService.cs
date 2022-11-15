@@ -62,7 +62,8 @@ public class DataService
             TicketPrice = 20,
             Combinations = 5,
             MaxValue = 65,
-            Margin = 5
+            Margin = 5,
+            Interval = 10
         },
         new Session {
             Id = 4532,
@@ -72,7 +73,8 @@ public class DataService
             TicketPrice = 20,
             Combinations = 5,
             MaxValue = 65,
-            Margin = 5
+            Margin = 5,
+            Interval = 30
         },
         new Session {
             Id = 4532,
@@ -82,7 +84,8 @@ public class DataService
             TicketPrice = 220,
             Combinations = 5,
             MaxValue = 65,
-            Margin = 5
+            Margin = 5,
+            Interval = 115
         }
     };
 
