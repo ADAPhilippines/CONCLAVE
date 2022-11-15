@@ -54,9 +54,36 @@ public class DataService
 
     public IEnumerable<Session> Sessions { get; } = new List<Session>
     {
-        new Session { Id = 4532, PrizePool = 12000, CurrentStatus = Status.OnGoing },
-        new Session { Id = 5673, PrizePool = 10000, CurrentStatus = Status.Completed },
-        new Session { Id = 5890, PrizePool = 15500, CurrentStatus = Status.Active },
+        new Session {
+            Id = 4532,
+            Name = "Lorem Ipsum",
+            CurrentStatus = Status.OnGoing,
+            PrizePool = 12000,
+            TicketPrice = 20,
+            Combinations = 5,
+            MaxValue = 65,
+            Margin = 5
+        },
+        new Session {
+            Id = 4532,
+            Name = "The brown fox",
+            CurrentStatus = Status.OnGoing,
+            PrizePool = 231578,
+            TicketPrice = 20,
+            Combinations = 5,
+            MaxValue = 65,
+            Margin = 5
+        },
+        new Session {
+            Id = 4532,
+            Name = "Dolor sit amet",
+            CurrentStatus = Status.Active,
+            PrizePool = 54532,
+            TicketPrice = 220,
+            Combinations = 5,
+            MaxValue = 65,
+            Margin = 5
+        }
     };
 
     public IEnumerable<LottoWinner> LottoWinners { get; } = new List<LottoWinner>

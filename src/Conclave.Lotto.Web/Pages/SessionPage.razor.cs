@@ -16,9 +16,12 @@ public partial class SessionPage : ComponentBase
 
     private IEnumerable<LottoWinner> LottoWinners { get; set; } = default!;
 
+    private IEnumerable<Session> Sessions { get; set; } = default!;
+
     protected override void OnInitialized()
     {
         LottoWinners = DataService.LottoWinners;
+        Sessions = DataService.Sessions;
     }
 
     private void OpenDialog()

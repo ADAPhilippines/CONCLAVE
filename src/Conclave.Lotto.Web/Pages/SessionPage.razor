@@ -8,12 +8,10 @@
 <div class="flex gap-x-4">
     <div>
         <SessionList>
-            <SessionCard Interval="100" />
-            <SessionCard Interval="3765" />
-            <SessionCard Interval="10" />
-            <SessionCard Interval="356" />
-            <SessionCard Interval="60" />
-            <SessionCard Interval="60" />
+             @foreach (var item in Sessions)
+            {
+                <SessionCard SessionDetails="item" Interval="100" />
+            }
         </SessionList>
     </div>
 
