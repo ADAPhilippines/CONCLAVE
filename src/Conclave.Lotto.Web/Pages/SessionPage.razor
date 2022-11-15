@@ -10,11 +10,10 @@
         <SessionList>
              @foreach (var item in Sessions)
             {
-                <SessionCard SessionDetails="item" Interval="100" />
+                <SessionCard OnSessionCardClicked="() => OnSessionCardClicked(item)" SessionDetails="item" />
             }
         </SessionList>
     </div>
-
     <div>
         <div>
             <MudButton @onclick="OpenDialog" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">

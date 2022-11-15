@@ -10,12 +10,13 @@ public partial class SessionDetailsPage
     private DataService DataService { get; set; } = new();
 
     [Parameter]
-    public string? SessionId { get; set; }
+    public string SessionId { get; set; } = string.Empty;
 
     private Session SessionDetails { get; set; } = new();
 
     protected override void OnInitialized()
     {
-        SessionDetails = DataService.Sessions.FirstOrDefault();
+        List<Session> SessionList = DataService.Sessions;
+        SessionDetails = SessionList.Find(s => s.Id.ToString() == SessionId);
     }
 }

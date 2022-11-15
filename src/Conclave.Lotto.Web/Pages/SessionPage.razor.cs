@@ -14,6 +14,9 @@ public partial class SessionPage : ComponentBase
     [Inject]
     private DataService DataService { get; set; } = new();
 
+    [Inject]
+    private NavigationManager NavigationManager { get; set; } = default!;
+
     private IEnumerable<LottoWinner> LottoWinners { get; set; } = default!;
 
     private IEnumerable<Session> Sessions { get; set; } = default!;
@@ -28,5 +31,10 @@ public partial class SessionPage : ComponentBase
     {
         DialogOptions closeOnEscapeKey = new() { CloseOnEscapeKey = true };
         DialogService?.Show<CreateSessionDialog>("Create Session", closeOnEscapeKey);
+    }
+
+    private void OnSessionCardClicked(Session session)
+    {
+        NavigationManager.NavigateTo($"session/{session.Id}");
     }
 }

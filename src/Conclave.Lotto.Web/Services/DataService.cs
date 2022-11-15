@@ -52,10 +52,10 @@ public class DataService
         }
     };
 
-    public IEnumerable<Session> Sessions { get; } = new List<Session>
+    public List<Session> Sessions { get; } = new List<Session>
     {
         new Session {
-            Id = 4532,
+            Id = 123,
             Name = "Lorem Ipsum",
             CurrentStatus = Status.OnGoing,
             PrizePool = 12000,
@@ -66,7 +66,7 @@ public class DataService
             Interval = 10
         },
         new Session {
-            Id = 4532,
+            Id = 456,
             Name = "The brown fox",
             CurrentStatus = Status.OnGoing,
             PrizePool = 231578,
@@ -77,7 +77,7 @@ public class DataService
             Interval = 30
         },
         new Session {
-            Id = 4532,
+            Id = 789,
             Name = "Dolor sit amet",
             CurrentStatus = Status.Active,
             PrizePool = 54532,
