@@ -134,5 +134,18 @@ describe('ConclaveOperator Contract', function () {
             await ethers.provider.send('evm_increaseTime', [61]);
             await expect(oracle.connect(node).acceptJob(sampleRequestId)).to.be.revertedWithCustomError(oracle, 'TimeLimitExceeded');
         });
+
+        it('Should add job id to pending reward ids', async function () {
+            const {
+                oracle,
+                nodes: [node],
+                sampleRequestId,
+            } = await loadFixture(operatorFixture);
+
+            await oracle.connect(node).acceptJob(sampleRequestId);
+            const pendingRewardIds = await oracle.getPendingRewardJobIds(node.address);
+            expect(pendingRewardIds.length).to.equal(1);
+            expect(pendingRewardIds[0]).to.equal(sampleRequestId);
+        });
     });
 });

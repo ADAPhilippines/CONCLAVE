@@ -103,11 +103,11 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
     uint256 public s_tokenFeesCollected;
 
     mapping(uint256 => uint256[]) /* dataId => random numbers */ private s_jobRandomNumbers;
-    mapping(address => Rewards) /* validator => rewards */ private s_validatorRewards;
-    mapping(address => uint256) /* node => totalRewards */ private s_totalSlashedTokens;
+    mapping(address => Rewards) /* operator => rewards */ private s_validatorRewards;
+    mapping(address => uint256) /* operator => totalRewards */ private s_totalSlashedTokens;
     mapping(address => address) /* owner => node */ private s_ownerToNode;
     mapping(address => address) /* node => owner */ private s_nodeToOwner;
-    mapping(address => uint256[]) /* node => pendingRewardJobIds */ private s_pendingRewardJobIds;
+    mapping(address => uint256[]) /* operator => pendingRewardJobIds */ private s_pendingRewardJobIds;
     mapping(address => Rewards) /* operator => totalStakingRewards */ private s_operatorStakingRewards;
     mapping(address => uint256) /* operator => adaBalances */ private s_operatorAdaBalances;
 
@@ -379,5 +379,9 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
 
     function getNode(address owner) external view returns (address) {
         return s_ownerToNode[owner];
+    }
+
+    function getPendingRewardJobIds(address node) external view returns (uint256[] memory) {
+        return s_pendingRewardJobIds[s_nodeToOwner[node]];
     }
 }
