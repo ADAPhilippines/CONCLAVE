@@ -2,16 +2,16 @@ import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { ethers } from 'hardhat';
 import { BigNumber } from 'ethers';
-import { operatorFixture } from './Fixture';
+import { operatorFixture, delegateNodeFixture } from './Fixture';
 
 describe('ConclaveOperator Contract', function () {
-    describe('DelegateNode function', function () {
+    describe.only('DelegateNode function', function () {
         it('Should delegate node', async function () {
             const {
                 oracle,
                 accountsWithTokens: [operator],
                 accountsWithoutTokens: [node],
-            } = await loadFixture(operatorFixture);
+            } = await loadFixture(delegateNodeFixture);
 
             await expect(oracle.connect(operator).delegateNode(node.address))
                 .to.emit(oracle, 'NodeRegistered')
@@ -25,7 +25,7 @@ describe('ConclaveOperator Contract', function () {
                 oracle,
                 accountsWithTokens: [operator],
                 accountsWithoutTokens: [node1, node2],
-            } = await loadFixture(operatorFixture);
+            } = await loadFixture(delegateNodeFixture);
 
             await oracle.connect(operator).delegateNode(node1.address);
             await oracle.connect(operator).delegateNode(node2.address);
@@ -39,7 +39,7 @@ describe('ConclaveOperator Contract', function () {
                 oracle,
                 accountsWithTokens: [operator1, operator2],
                 accountsWithoutTokens: [node],
-            } = await loadFixture(operatorFixture);
+            } = await loadFixture(delegateNodeFixture);
 
             await oracle.connect(operator1).delegateNode(node.address);
             await expect(oracle.connect(operator2).delegateNode(node.address))
@@ -52,10 +52,87 @@ describe('ConclaveOperator Contract', function () {
                 oracle,
                 accountsWithTokens: [operator],
                 accountsWithoutTokens: [node],
-            } = await loadFixture(operatorFixture);
+            } = await loadFixture(delegateNodeFixture);
 
             await oracle.connect(operator).delegateNode(node.address);
             await expect(oracle.connect(operator).delegateNode(node.address)).to.be.revertedWithCustomError(oracle, 'NodeAlreadyRegistered');
+        });
+    });
+
+    describe.only('AcceptJob function', function () {
+        it('Should accept job', async function () {
+            const {
+                oracle,
+                nodes: [node],
+                sampleRequestId,
+            } = await loadFixture(operatorFixture);
+
+            await expect(oracle.connect(node).acceptJob(sampleRequestId))
+                .to.emit(oracle, 'JobAccepted')
+                .to.emit(oracle, 'JobRequestMaxValidatorReached');
+
+            const job = await oracle.getJobDetails(sampleRequestId);
+            expect(job.validators.length).to.equal(1);
+            expect(job.validators.includes(node.address)).to.equal(true);
+        });
+
+        it('Should not accept job if request does not exist', async function () {
+            const {
+                oracle,
+                nodes: [node],
+            } = await loadFixture(operatorFixture);
+
+            await expect(oracle.connect(node).acceptJob(1)).to.be.revertedWithCustomError(oracle, 'RequestNotExist');
+        });
+
+        it('Should not be able to accept the same job more than once', async function () {
+            const {
+                oracle,
+                nodes: [node],
+                sampleRequestId,
+            } = await loadFixture(operatorFixture);
+
+            await oracle.connect(node).acceptJob(sampleRequestId);
+            await expect(oracle.connect(node).acceptJob(sampleRequestId)).to.be.revertedWithCustomError(oracle, 'NodeAlreadyRegistered');
+        });
+
+        it('Should not be able to accept job if max validators reached', async function () {
+            const {
+                oracle,
+                nodes: [node1, node2],
+                sampleRequestId,
+                maxValidator,
+            } = await loadFixture(operatorFixture);
+
+            await oracle.connect(node1).acceptJob(sampleRequestId);
+            await expect(oracle.connect(node2).acceptJob(sampleRequestId))
+                .to.be.revertedWithCustomError(oracle, 'MaxValidatorReached')
+                .withArgs(maxValidator);
+        });
+
+        it('Should not be able to accept job if operator stake below minimum', async function () {
+            const {
+                oracle,
+                nodes: [node],
+                operators: [operator],
+                sampleRequestId,
+            } = await loadFixture(operatorFixture);
+
+            const operatorBalance = await oracle.getStake(operator.address);
+            await oracle.connect(operator).unstake(operatorBalance);
+
+            await expect(oracle.connect(node).acceptJob(sampleRequestId)).to.be.revertedWithCustomError(oracle, 'NotEnoughStake');
+        });
+
+        it('Should not be able to accept job if time limit reached', async function () {
+            const {
+                oracle,
+                nodes: [node],
+                sampleRequestId,
+            } = await loadFixture(operatorFixture);
+
+            await ethers.provider.send('evm_increaseTime', [61]);
+            await expect(oracle.connect(node).acceptJob(sampleRequestId)).to.be.revertedWithCustomError(oracle, 'TimeLimitExceeded');
         });
     });
 });
