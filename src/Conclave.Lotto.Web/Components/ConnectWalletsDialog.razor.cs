@@ -1,3 +1,4 @@
+using System.Numerics;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -9,12 +10,17 @@ public partial class ConnectWalletsDialog
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
 
+
+    public string MilkomedaValue { get; set; } = string.Empty;
+
+    public string CardanoValue { get; set; } = string.Empty;
+
+
     private void OpenCardanoWalletsDialog()
     {
         var options = new DialogOptions { CloseOnEscapeKey = true };
         DialogService.Show<CardanoWalletsDialog>("", options);
     }
 
-    void Submit() => MudDialog.Close(DialogResult.Ok(true));
     void Cancel() => MudDialog.Cancel();
 }
