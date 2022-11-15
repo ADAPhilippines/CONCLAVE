@@ -16,7 +16,7 @@
     "transfer-consumer-token": "npx hardhat run scripts/transfer-consumer-token.ts --network milkomedaDev",
     "deploy-all": "npm run deploy-token && npm run deploy-oracle && npm run deploy-consumer",
     "approve-all": "npm run approve-consumer && npm run approve-nodes",
-    "approve-node-and-stake": "npm run approve-nodes && npm run stake-nodes",
+    "approve--stake-delegate": "npm run approve-nodes && npm run stake-nodes && npm run delegate-node",
     "transfer-all": "npm run transfer-consumer-ada && npm run transfer-consumer-token",
     "complete-setup": "npm run deploy-all && npm run airdrop-token && npm run approve-all && npm run transfer-all && npm run stake-nodes && npm run delegate-node"
   },
