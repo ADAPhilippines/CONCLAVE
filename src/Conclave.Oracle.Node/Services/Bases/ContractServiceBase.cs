@@ -8,10 +8,12 @@ public class ContractServiceBase : IContract, IWalletService
     public string PrivateKey { get; init; } = string.Empty;
     public string ContractAddress { get; init; } = string.Empty;
     public string RPC { get; init; } = string.Empty;
-    public ContractServiceBase(string contractAddress, string privateKey, string rpc)
+    public string ABI { get; init; } = string.Empty;
+    public ContractServiceBase(string contractAddress, string privateKey, string rpc, string abi)
     {
         ContractAddress = contractAddress;
         PrivateKey = privateKey;
         RPC = rpc;
+        ABI = abi;
     }
 }

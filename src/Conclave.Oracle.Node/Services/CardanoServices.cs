@@ -1,3 +1,4 @@
+using System.Numerics;
 using Blockfrost.Api;
 
 namespace Conclave.Oracle.Node.Services;
@@ -44,7 +45,20 @@ public class CardanoServices
         List<BlockContentResponse>? blockresponse = null;
 
         if (nextBlocks is not 0)
-            blockresponse = await _blockService.GetNextBlockAsync(blockHash, nextBlocks, 1) as List<BlockContentResponse>;
+            blockresponse = await _blockService.GetNextBlockAsync(blockHash, nextBlocks - 1, 1) as List<BlockContentResponse>;
+        if (blockresponse is not null)
+            blockHashes.AddRange(blockresponse.Select(r => r.Hash));
+
+        return blockHashes;
+    }
+
+    public async Task<List<string>> GetNextBlocksFromCurrentHash(string blockHash, BigInteger nextBlocks)
+    {
+        List<string> blockHashes = new List<string>() { blockHash };
+        List<BlockContentResponse>? blockresponse = null;
+
+        if (nextBlocks != BigInteger.Zero)
+            blockresponse = await _blockService.GetNextBlockAsync(blockHash, (int)nextBlocks - 1, 1) as List<BlockContentResponse>;
         if (blockresponse is not null)
             blockHashes.AddRange(blockresponse.Select(r => r.Hash));
 

@@ -6,12 +6,11 @@ using Conclave.Oracle.Node.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 IConfiguration config = builder.Configuration.GetSection("NodeSettings");
-string network = config.GetValue<string>("BlockFrostNetwork");
-string apiKey = config.GetValue<string>("BlockFrostAPIKey");
+string? network = config.GetValue<string>("BlockFrostNetwork");
+string? apiKey = config.GetValue<string>("BlockFrostAPIKey");
 
 builder.Services.Configure<SettingsParameters>(config);
-builder.Services.AddBlockFrostService(network, apiKey);
-builder.Services.AddBrowserService();
+builder.Services.AddBlockFrostService(network!, apiKey!);
 builder.Services.AddSingleton<EthereumWalletServices>();
 builder.Services.AddSingleton<OracleContractService>();
 builder.Services.AddHostedService<OracleWorker>();

@@ -42,5 +42,3 @@ while (true)
         await ethService.CallContractReadFunctionAsync<BigInteger>(contractAddress, abi, "retrieve"));
     Console.WriteLine();
 }
-
-// while (true) Console.ReadLine();

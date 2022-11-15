@@ -2,7 +2,7 @@ using Conclave.Oracle.Node.Models;
 
 namespace Conclave.Oracle.Node.Constants;
 
-public static class NetworkConstants
+public static class NetworkUtils
 {
     public static NetworkBase Mainnet = new NetworkBase(1596059091000, 4492800, 1000);
     public static NetworkBase Testnet = new NetworkBase(1595967616000, 1598400, 1000);
