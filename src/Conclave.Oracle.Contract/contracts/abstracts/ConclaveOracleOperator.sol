@@ -54,6 +54,11 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
     event NodeRegistered(address indexed node, address indexed owner);
     event JobAccepted(uint256 indexed jobId, address indexed node, uint256 jobAcceptanceExpiration);
     event ResponseSubmitted(uint256 indexed jobId, address indexed requester, uint256 totalResponseExpected, uint256 currentResponse);
+    event JobRequestMaxValidatorReached(
+        uint256 jobId,
+        uint32 indexed numCount,
+        uint256 indexed jobFulfillmentTimestamp
+    );
 
     struct Rewards {
         uint256 ada;
@@ -154,8 +159,16 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
 
         request.nodeRegistrations[s_nodeToOwner[msg.sender]] = true;
         s_pendingRewardJobIds[s_nodeToOwner[msg.sender]].push(jobId);
+        request.validators.push(msg.sender);
 
-        emit JobAccepted(jobId, s_nodeToOwner[msg.sender], request.jobAcceptanceExpiration);
+        emit JobAccepted(jobId, msg.sender, request.jobAcceptanceExpiration);
+        if (request.validators.length == request.maxValidator) {
+            emit JobRequestMaxValidatorReached(
+                jobId,
+                request.numCount,
+                request.jobFulfillmentExpiration
+            );
+        }
     }
 
     function submitResponse(uint256 jobId, uint256[] calldata response)
