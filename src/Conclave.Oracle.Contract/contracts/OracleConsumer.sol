@@ -34,8 +34,8 @@ contract OracleConsumer {
         uint256 tokenFeePerNum,
         uint24 minValidator,
         uint24 maxValidator
-    ) external {
-        uint256 jobId = s_oracle.requestRandomNumbers(
+    ) external payable {
+        uint256 jobId = s_oracle.requestRandomNumbers{value: msg.value}(
             numCount,
             adaFee,
             adaFeePerNum,
