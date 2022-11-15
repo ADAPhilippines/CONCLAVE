@@ -43,7 +43,7 @@ public class CardanoServices
 
         #region logs
         Console.WriteLine();
-        Console.WriteLine("---------Request Id #: {0} (Nearest block etails)---------", requestId);
+        Console.WriteLine("---------Request Id #: {0} (Nearest block details)---------", requestId);
         Console.WriteLine("Block hash : {0}", currentBlock!.Hash);
         Console.WriteLine("Block slot : {0}", currentBlock!.Slot);
         Console.WriteLine("Block timestamp : {0}", currentBlock!.Time);
