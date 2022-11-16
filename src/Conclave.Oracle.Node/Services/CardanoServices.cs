@@ -1,167 +1,186 @@
 using System.Numerics;
 using Blockfrost.Api;
-using Conclave.Oracle.Node.Exceptions;
 
 namespace Conclave.Oracle.Node.Services;
 
 public class CardanoServices
 {
-    private readonly int RetryDurationMs = 3000;
-    private readonly int MaxRetrials = 10;
+    #region constant variables
+    private const int RETRIAL_DURATION = 3000;
+    private const int BLOCK_DURATION = 20000;
+    #endregion
+    #region private variables
     private readonly IBlockService _blockService;
     private readonly ILogger<CardanoServices> _logger;
-    public CardanoServices(IBlockService iblockService, ILogger<CardanoServices> logger)
+    private readonly IHostApplicationLifetime _hostApplicationLifetime;
+    #endregion
+    public CardanoServices(IBlockService iblockService, ILogger<CardanoServices> logger, IHostApplicationLifetime hostApplicationLifetime)
     {
         _blockService = iblockService;
         _logger = logger;
+        _hostApplicationLifetime = hostApplicationLifetime;
     }
 
-    public async Task<string> GetNearestBlockHashFromTimeMs(int unixTime, BigInteger requestId)
+    public async Task<string> GetNearestBlockHashFromTimeMsAsync(int unixTime, BigInteger requestId)
     {
-        BlockContentResponse? currentBlock = await GetLatestBlock();
+        #region logs
+        _logger.BeginScope("Processing request Id#: {0}", requestId);
+        _logger.LogInformation("Getting nearest block hash.");
+        #endregion
+
+        BlockContentResponse currentBlock = await GetLatestBlockAsync();
         int currentTime = currentBlock!.Time;
 
         if (unixTime < currentTime)
         {
             while (unixTime < currentTime)
             {
-                currentBlock = await GetBlockFromHash(currentBlock!.PreviousBlock);
+                currentBlock = await GetBlockFromHashAsync(currentBlock.PreviousBlock);
                 currentTime = currentBlock!.Time;
             }
             if (unixTime != currentTime)
-                currentBlock = await GetBlockFromHash(currentBlock!.NextBlock);
+                currentBlock = await GetBlockFromHashAsync(currentBlock.NextBlock);
         }
         else if (unixTime > currentTime)
         {
             while (unixTime > currentTime)
             {
-                currentBlock = await WaitForNextBlock(currentBlock);
-                currentBlock = await GetBlockFromHash(currentBlock!.NextBlock);
+                _logger.LogInformation("Waiting for next block of {0}.", currentBlock.Hash);
+                currentBlock = await WaitForNextBlockAsync(currentBlock, requestId);
+                currentBlock = await GetBlockFromHashAsync(currentBlock!.NextBlock);
                 currentTime = currentBlock!.Time;
+                await Task.Delay(BLOCK_DURATION);
             }
         }
 
         #region logs
-        Console.WriteLine();
-        Console.WriteLine("---------Request Id #: {0} (Nearest block details)---------", requestId);
-        Console.WriteLine("Block hash : {0}", currentBlock!.Hash);
-        Console.WriteLine("Block slot : {0}", currentBlock!.Slot);
-        Console.WriteLine("Block timestamp : {0}", currentBlock!.Time);
+        _logger.LogInformation("Nearest block hash : {0}", currentBlock.Hash);
         #endregion
-        return currentBlock!.Hash;
+        return currentBlock.Hash;
     }
 
-    public async Task<List<string>> GetNextBlocksFromCurrentHash(string blockHash, int nextBlocks, BigInteger requestId)
+    public async Task<List<string>> GetNextBlocksFromCurrentHashAsync(string blockHash, int nextBlocks, BigInteger requestId)
     {
-        List<string> blockHashes = new List<string>() { blockHash };
+        #region logs
+        _logger.BeginScope("Processing request Id#: {0}", requestId);
+        if (nextBlocks is not 0)
+            _logger.LogInformation("Getting succeeding blocks after {0}.", blockHash);
+        #endregion
+
+        List<string> blockHashes = new() { blockHash };
         List<BlockContentResponse>? blockresponse = new List<BlockContentResponse>();
 
-        while (blockresponse?.Count < nextBlocks)
-        {
+        if (nextBlocks is not 0)
             blockresponse = await GetNextBlocksFromHashAsync(blockHash, nextBlocks);
-            await Task.Delay(20000 * (nextBlocks - blockresponse!.Count));
+
+        while (blockresponse?.Count < nextBlocks - 1)
+        {
+            _logger.LogInformation("Waiting {0} remaining blocks.", nextBlocks - blockresponse.Count);
+            blockresponse = await GetNextBlocksFromHashAsync(blockHash, nextBlocks);
+            await Task.Delay(BLOCK_DURATION * (nextBlocks - blockresponse!.Count));
         }
+
         if (blockresponse is not null)
             blockHashes.AddRange(blockresponse.Select(r => r.Hash));
 
         #region logs
-        Console.WriteLine("Compiled blockhashes : ");
-        int i = 0;
+        string blockHashesLogs = string.Empty;
         blockHashes.ForEach((b) =>
         {
-            Console.WriteLine("[{0}] {1}", i, b);
-            i++;
+            int i = blockHashes.IndexOf(b);
+            if (b == blockHashes.Last())
+                blockHashesLogs += string.Format("[{0}] {1}", i, b);
+            else
+                blockHashesLogs += string.Format("[{0}] {1}\n", i, b);
         });
+
+        using (_logger.BeginScope("Block hash/es", requestId))
+            _logger.LogInformation(blockHashesLogs);
         #endregion
         return blockHashes;
     }
 
-    public async Task<BlockContentResponse?> WaitForNextBlock(BlockContentResponse? currentBlock)
+    public async Task<BlockContentResponse> WaitForNextBlockAsync(BlockContentResponse currentBlock, BigInteger requestId)
     {
+        #region logs
+        _logger.BeginScope("Processing request Id#: {0}", requestId);
+        _logger.LogInformation("Waiting next blocks of {0}.", currentBlock.Hash);
+        #endregion
+
         while (currentBlock!.NextBlock is null)
         {
-            currentBlock = await GetBlockFromHash(currentBlock.Hash);
-            await Task.Delay(13000);
+            currentBlock = await GetBlockFromHashAsync(currentBlock.Hash);
+            await Task.Delay(BLOCK_DURATION);
         }
 
+        #region logs
+        _logger.LogInformation("Next block of {0} found : {1}", currentBlock.Hash, currentBlock.NextBlock);
+        #endregion
         return currentBlock;
     }
 
-    #region Pure BlockFrost Functions
-    public async Task<List<BlockContentResponse>?> GetNextBlocksFromHashAsync(string blockHash, int nextBlocks)
+    #region Native BlockFrost Functions
+    private async Task<List<BlockContentResponse>?> GetNextBlocksFromHashAsync(string blockHash, int nextBlocks)
     {
-        int currentTrial = 0;
-        while (currentTrial <= MaxRetrials)
+        while (true)
         {
             try
             {
                 return await _blockService.GetNextBlockAsync(blockHash, nextBlocks, 1) as List<BlockContentResponse>;
             }
-            catch (ApiException e) when (currentTrial <= MaxRetrials)
+            catch (ApiException e) when (e.StatusCode is 403)
             {
-                _logger.LogError($"Error Getting Block: {e.Message}. Retrying in 3s");
-                await Task.Delay(RetryDurationMs);
-                currentTrial++;
+                _logger.LogError("Error Getting Next Blocks: {0}. Closing the application.", e.Message);
+                _hostApplicationLifetime.StopApplication();
             }
-            catch (ApiException e) when (currentTrial > MaxRetrials)
+            catch (ApiException e)
             {
-                _logger.LogError("Max number of trials exceeded...");
-                throw new OracleNodeException($"Error getting Block: {e.Message}", e);
+                _logger.LogError("Error Getting Next Blocks: {0}. Retrying...", e.Message);
+                await Task.Delay(RETRIAL_DURATION);
             }
         }
-        return null;
     }
 
-    public async Task<BlockContentResponse?> GetLatestBlock()
+    private async Task<BlockContentResponse> GetLatestBlockAsync()
     {
-        int currentTrial = 0;
-        while (currentTrial <= MaxRetrials)
+        while (true)
         {
             try
             {
                 return await _blockService.GetLatestBlockAsync();
             }
-            catch (ApiException e) when (e.StatusCode is 404)
+            catch (ApiException e) when (e.StatusCode is 403)
             {
-                return null;
+                _logger.LogError("Error Getting Latest Block: {0}. Closing the application.", e.Message);
+                _hostApplicationLifetime.StopApplication();
             }
-            catch (ApiException e) when (currentTrial <= MaxRetrials)
+            catch (ApiException e)
             {
-                _logger.LogError($"Error Getting Block: {e.Message}. Retrying in 3s");
-                await Task.Delay(RetryDurationMs);
-                currentTrial++;
-            }
-            catch (ApiException e) when (currentTrial > MaxRetrials)
-            {
-                _logger.LogError("Max number of trials exceeded...");
-                throw new OracleNodeException($"Error getting Block: {e.Message}", e);
+                _logger.LogError("Error Getting Latest Block: {0}. Retrying...", e.Message);
+                await Task.Delay(RETRIAL_DURATION);
             }
         }
-        return null;
     }
 
-    public async Task<BlockContentResponse?> GetBlockFromHash(string hash)
+    private async Task<BlockContentResponse> GetBlockFromHashAsync(string hash)
     {
-        int currentTrial = 0;
-        while (currentTrial <= MaxRetrials)
+        while (true)
         {
             try
             {
                 return await _blockService.GetBlocksAsync(hash);
             }
-            catch (ApiException e) when (currentTrial <= MaxRetrials)
+            catch (ApiException e) when (e.StatusCode is 403)
             {
-                _logger.LogError($"Error Getting Block: {e.Message}. Retrying in 3s");
-                await Task.Delay(RetryDurationMs);
-                currentTrial++;
+                _logger.LogError("Error Getting Latest Block: {0}. Closing the application.", e.Message);
+                _hostApplicationLifetime.StopApplication();
             }
-            catch (ApiException e) when (currentTrial > MaxRetrials)
+            catch (ApiException e)
             {
-                _logger.LogError("Max number of trials exceeded...");
-                throw new OracleNodeException($"Error getting Block: {e.Message}", e);
+                _logger.LogError("Error Getting Block: {0}. Retrying...", e.Message);
+                await Task.Delay(RETRIAL_DURATION);
             }
         }
-        return null;
     }
     #endregion
 }

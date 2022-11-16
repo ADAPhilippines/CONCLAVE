@@ -15,15 +15,14 @@ public class EthereumWalletServices : WalletServiceBase
     private readonly Web3 Web3;
     private readonly Account Account;
     private readonly AccountOfflineTransactionSigner TransactionSigner = new AccountOfflineTransactionSigner();
-    public EthereumWalletServices(
-        IOptionsMonitor<SettingsParameters> settings) : base(settings.CurrentValue.PrivateKey, settings.CurrentValue.EthereumRPC)
+    public EthereumWalletServices(IOptions<SettingsParameters> settings) : base(settings.Value.PrivateKey, settings.Value.EthereumRPC)
     {
-        Account = new Account(settings.CurrentValue.PrivateKey);
-        Web3 = new Web3(Account, settings.CurrentValue.EthereumRPC);
+        Account = new Account(settings.Value.PrivateKey);
+        Web3 = new Web3(Account, settings.Value.EthereumRPC);
         Address = Account.Address;
     }
 
-    public async Task<HexBigInteger> GetBalance()
+    public async Task<HexBigInteger> GetBalanceAsync()
     {
         return await Web3.Eth.GetBalance.SendRequestAsync(Address);
     }

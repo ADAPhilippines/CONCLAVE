@@ -6,19 +6,20 @@ namespace Conclave.Oracle.Node.Extensions;
 
 public static class BlockFrostServiceExtension
 {
-    public static IServiceCollection AddBlockFrostService(this IServiceCollection serviceCollection, string network, string apiKey)
+    public static IServiceCollection AddCardanoService(this IServiceCollection serviceCollection, string network, string apiKey)
     {
         serviceCollection.AddBlockfrost(network, apiKey);
         serviceCollection.AddSingleton<CardanoServices>((serviceProvider) =>
         {
-            var blockService = serviceProvider.GetRequiredService<IBlockService>();
-
+            IBlockService blockService = serviceProvider.GetRequiredService<IBlockService>();
             CardanoServices blockFrostService;
-            ILogger<CardanoServices>? logger = null;
-            blockFrostService = new CardanoServices(blockService, logger!);
+            ILogger<CardanoServices> logger = serviceProvider.GetRequiredService<ILogger<CardanoServices>>();
+            IHostApplicationLifetime hostApplicationLifetime = serviceProvider.GetRequiredService<IHostApplicationLifetime>();
+
+            blockFrostService = new CardanoServices(blockService, logger, hostApplicationLifetime);
             return blockFrostService;
         });
-        
+
         return serviceCollection;
     }
 }
