@@ -13,7 +13,7 @@ interface IConclaveOracleOperator {
 
     function isResponseSubmitted(uint256 jobId) external view returns (bool);
 
-    function getRewards(uint256 jobId)
+    function getPendingRewards(uint256 jobId)
         external
         view
         returns (uint256 reward, uint256 tokenReward);
