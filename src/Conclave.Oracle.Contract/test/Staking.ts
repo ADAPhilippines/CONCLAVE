@@ -4,7 +4,7 @@ import { ethers } from 'hardhat';
 import { BigNumber } from 'ethers';
 import { stakingFixture } from './Fixture';
 
-describe('Staking Contract', function () {
+describe.only('Staking Contract', function () {
     describe('Stake function', function () {
         it('Should accept valid stake', async function () {
             const {
@@ -134,14 +134,17 @@ describe('Staking Contract', function () {
                 testStakeAmount,
                 approveAndStake,
                 unstake,
+                stake,
             } = await loadFixture(stakingFixture);
 
             for (const account of [addr1, addr2, addr3]) {
                 await approveAndStake(account, testStakeAmount);
             }
-
-            await unstake(addr1, testStakeAmount);
-            expect(await oracle.s_totalStakes()).to.equal(testStakeAmount.mul(2));
+            await unstake(addr2, testStakeAmount);
+            await unstake(addr3, testStakeAmount);
+            await stake(addr1, testStakeAmount.add(1000));
+            const addr1Stake = await oracle.getStake(addr1.address);
+            expect(await oracle.s_totalStakes()).to.equal(addr1Stake);
         });
     });
 
