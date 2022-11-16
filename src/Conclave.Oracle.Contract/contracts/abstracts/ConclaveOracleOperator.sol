@@ -467,6 +467,14 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         return (total * share) / 10_000;
     }
 
+    function calculateWeight(uint256 amount, uint256 total)
+        public
+        pure
+        returns (uint256)
+    {
+        return (amount * 10_000) / total;
+    }
+
     function getOwner(address node) external view returns (address) {
         return s_nodeToOwner[node];
     }
