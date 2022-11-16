@@ -5,22 +5,17 @@
 
 <PageTitle>Index</PageTitle>
 
+
 <div class="flex justify-between gap-3 1xl:gap-0">
     <div>
+        <MudPagination Color="Color.Primary" Count="3" SelectedChanged="OnPageChanged" />
         <SessionList>
-            @foreach (var item in Sessions)
+            @foreach (var item in PaginatedSessions)
             {
                 <SessionCard OnSessionCardClicked="() => OnSessionCardClicked(item)" SessionDetails="item"
                 OnBtnBuyTicketClicked="() => OnBtnBuyTicketClicked(item)" />
             }
         </SessionList>
-        <div>
-            <h5>Ticket Entry</h5>
-            <div class="userInput">
-                <MudTextField MaxLength="2" T="string" Variant="Variant.Text" OnKeyUp="OnInputKeyPressed"></MudTextField>
-                <MudTextField MaxLength="2" T="string" Variant="Variant.Text" OnKeyUp="OnInputKeyPressed"></MudTextField>
-            </div>
-        </div>
     </div>
     <div>
         <div>
@@ -28,7 +23,6 @@
                 Create Session
             </MudButton>
         </div>
-
         <div class="outline outline-1 mt-4">
             <LottoWinnersList>
                 @foreach (var lottoWinner in LottoWinners)
@@ -37,7 +31,6 @@
                 }
             </LottoWinnersList>
         </div>
-
         <div class="mt-4 outline outline-1">
             <TicketList />
         </div>

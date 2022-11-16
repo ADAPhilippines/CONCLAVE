@@ -3,7 +3,6 @@ using Conclave.Lotto.Web.Components;
 using Conclave.Lotto.Web.Services;
 using Conclave.Lotto.Web.Models;
 using MudBlazor;
-using Microsoft.AspNetCore.Components.Web;
 
 namespace Conclave.Lotto.Web.Pages;
 
@@ -20,15 +19,15 @@ public partial class SessionPage : ComponentBase
 
     private IEnumerable<LottoWinner> LottoWinners { get; set; } = default!;
 
-    private IEnumerable<Session> Sessions { get; set; } = default!;
+    private List<Session> Sessions { get; set; } = default!;
 
-    [Parameter]
-    public EventCallback<string> CouponValueChanged { get; set; }
+    private List<Session> PaginatedSessions { get; set; } = default!;
 
     protected override void OnInitialized()
     {
         LottoWinners = DataService.LottoWinners;
         Sessions = DataService.Sessions;
+        PaginatedSessions = Sessions.GetRange(0, 3);
     }
 
     private void OpenDialog()
@@ -49,8 +48,11 @@ public partial class SessionPage : ComponentBase
         DialogService?.Show<BuyTicketDialog>("Buy Ticket", dialogParams, closeOnEscapeKey);
     }
 
-    private void OnInputKeyPressed(KeyboardEventArgs args)
+    private void OnPageChanged(int page)
     {
-        Console.WriteLine($"Change: {args}");
+        int index = page;
+        if (page == 1) index = 0;
+        else index = page * 3 - 3;
+        PaginatedSessions = Sessions.GetRange(index, 3);
     }
 }
