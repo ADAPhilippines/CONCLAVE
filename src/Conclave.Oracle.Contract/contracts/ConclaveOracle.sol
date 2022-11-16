@@ -25,6 +25,7 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
     error NumberCountNotInRange(uint256 min, uint256 max, uint256 actual);
     error NotAuthorized();
     error InvalidValidatorRange();
+    error JobSubmissionInProgress();
 
     event JobRequestCreated(
         uint256 jobId,
@@ -92,8 +93,7 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         uint256 jobAcceptanceTimeLimit = block.timestamp +
             s_jobAcceptanceTimeLimitInSeconds;
 
-        uint256 jobFulfillmentLimit = block.timestamp +
-            jobAcceptanceTimeLimit +
+        uint256 jobFulfillmentLimit = jobAcceptanceTimeLimit +
             (s_jobFulfillmentLimitPerNumberInSeconds * numCount);
 
         JobRequest storage jobRequest = s_jobRequests[jobId];
@@ -120,10 +120,16 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         payable
         override
         onlyExistingRequest(jobId)
-        onlyWithinTimeLimit(_getJobRequest(jobId).jobFulfillmentExpiration)
         returns (uint256[] memory randomNumbers, uint status)
     {
         JobRequest storage jobRequest = s_jobRequests[jobId];
+
+        if (
+            jobRequest.validators.length < jobRequest.responseCount &&
+            block.timestamp < jobRequest.jobFulfillmentExpiration
+        ) {
+            revert JobSubmissionInProgress();
+        }
 
         if (msg.sender != jobRequest.requester) {
             revert NotAuthorized();
