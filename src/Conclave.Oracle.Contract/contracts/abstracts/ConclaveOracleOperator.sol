@@ -123,7 +123,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
     mapping(address => uint256[]) /* operator => pendingRewardJobIds */
         private s_pendingRewardJobIds;
     mapping(address => Rewards) /* operator => totalStakingRewards */
-        private s_operatorStakingRewards;
+        public s_operatorStakingRewards;
     mapping(address => uint256) /* jobId => operator => adaBalances */
         private s_operatorAdaBalances;
 
@@ -133,6 +133,8 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         public s_dataIdVotes;
     mapping(uint256 => mapping(address => bool)) /* jobId => node => isRegistered */
         public s_nodeRegistrations;
+
+    address public s_latestDistributorNode;
 
     constructor(
         IERC20 token,
@@ -263,6 +265,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
             s_tokenFeesCollected >= s_minTokenStakingRewards
         ) {
             if (_isDistributorNode(msg.sender)) {
+                s_latestDistributorNode = msg.sender;
                 _distributeStakingRewards(msg.sender);
             }
         }
@@ -290,7 +293,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         return s_nodeDataId[jobId][s_nodeToOwner[msg.sender]] != 0;
     }
 
-    function getRewards(uint256 jobId)
+    function getPendingRewards(uint256 jobId)
         public
         view
         override
@@ -338,7 +341,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
                 s_nodeDataId[request.jobId][msg.sender] ==
                 request.finalResultDataId
             ) {
-                (uint256 ada, uint256 token) = getRewards(
+                (uint256 ada, uint256 token) = getPendingRewards(
                     s_pendingRewardJobIds[s_nodeToOwner[msg.sender]][i]
                 );
                 s_validatorRewards[s_nodeToOwner[msg.sender]].ada += ada;
@@ -454,6 +457,14 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         returns (uint256)
     {
         return (amount * 10_000) / total;
+    }
+
+    function calculateShare(uint256 share, uint256 total)
+        public
+        pure
+        returns (uint256)
+    {
+        return (total * share) / 10_000;
     }
 
     function getOwner(address node) external view returns (address) {
