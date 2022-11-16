@@ -19,12 +19,15 @@ public partial class SessionPage : ComponentBase
 
     private IEnumerable<LottoWinner> LottoWinners { get; set; } = default!;
 
-    private IEnumerable<Session> Sessions { get; set; } = default!;
+    private List<Session> Sessions { get; set; } = default!;
+
+    private List<Session> PaginatedSessions { get; set; } = default!;
 
     protected override void OnInitialized()
     {
         LottoWinners = DataService.LottoWinners;
         Sessions = DataService.Sessions;
+        PaginatedSessions = Sessions.GetRange(0, 3);
     }
 
     private void OpenDialog()
@@ -36,5 +39,20 @@ public partial class SessionPage : ComponentBase
     private void OnSessionCardClicked(Session session)
     {
         NavigationManager.NavigateTo($"session/{session.Id}");
+    }
+
+    private void OnBtnBuyTicketClicked(Session session)
+    {
+        DialogParameters dialogParams = new DialogParameters { ["Session"] = session };
+        DialogOptions closeOnEscapeKey = new() { CloseOnEscapeKey = true };
+        DialogService?.Show<BuyTicketDialog>("Buy Ticket", dialogParams, closeOnEscapeKey);
+    }
+
+    private void OnPageChanged(int page)
+    {
+        int index = page;
+        int maxItems = 3;
+        index = page * maxItems - maxItems;
+        PaginatedSessions = Sessions.GetRange(index, maxItems);
     }
 }

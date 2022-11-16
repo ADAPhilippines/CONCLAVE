@@ -12,6 +12,9 @@ public partial class SessionCard
     [Parameter]
     public EventCallback OnSessionCardClicked { get; set; }
 
+    [Parameter]
+    public EventCallback OnBtnBuyTicketClicked { get; set; }
+
     private string SessionStatusClass()
     {
         if (SessionDetails.CurrentStatus == Status.OnGoing)

@@ -1,0 +1,12 @@
+<MudDialog>
+    <DialogContent>
+        <div class="flex justify-between">
+            <p>@Session.Id</p>
+            <p>Ticket Price: @Session.TicketPrice</p>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnBtnCancelClicked">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="OnBtnDepositClicked">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
