@@ -5,7 +5,7 @@ import { BigNumber } from 'ethers';
 import { operatorFixture, delegateNodeFixture } from './Fixture';
 
 describe('ConclaveOperator Contract', function () {
-    describe.only('DelegateNode function', function () {
+    describe('DelegateNode function', function () {
         it('Should delegate node', async function () {
             const {
                 oracle,
@@ -59,7 +59,7 @@ describe('ConclaveOperator Contract', function () {
         });
     });
 
-    describe.only('AcceptJob function', function () {
+    describe('AcceptJob function', function () {
         it('Should accept job', async function () {
             const {
                 oracle,
@@ -149,7 +149,7 @@ describe('ConclaveOperator Contract', function () {
         });
     });
 
-    describe.only('SubmitResult function', function () {
+    describe('SubmitResult function', function () {
         it('Should submit result', async function () {
             const {
                 oracle,
@@ -160,10 +160,10 @@ describe('ConclaveOperator Contract', function () {
             } = await loadFixture(operatorFixture);
 
             await oracle.connect(node).acceptJob(sampleRequestId);
-            const jobDetails = await oracle.getJobDetails(sampleRequestId);
             await ethers.provider.send('evm_increaseTime', [61]);
+            const jobDetails = await oracle.getJobDetails(sampleRequestId);
             const response = getResponse(jobDetails.numCount);
-            await oracle.connect(node).submitResponse(sampleRequestId, response);
+            await expect(oracle.connect(node).submitResponse(sampleRequestId, response)).to.emit(oracle, 'ResponseSubmitted');
 
             const nodeSubmission = await oracle.s_nodeDataId(sampleRequestId, operator.address);
             const dataHash = ethers.utils.keccak256(
@@ -174,7 +174,175 @@ describe('ConclaveOperator Contract', function () {
             );
             const dataId = ethers.BigNumber.from(dataHash);
 
+            // should update dataId mapping and incrememnt dataIdVotes by 1
             expect(nodeSubmission).to.equal(dataId);
+            expect(await oracle.s_dataIdVotes(sampleRequestId, dataId)).to.equal(1);
+        });
+
+        it('Should not be able to submit result twice', async function () {
+            const {
+                oracle,
+                nodes: [node],
+                sampleRequestId,
+                getResponse,
+            } = await loadFixture(operatorFixture);
+
+            await oracle.connect(node).acceptJob(sampleRequestId);
+            await ethers.provider.send('evm_increaseTime', [61]);
+            const jobDetails = await oracle.getJobDetails(sampleRequestId);
+            const response = getResponse(jobDetails.numCount);
+            await oracle.connect(node).submitResponse(sampleRequestId, response);
+            await expect(oracle.connect(node).submitResponse(sampleRequestId, response)).to.be.revertedWithCustomError(
+                oracle,
+                'ResponseAlreadySubmitted'
+            );
+        });
+
+        it('Should not be able to submit result if not registered validator for a job', async function () {
+            const {
+                oracle,
+                nodes: [node],
+                sampleRequestId,
+                getResponse,
+            } = await loadFixture(operatorFixture);
+
+            await expect(oracle.connect(node).submitResponse(sampleRequestId, getResponse(1))).to.be.revertedWithCustomError(
+                oracle,
+                'ResponseSubmissionNotAuthorized'
+            );
+        });
+
+        it('Should not be able to submit invalid response', async function () {
+            const {
+                oracle,
+                nodes: [node],
+                sampleRequestId,
+                getResponse,
+            } = await loadFixture(operatorFixture);
+
+            await oracle.connect(node).acceptJob(sampleRequestId);
+            await ethers.provider.send('evm_increaseTime', [61]);
+            await expect(oracle.connect(node).submitResponse(sampleRequestId, getResponse(2))).to.be.revertedWithCustomError(
+                oracle,
+                'InvalidResponse'
+            );
+        });
+
+        it('Should not be able to submit response if minimum validator not reached', async function () {
+            const {
+                oracle,
+                consumer,
+                nodes: [node],
+                adaFee,
+                adaFeePerNum,
+                tokenFee,
+                tokenFeePerNum,
+                minValidator,
+                maxValidator,
+                getResponse,
+            } = await loadFixture(operatorFixture);
+
+            const numCount = 2;
+            const totalAdaFee = adaFee.add(adaFeePerNum.mul(numCount));
+            await consumer.requestRandomNumbers(numCount, adaFee, adaFeePerNum, tokenFee, tokenFeePerNum, minValidator.add(2), maxValidator.add(3), {
+                value: totalAdaFee,
+            });
+            const request = await consumer.s_requests(1);
+            await oracle.connect(node).acceptJob(request.jobId);
+            await ethers.provider.send('evm_increaseTime', [61]);
+            await expect(oracle.connect(node).submitResponse(request.jobId, getResponse(numCount))).to.be.revertedWithCustomError(
+                oracle,
+                'MinValidatorNotReached'
+            );
+        });
+
+        it('Should not be able to submit response if not within the specified time limit', async function () {
+            const {
+                oracle,
+                nodes: [node],
+                sampleRequestId,
+                getResponse,
+                jobFulFillmentLimitInSeconds,
+                jobAcceptanceLimitInSeconds,
+            } = await loadFixture(operatorFixture);
+
+            const request = await oracle.getJobDetails(sampleRequestId);
+            await oracle.connect(node).acceptJob(sampleRequestId);
+            const timeJump = jobAcceptanceLimitInSeconds + jobFulFillmentLimitInSeconds * request.numCount + 100000;
+            await ethers.provider.send('evm_increaseTime', [timeJump]);
+            await expect(oracle.connect(node).submitResponse(sampleRequestId, getResponse(request.numCount))).to.be.revertedWithCustomError(
+                oracle,
+                'TimeLimitExceeded'
+            );
+        });
+
+        it('Should not be able to submit if request does not exist', async function () {
+            const {
+                oracle,
+                nodes: [node],
+                getResponse,
+                unstake,
+            } = await loadFixture(operatorFixture);
+
+            await expect(oracle.connect(node).submitResponse(1, getResponse(1))).to.be.revertedWithCustomError(oracle, 'RequestNotExist');
+        });
+
+        it('Should be able to trigger distribute staking reward function and distribute rewards', async function () {
+            const {
+                oracle,
+                nodes,
+                operators,
+                sampleRequestId,
+                getResponse,
+                consumer,
+                adaFee,
+                adaFeePerNum,
+                tokenFee,
+                tokenFeePerNum,
+                minValidator,
+                maxValidator,
+                decimal,
+            } = await loadFixture(operatorFixture);
+
+            await oracle.connect(nodes[0]).acceptJob(sampleRequestId);
+            await ethers.provider.send('evm_increaseTime', [30]);
+            const jobDetails = await oracle.getJobDetails(sampleRequestId);
+            const response = getResponse(jobDetails.numCount);
+            await oracle.connect(nodes[0]).submitResponse(sampleRequestId, response);
+
+            await ethers.provider.send('evm_increaseTime', [61 + 61 * jobDetails.numCount]);
+            await consumer.finalizeResult(sampleRequestId);
+
+            // unstake all operators to make sure 100% of reward goes to node
+            for (let i = 1; i < operators.length; i++) {
+                const balance = await oracle.getStake(operators[i].address);
+                await oracle.connect(operators[i]).unstake(balance);
+            }
+
+            const totalFee = adaFee.add(adaFeePerNum.mul(jobDetails.numCount));
+            await consumer.requestRandomNumbers(1, adaFee, adaFeePerNum, tokenFee, tokenFeePerNum, minValidator, maxValidator, {
+                value: totalFee,
+            });
+            const newJobDetails = await consumer.s_requests(1);
+            await oracle.connect(nodes[0]).acceptJob(newJobDetails.jobId);
+            await ethers.provider.send('evm_increaseTime', [61]);
+            await oracle.connect(nodes[0]).submitResponse(newJobDetails.jobId, getResponse(1));
+
+            const rewards = await oracle.s_operatorStakingRewards(operators[0].address);
+            const stakingAdaReward = await oracle.calculateShare(
+                10 * 100,
+                jobDetails.baseAdaFee.add(jobDetails.adaFeePerNum.mul(jobDetails.numCount))
+            );
+            const stakingTokenReward = await oracle.calculateShare(
+                10 * 100,
+                jobDetails.baseTokenFee.add(jobDetails.tokenFeePerNum.mul(jobDetails.numCount))
+            );
+
+            expect(rewards.ada).to.be.equal(stakingAdaReward);
+            expect(rewards.token).to.be.equal(stakingTokenReward);
+            expect(await oracle.s_latestDistributorNode()).to.equal(nodes[0].address);
         });
     });
+
+    describe('GetPendingRewards function', async function () {});
 });
