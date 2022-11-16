@@ -5,10 +5,8 @@
 
 <PageTitle>Index</PageTitle>
 
-
 <div class="flex justify-between gap-3 1xl:gap-0">
-    <div>
-        <MudPagination Color="Color.Primary" Count="3" SelectedChanged="OnPageChanged" />
+    <div class="relative px-5 pt-5 border-2 flex flex-col justify-between">
         <SessionList>
             @foreach (var item in PaginatedSessions)
             {
@@ -16,6 +14,9 @@
                 OnBtnBuyTicketClicked="() => OnBtnBuyTicketClicked(item)" />
             }
         </SessionList>
+        <div class="flex px-5 mb-2 justify-center">
+            <MudPagination Color="Color.Primary" Count="3" SelectedChanged="OnPageChanged" />
+        </div>
     </div>
     <div>
         <div>

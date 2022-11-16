@@ -43,7 +43,7 @@ public partial class SessionPage : ComponentBase
 
     private void OnBtnBuyTicketClicked(Session session)
     {
-        DialogParameters dialogParams = new DialogParameters { ["session"] = session };
+        DialogParameters dialogParams = new DialogParameters { ["Session"] = session };
         DialogOptions closeOnEscapeKey = new() { CloseOnEscapeKey = true };
         DialogService?.Show<BuyTicketDialog>("Buy Ticket", dialogParams, closeOnEscapeKey);
     }
@@ -51,8 +51,8 @@ public partial class SessionPage : ComponentBase
     private void OnPageChanged(int page)
     {
         int index = page;
-        if (page == 1) index = 0;
-        else index = page * 3 - 3;
-        PaginatedSessions = Sessions.GetRange(index, 3);
+        int maxItems = 3;
+        index = page * maxItems - maxItems;
+        PaginatedSessions = Sessions.GetRange(index, maxItems);
     }
 }

@@ -10,7 +10,7 @@ public partial class BuyTicketDialog
     public MudDialogInstance? MudDialog { get; set; }
 
     [Parameter]
-    public Session session { get; set; } = new();
+    public Session Session { get; set; } = new();
 
     private void OnBtnDepositClicked()
     {
