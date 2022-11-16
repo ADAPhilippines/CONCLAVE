@@ -109,11 +109,15 @@ export async function stakingFixture() {
         accountsWithTokens,
         accountsWithoutTokens,
         minValidatorStake,
+        minAdaStakingRewards,
+        minTokenStakingRewards,
         testStakeAmount,
         stake,
         approve,
         approveAndStake,
         unstake,
+        jobAcceptanceLimitInSeconds,
+        jobFulFillmentLimitInSeconds,
     };
 }
 
@@ -131,6 +135,10 @@ export async function delegateNodeFixture() {
         approve,
         approveAndStake,
         unstake,
+        jobAcceptanceLimitInSeconds,
+        jobFulFillmentLimitInSeconds,
+        minAdaStakingRewards,
+        minTokenStakingRewards,
     } = await stakingFixture();
 
     const stakeAndDelegate = async (operator: SignerWithAddress, node: SignerWithAddress, amount: BigNumber) => {
@@ -158,6 +166,10 @@ export async function delegateNodeFixture() {
         unstake,
         stakeAndDelegate,
         getRandomStakeAmount,
+        jobAcceptanceLimitInSeconds,
+        jobFulFillmentLimitInSeconds,
+        minAdaStakingRewards,
+        minTokenStakingRewards,
     };
 }
 
@@ -177,6 +189,10 @@ export async function operatorFixture() {
         approve,
         approveAndStake,
         unstake,
+        jobAcceptanceLimitInSeconds,
+        jobFulFillmentLimitInSeconds,
+        minAdaStakingRewards,
+        minTokenStakingRewards,
     } = await delegateNodeFixture();
 
     // deploy consumer
@@ -184,8 +200,8 @@ export async function operatorFixture() {
     const consumer = await Consumer.deploy(oracle.address, token.address);
 
     // transfer assets to consumer
-    const ethAmount = ethers.utils.parseEther('100');
-    const cnclvAmount = ethers.utils.parseUnits('1000000', decimal);
+    const ethAmount = ethers.utils.parseEther('500');
+    const cnclvAmount = ethers.utils.parseUnits('10000000', decimal);
 
     await accounts[0].sendTransaction({
         to: consumer.address,
@@ -200,9 +216,9 @@ export async function operatorFixture() {
         await token.connect(account).approve(oracle.address, ethers.constants.MaxUint256);
     }
 
-    const adaFee = ethers.utils.parseEther('0.5');
+    const adaFee = ethers.utils.parseEther('150');
     const adaFeePerNum = ethers.utils.parseEther('0.1');
-    const tokenFee = ethers.utils.parseUnits('1000', decimal);
+    const tokenFee = ethers.utils.parseUnits('1000000', decimal);
     const tokenFeePerNum = ethers.utils.parseUnits('100', decimal);
     const minValidator = ethers.BigNumber.from('1');
     const maxValidator = ethers.BigNumber.from('1');
@@ -268,5 +284,9 @@ export async function operatorFixture() {
         operators,
         nodes,
         getResponse,
+        jobFulFillmentLimitInSeconds,
+        jobAcceptanceLimitInSeconds,
+        minAdaStakingRewards,
+        minTokenStakingRewards,
     };
 }
