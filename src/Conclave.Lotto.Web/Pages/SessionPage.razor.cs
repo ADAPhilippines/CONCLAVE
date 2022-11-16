@@ -4,6 +4,7 @@ using Conclave.Lotto.Web.Services;
 using Conclave.Lotto.Web.Models;
 using MudBlazor;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.Forms;
 
 namespace Conclave.Lotto.Web.Pages;
 
@@ -22,8 +23,10 @@ public partial class SessionPage : ComponentBase
 
     private IEnumerable<Session> Sessions { get; set; } = default!;
 
-    [Parameter]
-    public EventCallback<string> CouponValueChanged { get; set; }
+    private ExampleModel exampleModel = new();
+
+    private int MaxLength = 3;
+
 
     protected override void OnInitialized()
     {
@@ -51,6 +54,12 @@ public partial class SessionPage : ComponentBase
 
     private void OnInputKeyPressed(KeyboardEventArgs args)
     {
-        Console.WriteLine($"Change: {args}");
+        // inputText2.FocusAsync();
+
+    }
+
+    private void SetValue(string Value)
+    {
+        Console.WriteLine($"valueee {Value}");
     }
 }
