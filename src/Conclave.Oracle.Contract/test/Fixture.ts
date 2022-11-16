@@ -147,7 +147,7 @@ export async function delegateNodeFixture() {
     };
 
     const getRandomStakeAmount = (min: number, max: number): BigNumber => {
-        const amount = Math.random() * (max - min) + min;
+        const amount = Math.floor(Math.random() * (max - min) + min);
         return ethers.utils.parseUnits(amount.toString(), decimal);
     };
 
@@ -223,7 +223,6 @@ export async function operatorFixture() {
     const minValidator = ethers.BigNumber.from('1');
     const maxValidator = ethers.BigNumber.from('1');
     const numCount = 1;
-    const total = adaFee.add(adaFeePerNum.mul(numCount));
 
     const operators = accountsWithTokens;
     const nodes = accountsWithoutTokens;
@@ -239,16 +238,63 @@ export async function operatorFixture() {
         index++;
     }
 
-    const tx = await consumer.requestRandomNumbers(numCount, adaFee, adaFeePerNum, tokenFee, tokenFeePerNum, minValidator, maxValidator, {
-        value: total,
-    });
-    const receipt = await ethers.provider.getTransactionReceipt(tx.hash);
-    const data = receipt.logs[1].data;
-    const topics = receipt.logs[1].topics;
-    const jobRequestEvent = new ethers.utils.Interface(['event JobRequestCreated(uint256 jobId,uint32 indexed numCount,uint256 indexed timestamp)']);
+    type Request = {
+        numCount: number;
+        adaFee: BigNumber;
+        adaFeePerNum: BigNumber;
+        tokenFee: BigNumber;
+        tokenFeePerNum: BigNumber;
+        minValidator: BigNumber;
+        maxValidator: BigNumber;
+    };
 
-    const event = jobRequestEvent.decodeEventLog('JobRequestCreated', data, topics);
-    const sampleRequestId = event.jobId;
+    const submitRequest = async (request: Request) => {
+        const tx = await consumer.requestRandomNumbers(
+            request.numCount,
+            request.adaFee,
+            request.adaFeePerNum,
+            request.tokenFee,
+            request.tokenFeePerNum,
+            request.minValidator,
+            request.maxValidator,
+            {
+                value: request.adaFee.add(request.adaFeePerNum.mul(request.numCount)),
+            }
+        );
+        const receipt = await ethers.provider.getTransactionReceipt(tx.hash);
+        const data = receipt.logs[1].data;
+        const topics = receipt.logs[1].topics;
+        const jobRequestEvent = new ethers.utils.Interface([
+            'event JobRequestCreated(uint256 jobId,uint32 indexed numCount,uint256 indexed timestamp)',
+        ]);
+
+        const event = jobRequestEvent.decodeEventLog('JobRequestCreated', data, topics);
+        const requestId = event.jobId;
+        return requestId;
+    };
+
+    const submitResponseAndFinalize = async (requestId: BigNumber, participatingNodes: SignerWithAddress[]) => {
+        for (const node of participatingNodes) {
+            await oracle.connect(node).acceptJob(requestId);
+        }
+
+        let res1 = getResponse(numCount);
+        let res2 = getResponse(numCount);
+
+        await ethers.provider.send('evm_increaseTime', [jobAcceptanceLimitInSeconds]);
+        for (const node of participatingNodes) {
+            await oracle.connect(node).submitResponse(requestId, [res1, res2][Math.round(Math.random())]);
+        }
+
+        await ethers.provider.send('evm_increaseTime', [jobAcceptanceLimitInSeconds + jobFulFillmentLimitInSeconds * numCount + 1]);
+        await consumer.finalizeResult(requestId);
+
+        const jobDetails = await oracle.getJobDetails(requestId);
+
+        return jobDetails;
+    };
+
+    const sampleRequestId = await submitRequest({ numCount, adaFee, adaFeePerNum, tokenFee, tokenFeePerNum, minValidator, maxValidator });
 
     const getResponse = (count: number) => {
         const res = [];
@@ -288,5 +334,7 @@ export async function operatorFixture() {
         jobAcceptanceLimitInSeconds,
         minAdaStakingRewards,
         minTokenStakingRewards,
+        submitRequest,
+        submitResponseAndFinalize,
     };
 }
