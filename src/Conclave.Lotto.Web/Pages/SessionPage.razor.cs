@@ -26,6 +26,7 @@ public partial class SessionPage : ComponentBase
     private ExampleModel exampleModel = new();
 
     private int MaxLength = 3;
+    private List<string> userNames = new List<string>(new string[5]);
 
     private MudTextField<string> inputText2 = new();
     protected override void OnInitialized()
