@@ -15,24 +15,24 @@
             }
         </SessionList>
     </div>
-</div>
-<div>
     <div>
-        <MudButton OnClick="OpenDialog" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
-            Create Session
-        </MudButton>
-    </div>
+        <div>
+            <MudButton OnClick="OpenDialog" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
+                Create Session
+            </MudButton>
+        </div>
 
-    <div class="outline outline-1 mt-4">
-        <LottoWinnersList>
-            @foreach (var lottoWinner in LottoWinners)
-            {
-                <LottoWinnerCard Address="@lottoWinner.Address" PrizeWon="@lottoWinner.PrizeWon" />
-            }
-        </LottoWinnersList>
-    </div>
+        <div class="outline outline-1 mt-4">
+            <LottoWinnersList>
+                @foreach (var lottoWinner in LottoWinners)
+                {
+                    <LottoWinnerCard Address="@lottoWinner.Address" PrizeWon="@lottoWinner.PrizeWon" />
+                }
+            </LottoWinnersList>
+        </div>
 
-    <div class="mt-4 outline outline-1">
-        <TicketList />
+        <div class="mt-4 outline outline-1">
+            <TicketList />
+        </div>
     </div>
 </div>

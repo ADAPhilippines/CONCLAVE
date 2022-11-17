@@ -2,8 +2,8 @@
     <DialogContent>
         <div class="flex flex-col justify-between">
             <div class="flex justify-between mb-2">
-                <MudText Typo="Typo.body2">Session ID: </MudText>
-                <MudText Typo="Typo.body2">Ticket Price:</MudText>
+                <MudText Typo="Typo.body2">Session ID: @Session.Id</MudText>
+        <MudText Typo="Typo.body2">Ticket Price: ₳ @Session.TicketPrice</MudText>
             </div>
             <MudText Typo="Typo.h5">Ticket Entry:</MudText>
             <ul class="flex justify-center border-2">
@@ -11,7 +11,10 @@
                 {
                     int j = i;
                     <li>
-                        <MudTextField Variant="Variant.Outlined" Class="mr-2" @bind-Value="@userNames[j]"
+                        <MudTextField 
+                        Variant="Variant.Outlined" 
+                        Class="mr-2" 
+                        @bind-Value="@userNames[j]"
                         @ref="InputTextRef[j]" />
                     </li>
                 }
