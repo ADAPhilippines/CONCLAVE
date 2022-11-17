@@ -28,6 +28,8 @@ public partial class SessionPage : ComponentBase
     private int MaxLength = 3;
     private List<string> userNames = new List<string>(new string[5]);
 
+    private Dictionary<int, MudTextField<string>> InputTextRef = new();
+
     private MudTextField<string> inputText2 = new();
     protected override void OnInitialized()
     {
@@ -58,4 +60,10 @@ public partial class SessionPage : ComponentBase
         Console.WriteLine($"event args: {args}");
         inputText2.FocusAsync();
     }
+
+    private void OnTestClick() 
+    {
+        Console.WriteLine("Testtt event");
+    }
+
 }

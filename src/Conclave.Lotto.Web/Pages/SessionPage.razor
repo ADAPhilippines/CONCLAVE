@@ -21,11 +21,23 @@
                 {
                     int j = i;
                     <li>
-                        <MudTextField Variant="Variant.Outlined" Class="mr-2" @bind-Value="@userNames[j]" />
+                        <MudTextField 
+                        Variant="Variant.Outlined" 
+                        Class="mr-2" 
+                        @bind-Value="@userNames[j]" 
+                        @ref="InputTextRef[j]"
+                        />
                     </li>
                 }
+                <MudButton OnClick="OnTestClick">Test</MudButton>
+
             </ul>
         </div>
+
+        @foreach (string userName in userNames)
+        {
+            <p>@userName</p>
+        }
     </div>
     <div>
         <div>
