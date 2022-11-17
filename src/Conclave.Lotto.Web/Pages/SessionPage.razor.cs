@@ -43,7 +43,7 @@ public partial class SessionPage : ComponentBase
 
     private void OnBtnBuyTicketClicked(Session session)
     {
-        DialogParameters dialogParams = new DialogParameters { ["session"] = session };
+        DialogParameters dialogParams = new DialogParameters { ["SessionDetails"] = session };
         DialogOptions closeOnEscapeKey = new() { CloseOnEscapeKey = true };
         DialogService?.Show<BuyTicketDialog>("Buy Ticket", dialogParams, closeOnEscapeKey);
     }
