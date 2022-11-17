@@ -19,5 +19,7 @@ builder.Services.AddSingleton<MetamaskHostProvider>();
 
 builder.Services.AddMudServices();
 builder.Services.AddScoped<DataService>();
+builder.Services.AddScoped<NethereumService>();
+
 
 await builder.Build().RunAsync();
