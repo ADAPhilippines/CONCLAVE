@@ -23,13 +23,6 @@ public partial class SessionPage : ComponentBase
 
     private IEnumerable<Session> Sessions { get; set; } = default!;
 
-    private ExampleModel exampleModel = new();
-
-    private int MaxLength = 3;
-    private List<string> userNames = new List<string>(new string[5]);
-
-    private Dictionary<int, MudTextField<string>> InputTextRef = new();
-
     private MudTextField<string> inputText2 = new();
     protected override void OnInitialized()
     {
@@ -54,16 +47,4 @@ public partial class SessionPage : ComponentBase
         DialogOptions closeOnEscapeKey = new() { CloseOnEscapeKey = true };
         DialogService?.Show<BuyTicketDialog>("Buy Ticket", dialogParams, closeOnEscapeKey);
     }
-
-    private void OnInputKeyPressed(EventArgs args)
-    {
-        Console.WriteLine($"event args: {args}");
-        inputText2.FocusAsync();
-    }
-
-    private void OnTestClick() 
-    {
-        Console.WriteLine("Testtt event");
-    }
-
 }

@@ -10,7 +10,11 @@ public partial class BuyTicketDialog
     public MudDialogInstance? MudDialog { get; set; }
 
     [Parameter]
-    public Session session { get; set; } = new();
+    public Session Session { get; set; } = new();
+
+    private List<int> userNames = new List<int>(new int[5]);
+    private Dictionary<int, MudTextField<int>> InputTextRef = new();
+    
 
     private void OnBtnDepositClicked()
     {
