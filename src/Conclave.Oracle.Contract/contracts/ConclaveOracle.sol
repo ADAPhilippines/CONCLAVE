@@ -38,19 +38,19 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
 
     constructor(
         IERC20 token,
-        uint256 minValidatorStake,
-        uint256 jobAcceptanceTimeLimitInSeconds,
-        uint256 jobFulfillmentLimitPerNumberInSeconds,
-        uint256 slashingAmount,
+        uint256 minAdaStake,
+        uint256 minTokenStake,
         uint256 minAdaStakingRewards,
-        uint256 minTokenStakingRewards
+        uint256 minTokenStakingRewards,
+        uint256 jobAcceptanceTimeLimitInSeconds,
+        uint256 jobFulfillmentLimitPerNumberInSeconds
     )
         ConclaveOracleOperator(
             token,
-            minValidatorStake,
-            slashingAmount,
             minAdaStakingRewards,
-            minTokenStakingRewards
+            minTokenStakingRewards,
+            minAdaStake,
+            minTokenStake
         )
     {
         s_jobAcceptanceTimeLimitInSeconds = jobAcceptanceTimeLimitInSeconds;
@@ -136,9 +136,12 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         }
 
         if (jobRequest.minValidator < jobRequest.responseCount) {
+            // @TODO: Should be able to aggregate if minValidator not met within jobAcceptance limit
+            // REFUND 10% of slashed amount to consumer
+            // PAY THE HONEST NODES
+
             _refundFees(jobId);
-            uint256[] memory numbers = new uint256[](jobRequest.numCount);
-            randomNumbers = numbers;
+            randomNumbers = new uint256[](jobRequest.numCount);
             status = uint(RequestStatus.Refunded);
             jobRequest.status = RequestStatus.Refunded;
         } else {
@@ -161,12 +164,12 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
             status = uint(RequestStatus.Fulfilled);
             s_totalFulfilled++;
 
-            s_feesCollected += _calculateShare(
+            s_totalPendingStakingRewards.ada += _calculateShare(
                 10 * 100,
                 (jobRequest.baseAdaFee +
                     (jobRequest.adaFeePerNum * jobRequest.numCount))
             );
-            s_tokenFeesCollected += _calculateShare(
+            s_totalPendingStakingRewards.token += _calculateShare(
                 10 * 100,
                 (jobRequest.baseTokenFee +
                     (jobRequest.tokenFeePerNum * jobRequest.numCount))
