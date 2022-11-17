@@ -3,6 +3,7 @@ using Conclave.Lotto.Web.Components;
 using Conclave.Lotto.Web.Services;
 using Conclave.Lotto.Web.Models;
 using MudBlazor;
+using Microsoft.AspNetCore.Components.Web;
 
 namespace Conclave.Lotto.Web.Pages;
 
@@ -47,10 +48,11 @@ public partial class SessionPage : ComponentBase
 
     private void OnBtnBuyTicketClicked(Session session)
     {
-        DialogParameters dialogParams = new DialogParameters { ["Session"] = session };
+        DialogParameters dialogParams = new DialogParameters { ["SessionDetails"] = session };
         DialogOptions closeOnEscapeKey = new() { CloseOnEscapeKey = true };
         DialogService?.Show<BuyTicketDialog>("Buy Ticket", dialogParams, closeOnEscapeKey);
     }
+
 
     private void OnPageChanged(int page)
     {
@@ -90,10 +92,9 @@ public partial class SessionPage : ComponentBase
         else if (args?.Value?.ToString() == "UpComing")
         {
             Console.WriteLine("upcoming");
-            
+
             FilteredSessions = Sessions.FindAll(s => s.CurrentStatus == Status.UpComing);
             PaginatedSessions = FilteredSessions.GetRange(0, 3);
         }
-
     }
 }
