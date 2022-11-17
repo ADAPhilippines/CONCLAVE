@@ -22,7 +22,8 @@
             </div>
             <div class="flex-1">
                 <p>Filter by:</p>
-                <select name="status" @onchange="OnSelectValuesChanged">
+                <select class="border-2 p-2 w-full" name="status" @onchange="OnSelectValuesChanged">
+                     <option value="" disabled selected>Select Status</option>
                     @foreach (Status item in Enum.GetValues(typeof(Status)))
                     {
                         <option value="@item">@item</option>
