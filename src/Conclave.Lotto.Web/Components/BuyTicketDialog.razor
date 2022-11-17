@@ -11,12 +11,8 @@
                 {
                     int j = i;
                     <li>
-                        <MudTextField 
-                        Variant="Variant.Outlined" 
-                        Class="mr-2" 
-                        @bind-Value="@Entries[j]"
-                        @ref="InputTextRef[j]" 
-                        OnKeyPress="(e) => OnKeyPressed(e, j)"/>
+                        <MudTextField Variant="Variant.Outlined" Class="mr-2" @bind-Value="@Entries[j]"
+                        @ref="InputTextRef[j]" OnKeyPress="(e) => OnKeyPressed(e, j)" />
                     </li>
                 }
             </ul>

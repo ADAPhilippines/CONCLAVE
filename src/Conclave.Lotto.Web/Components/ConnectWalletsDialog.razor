@@ -1,4 +1,4 @@
-<MudDialog Class="w-[500px]">
+@* <MudDialog Class="connect-wallets">
     <DialogContent>
         <div>
             <div class="flex justify-between items-center">
@@ -16,7 +16,7 @@
                     <MudImage Class="max-w-[40px]" Src="images/cardano-logo.svg" Alt="Cardano logo" />
                     <p class="font-bold text-[20px]">Cardano</p>
                 </div>
-                <MudButton Variant="Variant.Filled" Color="Color.Primary">
+                <MudButton OnClick="OpenCardanoWalletsDialog" Variant="Variant.Filled" Color="Color.Primary">
                     Connect Wallet
                 </MudButton>
             </div>
@@ -24,6 +24,93 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit">Ok</MudButton>
+    </DialogActions>
+</MudDialog> *@
+
+<MudDialog Class="connect-wallets">
+    <DialogContent>
+        <hr>
+        <div class="mt-3">
+            <div class="flex justify-between items-center pb-4">
+                <div class="w-full">
+                    <div class="flex">
+                        <div class="flex items-center gap-3 basis-1/2">
+                            <MudImage Class="max-w-[40px]" Src="images/metamask-logo.svg" Alt="Metamask logo" />
+                            <p class="font-bold text-[20px]">Metamask</p>
+                        </div>
+
+                        <div class="flex items-center gap-1 basis-1/2">
+                            <MudIcon Icon="@Icons.Filled.AccountBalanceWallet" Title="Metamask wallet address" />
+                            <p>0x07351aCf3550390017CE7277604fc0f5c08B5431</p>
+                        </div>
+                    </div>
+
+                    <MudExpansionPanels Elevation="0" Class="outline outline-1 mt-2">
+                        <MudExpansionPanel Text="Transfer to Cardano">
+                            <div class="grid grid-cols-3 gap-3">
+                                <MudTextField Class="col-span-2" @bind-Value="MilkomedaValue" Label="Amount" Variant="Variant.Filled"></MudTextField>
+                                <MudSelect Class="col-span-1" T="string" Label="Asset" AnchorOrigin="Origin.BottomCenter" Variant="Variant.Outlined">
+                                    <MudSelectItem Value="@("MilkAda")" />
+                                    <MudSelectItem Value="@("CNCLV")" />
+                                </MudSelect>
+                            </div>
+                            <MudButton Size="Size.Large" Class="mt-3" Variant="Variant.Filled" Color="Color.Primary">Send</MudButton>
+                        </MudExpansionPanel>
+                    </MudExpansionPanels>
+
+                    <div class="mt-2 flex">
+                        <div class="mr-5">
+                            <span class="font-bold">CNCLV:</span> <span>1,230,405</span>
+                        </div>
+                        <div>
+                            <span class="font-bold">MilkAda:</span> <span>93,498</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr>
+
+            <div class="flex justify-between items-center pt-4">
+                <div class="w-full">
+                    <div class="flex">
+                        <div class="flex items-center gap-3 basis-1/2">
+                            <MudImage Class="max-w-[40px] m-0" Src="images/nami.png" Alt="Nami logo" />
+                            <p class="font-bold text-[20px]">Nami</p>
+                        </div>
+
+                        <div class="flex items-center gap-1 w-fit basis-1/2">
+                            <MudIcon Icon="@Icons.Filled.AccountBalanceWallet" Title="Cardano wallet address" />
+                            <p>addr_test1qrr86cuspxp7e3....5us6td4tas36a9xqoty</p>
+                        </div>
+                    </div>
+
+                    <MudExpansionPanels Elevation="0" Class="outline outline-1 mt-2">
+                        <MudExpansionPanel Text="Transfer to Milkomeda">
+                            <div class="grid grid-cols-3 gap-3">
+                                <MudTextField Class="col-span-2" @bind-Value="CardanoValue" Label="Amount" Variant="Variant.Filled"></MudTextField>
+                                <MudSelect Class="col-span-1" T="string" Label="Asset" AnchorOrigin="Origin.BottomCenter" Variant="Variant.Outlined">
+                                    <MudSelectItem Value="@("Ada")" />
+                                    <MudSelectItem Value="@("CNCLV")" />
+                                </MudSelect>
+                            </div>
+                            <MudButton Size="Size.Large" Class="mt-3" Variant="Variant.Filled" Color="Color.Primary">Send</MudButton>
+                        </MudExpansionPanel>
+                    </MudExpansionPanels>
+
+                    <div class="mt-2 flex">
+                        <div class="mr-5">
+                            <span class="font-bold">CNCLV:</span> <span>23,433,673</span>
+                        </div>
+                        <div>
+                            <span class="font-bold">Ada:</span> <span>102,371</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
     </DialogActions>
 </MudDialog>
