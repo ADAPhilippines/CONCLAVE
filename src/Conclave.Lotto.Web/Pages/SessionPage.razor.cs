@@ -27,7 +27,7 @@ public partial class SessionPage : ComponentBase
 
     private int MaxLength = 3;
 
-
+    private MudTextField<string> inputText2 = new();
     protected override void OnInitialized()
     {
         LottoWinners = DataService.LottoWinners;
@@ -52,14 +52,9 @@ public partial class SessionPage : ComponentBase
         DialogService?.Show<BuyTicketDialog>("Buy Ticket", dialogParams, closeOnEscapeKey);
     }
 
-    private void OnInputKeyPressed(KeyboardEventArgs args)
+    private void OnInputKeyPressed(EventArgs args)
     {
-        // inputText2.FocusAsync();
-
-    }
-
-    private void SetValue(string Value)
-    {
-        Console.WriteLine($"valueee {Value}");
+        Console.WriteLine($"event args: {args}");
+        inputText2.FocusAsync();
     }
 }

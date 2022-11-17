@@ -17,7 +17,9 @@
         <div>
             <h5>Ticket Entry</h5>
             <div class="userInput">
-                    <MudTextField T="string"  @oninput="(EventArgs) => SetValue(EventArgs.Value.ToString()"></MudTextField>
+                    @* <MudTextField T="string"  @oninput="(EventArgs) => SetValue(EventArgs.Value.ToString()"></MudTextField> *@
+                    <MudTextField T="string" OnKeyUp="OnInputKeyPressed"></MudTextField>
+                    <MudTextField T="string" @ref="inputText2"></MudTextField>
             </div>
         </div>
     </div>
