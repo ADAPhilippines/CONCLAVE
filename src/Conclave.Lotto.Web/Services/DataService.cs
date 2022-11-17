@@ -9,8 +9,8 @@ public class DataService
         new Ticket { Date = "11-07-2022", SessionId = 123456, Combination = 6, Price = 10, Status = Status.OnGoing },
         new Ticket { Date = "11-08-2022", SessionId = 23423, Combination = 4, Price = 12 },
         new Ticket { Date = "12-01-2022", SessionId = 783643, Combination = 5, Price = 15, Status = Status.OnGoing },
-        new Ticket { Date = "12-21-2022", SessionId = 762348, Combination = 8, Price = 12, Status = Status.Completed },
-        new Ticket { Date = "12-23-2022", SessionId = 32131, Combination = 7, Price = 10, Status = Status.Completed },
+        new Ticket { Date = "12-21-2022", SessionId = 762348, Combination = 8, Price = 12, Status = Status.UpComing },
+        new Ticket { Date = "12-23-2022", SessionId = 32131, Combination = 7, Price = 10, Status = Status.UpComing },
     };
 
     public IEnumerable<Transaction> Transactions { get; } = new List<Transaction>
@@ -65,7 +65,7 @@ public class DataService
             Margin = 5,
             Interval = 10,
             StartDate = new DateTime(2022, 12, 16, 7, 30, 00, DateTimeKind.Utc),
-            DateCreated = new DateTime(2022, 11, 13, 6, 15, 00, DateTimeKind.Utc)
+            DateCreated = new DateTime(2022, 10, 16, 6, 15, 00, DateTimeKind.Utc)
         },
         new Session {
             Id = 1,
@@ -78,25 +78,25 @@ public class DataService
             Margin = 5,
             Interval = 30,
             StartDate = new DateTime(2022, 11, 19, 7, 00, 00, DateTimeKind.Utc),
-            DateCreated = new DateTime(2022, 11, 13, 6, 15, 00, DateTimeKind.Utc)
+            DateCreated = new DateTime(2022, 11, 17, 6, 15, 00, DateTimeKind.Utc)
         },
         new Session {
             Id = 2,
             Name = "Test 3rd Session",
-            CurrentStatus = Status.Active,
+            CurrentStatus = Status.UpComing,
             PrizePool = 54532,
             TicketPrice = 220,
             Combinations = 5,
             MaxValue = 65,
             Margin = 5,
             Interval = 115,
-            StartDate = new DateTime(2022, 11, 17, 7, 30, 00, DateTimeKind.Utc),
-            DateCreated = new DateTime(2022, 11, 13, 6, 15, 00, DateTimeKind.Utc)
+            StartDate = new DateTime(2022, 12, 17, 7, 30, 00, DateTimeKind.Utc),
+            DateCreated = new DateTime(2022, 03, 13, 6, 15, 00, DateTimeKind.Utc)
         },
         new Session {
             Id = 3,
             Name = "Test 4th Session",
-            CurrentStatus = Status.Active,
+            CurrentStatus = Status.UpComing,
             PrizePool = 32352,
             TicketPrice = 20,
             Combinations = 5,
@@ -109,7 +109,7 @@ public class DataService
         new Session {
             Id = 4,
             Name = "Test 5th Session",
-            CurrentStatus = Status.Active,
+            CurrentStatus = Status.UpComing,
             PrizePool = 987524,
             TicketPrice = 20,
             Combinations = 5,
@@ -117,25 +117,25 @@ public class DataService
             Margin = 5,
             Interval = 10,
             StartDate = new DateTime(2022, 12, 16, 7, 30, 00, DateTimeKind.Utc),
-            DateCreated = new DateTime(2022, 11, 13, 6, 15, 00, DateTimeKind.Utc)
+            DateCreated = new DateTime(2022, 02, 13, 6, 15, 00, DateTimeKind.Utc)
         },
         new Session {
             Id = 5,
             Name = "Test 6th Session",
-            CurrentStatus = Status.Active,
+            CurrentStatus = Status.UpComing,
             PrizePool = 3684,
             TicketPrice = 20,
             Combinations = 5,
             MaxValue = 65,
             Margin = 5,
             Interval = 10,
-            StartDate = new DateTime(2022, 12, 16, 7, 30, 00, DateTimeKind.Utc),
+            StartDate = new DateTime(2022, 12, 19, 7, 30, 00, DateTimeKind.Utc),
             DateCreated = new DateTime(2022, 11, 13, 6, 15, 00, DateTimeKind.Utc)
         },
         new Session {
             Id = 6,
             Name = "Test 7th Session",
-            CurrentStatus = Status.Active,
+            CurrentStatus = Status.UpComing,
             PrizePool = 39785,
             TicketPrice = 20,
             Combinations = 5,
@@ -143,12 +143,12 @@ public class DataService
             Margin = 5,
             Interval = 10,
             StartDate = new DateTime(2022, 12, 16, 7, 30, 00, DateTimeKind.Utc),
-            DateCreated = new DateTime(2022, 11, 13, 6, 15, 00, DateTimeKind.Utc)
+            DateCreated = new DateTime(2022, 11, 14, 6, 15, 00, DateTimeKind.Utc)
         },
         new Session {
             Id = 7,
             Name = "Test 8th Session",
-            CurrentStatus = Status.Active,
+            CurrentStatus = Status.UpComing,
             PrizePool = 13634,
             TicketPrice = 20,
             Combinations = 5,
@@ -156,12 +156,12 @@ public class DataService
             Margin = 5,
             Interval = 10,
             StartDate = new DateTime(2022, 12, 16, 7, 30, 00, DateTimeKind.Utc),
-            DateCreated = new DateTime(2022, 11, 13, 6, 15, 00, DateTimeKind.Utc)
+            DateCreated = new DateTime(2022, 10, 13, 6, 15, 00, DateTimeKind.Utc)
         },
         new Session {
             Id = 8,
             Name = "Test 9th Session",
-            CurrentStatus = Status.Active,
+            CurrentStatus = Status.UpComing,
             PrizePool = 43432,
             TicketPrice = 20,
             Combinations = 5,
@@ -169,7 +169,7 @@ public class DataService
             Margin = 5,
             Interval = 10,
             StartDate = new DateTime(2022, 12, 16, 7, 30, 00, DateTimeKind.Utc),
-            DateCreated = new DateTime(2022, 11, 13, 6, 15, 00, DateTimeKind.Utc)
+            DateCreated = new DateTime(2022, 9, 13, 6, 15, 00, DateTimeKind.Utc)
         }
     };
 

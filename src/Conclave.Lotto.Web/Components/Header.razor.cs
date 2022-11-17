@@ -6,20 +6,17 @@ namespace Conclave.Lotto.Web.Components;
 
 public partial class Header
 {
-    private string Address { get; set; } = string.Empty;
-
+    [Parameter]
+    public EventCallback OnBtnConnectWalletClicked { get; set; }
+    
     [Inject] IDialogService? DialogService { get; set; } = default;
-    [Inject] NethereumService? NethereumService { get; set; } = default!;
 
     private bool IsOpen { get; set; }
 
     private async Task OpenConnectWalletsDialog()
     {
-        if (NethereumService is not null)
-            await NethereumService.ConnectMetamaskWalletAsync();
-
-        // DialogOptions closeOnEscapeKey = new DialogOptions() { CloseOnEscapeKey = true };
-        // DialogService?.Show<ConnectWalletsDialog>("Connect Wallets", closeOnEscapeKey);
+         DialogOptions closeOnEscapeKey = new DialogOptions() { CloseOnEscapeKey = true };
+         DialogService?.Show<ConnectWalletsDialog>("Connect Wallets", closeOnEscapeKey);
     }
 
     private void OnBtnAddFundsClicked()

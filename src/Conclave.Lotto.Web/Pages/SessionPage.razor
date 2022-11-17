@@ -2,11 +2,35 @@
 @page "/sessions"
 
 @using Conclave.Lotto.Web.Components
+@using Models
 
 <PageTitle>Index</PageTitle>
 
 <div class="flex justify-between gap-3 1xl:gap-0">
     <div class="relative px-5 pt-5 border-2 flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+            <div class="flex-1">
+                <p>Sort by:</p>
+                <MudChipSet Filter="true" Mandatory="@mandatory" SelectedChipChanged="OnSelectedChipChanged">
+                    <MudChip Text="Relevance" Label="true" SelectedColor="Color.Primary" Variant="Variant.Filled">
+                        Relevance</MudChip>
+                    <MudChip Text="Latest" Label="true" SelectedColor="Color.Primary" Variant="Variant.Filled">Latest
+                    </MudChip>
+                    <MudChip Text="PrizePool" Label="true" SelectedColor="Color.Primary" Variant="Variant.Filled">Prize
+                        Pool</MudChip>
+                </MudChipSet>
+            </div>
+            <div class="flex-1">
+                <p>Filter by:</p>
+                <select class="border-2 p-2 w-full" name="status" @onchange="OnSelectValuesChanged">
+                     <option value="" disabled selected>Select Status</option>
+                    @foreach (Status item in Enum.GetValues(typeof(Status)))
+                    {
+                        <option value="@item">@item</option>
+                    }
+                </select>
+            </div>
+        </div>
         <SessionList>
             @foreach (var item in PaginatedSessions)
             {

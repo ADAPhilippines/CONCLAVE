@@ -1,0 +1,27 @@
+@page "/test-page"
+
+<ul>
+    @for (int i = 0; i < userNames.Count; i++)
+    {
+        int j = i; // copy i to be safe
+
+        <li class="border-2">
+            <input type="text" @bind="@userNames[j]" />
+        </li>
+    }
+</ul>
+
+
+
+@*to verify the binding*@
+@foreach (string userName in userNames)
+{
+    <p>@userName</p>
+}
+
+@code
+{
+
+    List<string> userNames = new List<string>(new string[2]);
+
+}
