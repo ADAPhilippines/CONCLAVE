@@ -293,48 +293,29 @@ describe('ConclaveOperator Contract', function () {
             await expect(oracle.connect(node).submitResponse(1, getResponse(1))).to.be.revertedWithCustomError(oracle, 'RequestNotExist');
         });
 
-        it.only('Should be able to trigger distribute staking reward function and distribute rewards', async function () {
+        it('Should be able to trigger distribute staking reward function and distribute rewards', async function () {
             const {
                 oracle,
                 nodes,
                 operators,
-                sampleRequestId,
+                operators: [operator1, operator2],
                 getResponse,
-                consumer,
                 adaFee,
-                adaFeePerNum,
                 tokenFee,
-                tokenFeePerNum,
                 minValidator,
                 maxValidator,
                 submitRequest,
-                decimal,
                 unstake,
+                simulateJobCycle,
             } = await loadFixture(operatorFixture);
 
-            await oracle.connect(nodes[0]).acceptJob(sampleRequestId);
-            await ethers.provider.send('evm_increaseTime', [30]);
-            const jobDetails = await oracle.getJobDetails(sampleRequestId);
-            const response = getResponse(jobDetails.numCount);
-            await oracle.connect(nodes[0]).submitResponse(sampleRequestId, response);
-
-            await ethers.provider.send('evm_increaseTime', [61 + 61 * jobDetails.numCount]);
-            await consumer.finalizeResult(sampleRequestId);
-
-            const totalDeductedStake: BigNumber = BigNumber.from(0);
-            const totalStartingStake = await oracle.s_totalStakes();
-
-            // unstake all operators to make sure 100% of reward goes to node
-            for (let i = 1; i < operators.length; i++) {
-                const balance = await oracle.getStake(operators[i].address);
-                totalDeductedStake.add(balance);
-                console.log({ balance: ethers.utils.formatUnits(balance, decimal) });
-                await unstake(operators[i], balance);
-                const remainingStake = await oracle.s_totalStakes();
-                expect(remainingStake).to.equal(totalStartingStake.sub(balance));
+            const requestIds = await simulateJobCycle(1, [nodes[0]], 1, 5);
+            const { baseAdaFee, adaFeePerNum, baseTokenFee, tokenFeePerNum, numCount } = await oracle.getJobDetails(requestIds[0]);
+            for (const operator of operators) {
+                if (operator.address === operator1.address) continue;
+                const balance = await oracle.getStake(operator.address);
+                await unstake(operator, balance);
             }
-            // const remainingStake = await oracle.s_totalStakes();
-            // expect(remainingStake).to.equal(totalStartingStake.sub(totalDeductedStake));
 
             const newRequestId = await submitRequest({ numCount: 1, adaFee, adaFeePerNum, tokenFee, tokenFeePerNum, minValidator, maxValidator });
             const newJobDetails = await oracle.getJobDetails(newRequestId);
@@ -343,82 +324,60 @@ describe('ConclaveOperator Contract', function () {
             await ethers.provider.send('evm_increaseTime', [61]);
             await oracle.connect(nodes[0]).submitResponse(newJobDetails.jobId, getResponse(1));
 
-            const rewards = await oracle.s_operatorStakingRewards(operators[0].address);
+            const rewards = await oracle.s_operatorStakingRewards(operator1.address);
             const totalStakes = await oracle.s_totalStakes();
-            const operatorStake = await oracle.getStake(operators[0].address);
-            const weight = await oracle.calculateWeight(await oracle.getStake(operators[0].address), await oracle.s_totalStakes());
+            const operatorStake = await oracle.getStake(operator1.address);
+            const weight = await oracle.calculateWeight(operatorStake, totalStakes);
 
-            const stakingAdaReward = await oracle.calculateShare(
-                10 * 100,
-                jobDetails.baseAdaFee.add(jobDetails.adaFeePerNum.mul(jobDetails.numCount))
-            );
-            const stakingTokenReward = await oracle.calculateShare(
-                10 * 100,
-                jobDetails.baseTokenFee.add(jobDetails.tokenFeePerNum.mul(jobDetails.numCount))
-            );
-
-            console.log({ operatorStake });
-            console.log({ totalStakes });
-            console.log({ weight });
+            const stakingAdaReward = await oracle.calculateShare(10 * 100, baseAdaFee.add(adaFeePerNum.mul(numCount)));
+            const stakingTokenReward = await oracle.calculateShare(10 * 100, baseTokenFee.add(tokenFeePerNum.mul(numCount)));
 
             const adaShare = await oracle.calculateShare(weight, stakingAdaReward);
             const tokenShare = await oracle.calculateShare(weight, stakingTokenReward);
 
-            // expect(rewards.ada).to.be.equal(adaShare);
-            // expect(rewards.token).to.be.equal(tokenShare);
-            // expect(await oracle.s_latestDistributorNode()).to.equal(nodes[0].address);
+            expect(rewards.ada).to.be.equal(adaShare);
+            expect(rewards.token).to.be.equal(tokenShare);
+            expect(await oracle.s_latestDistributorNode()).to.equal(nodes[0].address);
         });
     });
 
-    describe.only('GetPendingRewards function', async function () {
+    describe('GetPendingRewards function', async function () {
         it('Should display all pending reward from accepted jobs', async function () {
             const {
                 oracle,
                 nodes: [node1, node2, node3, node4, node5],
-                operators: [operator1, operator2, operator3, operator4],
-                getResponse,
-                consumer,
-                adaFee,
-                adaFeePerNum,
-                tokenFee,
-                tokenFeePerNum,
-                minValidator,
-                maxValidator,
-                submitRequest,
-                jobAcceptanceLimitInSeconds,
-                jobFulFillmentLimitInSeconds,
-                submitResponseAndFinalize,
+                simulateJobCycle,
             } = await loadFixture(operatorFixture);
 
-            // const participatingNodes = [node1, node2, node3, node4, node5];
-            // let numCount = 2;
-            // const requestId1 = await submitRequest({
-            //     numCount,
-            //     adaFee,
-            //     adaFeePerNum,
-            //     tokenFee,
-            //     tokenFeePerNum,
-            //     minValidator: minValidator.add(4),
-            //     maxValidator: maxValidator.add(5),
-            // });
+            const participatingNodes = [node1, node2, node3, node4, node5];
+            const requestIds = await simulateJobCycle(5, participatingNodes, 2, 5);
 
-            // const jobDetails1 = await submitResponseAndFinalize(requestId1, participatingNodes);
-            // console.log({ jobDetails1 });
+            for (const node of participatingNodes) {
+                for (let i = 0; i < requestIds.length; i++) {
+                    const { jobId, finalResultDataId, baseAdaFee, adaFeePerNum, baseTokenFee, tokenFeePerNum, numCount } = await oracle.getJobDetails(
+                        requestIds[i]
+                    );
+                    const reward = await oracle.connect(node).getPendingRewards(jobId);
+                    const opeartorAddr = await oracle.getOwner(node.address);
+                    const nodeDataId = await oracle.connect(node).s_nodeDataId(jobId, opeartorAddr);
 
-            // numCount = 3;
-            // const requestId2 = await submitRequest({
-            //     numCount,
-            //     adaFee,
-            //     adaFeePerNum,
-            //     tokenFee,
-            //     tokenFeePerNum,
-            //     minValidator: minValidator.add(4),
-            //     maxValidator: maxValidator.add(5),
-            // });
+                    if (finalResultDataId.eq(nodeDataId)) {
+                        const totalResponses = await oracle.s_dataIdVotes(jobId, finalResultDataId);
+                        const weight = await oracle.calculateWeight(1, totalResponses);
 
-            // const jobDetails2 = await submitResponseAndFinalize(requestId2, participatingNodes);
-            //console.log({ jobDetails2 });
-            expect(0).to.be.equal(0);
+                        const totalAdaRewards = await oracle.calculateShare(90 * 100, baseAdaFee.add(adaFeePerNum.mul(numCount)));
+                        const totalTokenRewards = await oracle.calculateShare(90 * 100, baseTokenFee.add(tokenFeePerNum.mul(numCount)));
+                        const adaShare = await oracle.calculateShare(weight, totalAdaRewards);
+                        const tokenShare = await oracle.calculateShare(weight, totalTokenRewards);
+
+                        expect(reward.ada).to.be.equal(adaShare);
+                        expect(reward.token).to.be.equal(tokenShare);
+                    } else {
+                        expect(reward.ada).to.be.equal(0);
+                        expect(reward.token).to.be.equal(0);
+                    }
+                }
+            }
         });
     });
 });
