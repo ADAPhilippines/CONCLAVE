@@ -23,6 +23,10 @@ public partial class SessionPage : ComponentBase
 
     private List<Session> PaginatedSessions { get; set; } = default!;
 
+    private bool mandatory { get; set; } = true;
+
+    private Status SessionStatus { get; set; } = Status.OnGoing;
+
     protected override void OnInitialized()
     {
         LottoWinners = DataService.LottoWinners;
@@ -54,5 +58,42 @@ public partial class SessionPage : ComponentBase
         int maxItems = 3;
         index = page * maxItems - maxItems;
         PaginatedSessions = Sessions.GetRange(index, maxItems);
+    }
+
+    private void OnSelectedChipChanged(MudChip chip)
+    {
+        if (chip.Text == "PrizePool")
+            Sessions.Sort((a, b) =>
+            {
+                return a.PrizePool.CompareTo(b.PrizePool);
+            });
+        else if (chip.Text == "Latest")
+            Sessions.Sort((a, b) =>
+            {
+                return DateTime.Compare(a.DateCreated.Value, b.DateCreated.Value);
+            });
+        else
+            Sessions.Sort((a, b) => { return a.Id.CompareTo(b.Id); });
+
+        PaginatedSessions = Sessions.GetRange(0, 3);
+    }
+
+    private void OnSelectValuesChanged(ChangeEventArgs args)
+    {
+        List<Session> FilteredSessions = new();
+        if (args?.Value?.ToString() == "OnGoing")
+        {
+            Console.WriteLine("Ongoing");
+            FilteredSessions = Sessions.FindAll(s => s.CurrentStatus == Status.OnGoing);
+            PaginatedSessions = FilteredSessions.GetRange(0, 2);
+        }
+        else if (args?.Value?.ToString() == "UpComing")
+        {
+            Console.WriteLine("upcoming");
+            
+            FilteredSessions = Sessions.FindAll(s => s.CurrentStatus == Status.UpComing);
+            PaginatedSessions = FilteredSessions.GetRange(0, 3);
+        }
+
     }
 }
