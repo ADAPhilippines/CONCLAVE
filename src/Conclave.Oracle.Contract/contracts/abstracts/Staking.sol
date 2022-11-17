@@ -23,6 +23,16 @@ abstract contract Staking is IStakeable {
         _;
     }
 
+    modifier onlyWithinBalance(uint256 ada, uint256 token) {
+        if (ada > address(this).balance) {
+            revert InsufficientBalance(ada, address(this).balance);
+        }
+        if (token > _token.balanceOf(address(this))) {
+            revert InsufficientBalance(token, _token.balanceOf(address(this)));
+        }
+        _;
+    }
+
     constructor(IERC20 token) {
         _token = token;
     }

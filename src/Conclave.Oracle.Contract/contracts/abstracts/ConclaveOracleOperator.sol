@@ -152,11 +152,24 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         _stake(ada, token);
     }
 
-    function unstake(uint256 ada, uint256 token) external override {
-        require(
-            s_pendingRewardJobIds[msg.sender].length == 0,
-            "Cannot withdraw stake while there are pending rewards"
-        );
+    function unstake(uint256 ada, uint256 token)
+        external
+        override
+        onlyWithinBalance(ada, token)
+    {
+        if (s_pendingRewardJobIds[msg.sender].length > 0) {
+            uint256 remainingAda = s_stakes[msg.sender].ada - ada;
+            uint256 remainingToken = s_stakes[msg.sender].token - token;
+
+            if (
+                remainingAda < s_minStake.ada ||
+                remainingToken < s_minStake.token
+            ) {
+                revert(
+                    "Cannot unstake below minimum stake when there's pending rewards"
+                );
+            }
+        }
         _unstake(ada, token);
     }
 
