@@ -1,40 +1,58 @@
 using Microsoft.AspNetCore.Components;
-
+using MudBlazor;
 namespace Conclave.Lotto.Web.Components;
 
 public partial class CountdownTimer
 {
     [Parameter]
-    public int Interval { get; set; }
+    public DateTime? StartDateTime { get; set; }
 
-    public int Hours { get; set; }
+    [Parameter]
+    public DateTime? DateCreated { get; set; }
 
-    public int Minutes { get; set; }
+    [Parameter]
+    public string ContainerType { get; set; } = "Card";
 
-    public int Seconds { get; set; }
+    private string PaperSize => ContainerType == "Card" ? "35px" : "50px";
+
+    private Typo TextSize => ContainerType == "Card" ? Typo.body2 : Typo.h5;
+
+    private TimeSpan TimeInterval { get; set; }
+
+    private int IntervalInSeconds { get; set; }
+
+    private double MinValue { get; set; }
+
+    private double CurrentValue { get; set; }
+
+    private double MaxValue { get; set; }
 
     protected async override Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
+            MinValue = DateCreated.Value.ToOADate();
+            MaxValue = StartDateTime.Value.ToOADate();
+
+            Console.WriteLine($"MinValue: {MinValue}, MaxValue: {MaxValue}, CurrentValue: {CurrentValue}");
             _ = Task.Run(async () =>
             {
-                while (Interval >= 0)
+                IntervalInSeconds = Convert.ToInt32(StartDateTime.Value.Subtract(DateTime.UtcNow).TotalSeconds);
+                while (IntervalInSeconds >= 0)
                 {
                     await Task.Delay(1000);
-                    await BreakdownTime(Interval);
+                    CurrentValue = DateTime.UtcNow.ToOADate();
+                    TimeInterval = StartDateTime.Value.Subtract(DateTime.UtcNow).Duration();
+                    await InvokeAsync(StateHasChanged);
                 }
             });
         }
         await base.OnAfterRenderAsync(firstRender);
     }
 
-    private async Task BreakdownTime(int interval)
-    {
-        Hours = interval / 3600;
-        Minutes = (interval % 3600) / 60;
-        Seconds = (interval % 3600) % 60;
-        Interval--;
-        await InvokeAsync(StateHasChanged);
+    private string HideSectionsInCard(){
+        if(ContainerType == "Card")
+            return "hidden";
+        return "block";
     }
 }

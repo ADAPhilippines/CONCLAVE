@@ -2,28 +2,52 @@
 @page "/sessions"
 
 @using Conclave.Lotto.Web.Components
+@using Models
 
 <PageTitle>Index</PageTitle>
 
-<div class="flex gap-x-4">
-    <div>
+<div class="flex justify-between gap-3 1xl:gap-0">
+    <div class="relative px-5 pt-5 border-2 flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+            <div class="flex-1">
+                <p>Sort by:</p>
+                <MudChipSet Filter="true" Mandatory="@mandatory" SelectedChipChanged="OnSelectedChipChanged">
+                    <MudChip Text="Relevance" Label="true" SelectedColor="Color.Primary" Variant="Variant.Filled">
+                        Relevance</MudChip>
+                    <MudChip Text="Latest" Label="true" SelectedColor="Color.Primary" Variant="Variant.Filled">Latest
+                    </MudChip>
+                    <MudChip Text="PrizePool" Label="true" SelectedColor="Color.Primary" Variant="Variant.Filled">Prize
+                        Pool</MudChip>
+                </MudChipSet>
+            </div>
+            <div class="flex-1">
+                <p>Filter by:</p>
+                <select class="border-2 p-2 w-full" name="status" @onchange="OnSelectValuesChanged">
+                     <option value="" disabled selected>Select Status</option>
+                    @foreach (Status item in Enum.GetValues(typeof(Status)))
+                    {
+                        <option value="@item">@item</option>
+                    }
+                </select>
+            </div>
+        </div>
         <SessionList>
-            <SessionCard Interval="100" />
-            <SessionCard Interval="3765" />
-            <SessionCard Interval="10" />
-            <SessionCard Interval="356" />
-            <SessionCard Interval="60" />
-            <SessionCard Interval="60" />
+            @foreach (var item in PaginatedSessions)
+            {
+                <SessionCard OnSessionCardClicked="() => OnSessionCardClicked(item)" SessionDetails="item"
+                OnBtnBuyTicketClicked="() => OnBtnBuyTicketClicked(item)" />
+            }
         </SessionList>
+        <div class="flex px-5 mb-2 justify-center">
+            <MudPagination Color="Color.Primary" Count="3" SelectedChanged="OnPageChanged" />
+        </div>
     </div>
-
     <div>
         <div>
-            <MudButton @onclick="OpenDialog" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
+            <MudButton OnClick="OpenDialog" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
                 Create Session
             </MudButton>
         </div>
-
         <div class="outline outline-1 mt-4">
             <LottoWinnersList>
                 @foreach (var lottoWinner in LottoWinners)
@@ -32,7 +56,6 @@
                 }
             </LottoWinnersList>
         </div>
-
         <div class="mt-4 outline outline-1">
             <TicketList />
         </div>

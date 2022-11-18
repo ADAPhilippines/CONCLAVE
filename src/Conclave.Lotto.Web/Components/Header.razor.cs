@@ -6,22 +6,17 @@ namespace Conclave.Lotto.Web.Components;
 
 public partial class Header
 {
-    private string Address { get; set; } = string.Empty;
-
+    [Parameter]
+    public EventCallback OnBtnConnectWalletClicked { get; set; }
+    
     [Inject] IDialogService? DialogService { get; set; } = default;
 
     private bool IsOpen { get; set; }
 
-    private void OpenConnectWalletsDialog()
+    private async Task OpenConnectWalletsDialog()
     {
-        DialogOptions closeOnEscapeKey = new DialogOptions() { CloseOnEscapeKey = true };
-        DialogService?.Show<ConnectWalletsDialog>("Connect Wallets", closeOnEscapeKey);
-    }
-
-    private async Task OnBtnConnectWalletClicked()
-    {
-        Address = await Interop.GetWalletAddress();
-        await InvokeAsync(StateHasChanged);
+         DialogOptions closeOnEscapeKey = new DialogOptions() { CloseOnEscapeKey = true };
+         DialogService?.Show<ConnectWalletsDialog>("Connect Wallets", closeOnEscapeKey);
     }
 
     private void OnBtnAddFundsClicked()

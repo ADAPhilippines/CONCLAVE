@@ -12,7 +12,7 @@ contract Staking is IStakeable {
     mapping(address => uint256) public s_stakes;
     address[] public s_stakers;
 
-    mapping(address => bool) public isStakers;
+    mapping(address => bool) public s_isStakers;
 
     error InsufficientBalance(uint256 requested, uint256 balance);
 
@@ -31,8 +31,8 @@ contract Staking is IStakeable {
         s_stakes[msg.sender] += amount;
         s_totalStakes += amount;
 
-        if (!isStakers[msg.sender]) {
-            isStakers[msg.sender] = true;
+        if (!s_isStakers[msg.sender]) {
+            s_isStakers[msg.sender] = true;
             s_stakers.push(msg.sender);
         }
     }

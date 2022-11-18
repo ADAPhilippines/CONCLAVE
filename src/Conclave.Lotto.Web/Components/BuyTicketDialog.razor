@@ -1,0 +1,25 @@
+<MudDialog>
+    <DialogContent>
+        <div class="flex flex-col justify-between">
+            <div class="flex justify-between mb-2">
+                <MudText Typo="Typo.body2">Session ID: @SessionDetails.Id</MudText>
+                <MudText Typo="Typo.body2">Ticket Price: ₳ @SessionDetails.TicketPrice</MudText>
+            </div>
+            <MudText Typo="Typo.h5">Ticket Entry:</MudText>
+            <ul class="flex justify-center border-2">
+                @for (int i = 0; i < Entries.Count; i++)
+                {
+                    int j = i;
+                    <li>
+                        <MudTextField Variant="Variant.Outlined" Class="mr-2" @bind-Value="@Entries[j]"
+                        @ref="InputTextRef[j]" OnKeyPress="(e) => OnKeyPressed(e, j)" />
+                    </li>
+                }
+            </ul>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnBtnCancelClicked">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="OnBtnDepositClicked">Ok</MudButton>
+    </DialogActions>
+</MudDialog>

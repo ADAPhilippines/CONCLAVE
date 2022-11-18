@@ -19,7 +19,7 @@ builder.Services.AddSingleton<MetamaskHostProvider>();
 
 builder.Services.AddMudServices();
 builder.Services.AddScoped<DataService>();
+builder.Services.AddScoped<NethereumService>();
 
-await JSHost.ImportAsync("Interop", "../dist/App.bundle.js");
 
 await builder.Build().RunAsync();

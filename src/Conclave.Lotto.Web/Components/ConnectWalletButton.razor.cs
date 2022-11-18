@@ -12,9 +12,6 @@ public partial class ConnectWalletButton
     public string? Address { get; set; }
 
     [Parameter]
-    public EventCallback OnBtnConnectWalletClicked { get; set; }
-
-    [Parameter]
     public EventCallback OnBtnAddFundsClicked { get; set; }
 
     [Parameter]
