@@ -8,6 +8,7 @@ abstract contract Staking is IStakeable {
     /* STAKING PROPERTIES */
     IERC20 public immutable _token;
     Stake public s_totalStakes;
+    Stake public s_totalPendingStakingRewards;
     mapping(address => Stake) public s_stakes;
     address[] public s_stakers;
 
