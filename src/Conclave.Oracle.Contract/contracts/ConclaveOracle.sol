@@ -23,6 +23,7 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
     error InvalidValidatorRange();
     error JobSubmissionInProgress();
     error JobAlreadyFinalized();
+    error JobAcceptanceInProgress();
 
     event JobRequestCreated(
         uint256 jobId,
@@ -126,6 +127,10 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         returns (uint256[] memory randomNumbers, uint status)
     {
         JobRequest storage jobRequest = s_jobRequests[jobId];
+
+        if (block.timestamp < jobRequest.jobAcceptanceExpiration) {
+            revert JobAcceptanceInProgress();
+        }
 
         if (
             jobRequest.validators.length < jobRequest.responseCount &&
