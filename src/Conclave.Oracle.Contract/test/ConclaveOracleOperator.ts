@@ -55,7 +55,10 @@ describe('ConclaveOperator Contract', function () {
             } = await loadFixture(delegateNodeFixture);
 
             await oracle.connect(operator).delegateNode(node.address);
-            await expect(oracle.connect(operator).delegateNode(node.address)).to.be.revertedWithCustomError(oracle, 'NodeAlreadyRegistered');
+            await expect(oracle.connect(operator).delegateNode(node.address)).to.be.revertedWithCustomError(
+                oracle,
+                'NodeAlreadyRegistered'
+            );
         });
     });
 
@@ -93,7 +96,10 @@ describe('ConclaveOperator Contract', function () {
             } = await loadFixture(operatorFixture);
 
             await oracle.connect(node).acceptJob(sampleRequestId);
-            await expect(oracle.connect(node).acceptJob(sampleRequestId)).to.be.revertedWithCustomError(oracle, 'NodeAlreadyRegistered');
+            await expect(oracle.connect(node).acceptJob(sampleRequestId)).to.be.revertedWithCustomError(
+                oracle,
+                'NodeAlreadyRegistered'
+            );
         });
 
         it('Should not be able to accept job if max validators reached', async function () {
@@ -119,9 +125,12 @@ describe('ConclaveOperator Contract', function () {
             } = await loadFixture(operatorFixture);
 
             const operatorBalance = await oracle.getStake(operator.address);
-            await oracle.connect(operator).unstake(operatorBalance);
+            await oracle.connect(operator).unstake(operatorBalance.ada, operatorBalance.token);
 
-            await expect(oracle.connect(node).acceptJob(sampleRequestId)).to.be.revertedWithCustomError(oracle, 'NotEnoughStake');
+            await expect(oracle.connect(node).acceptJob(sampleRequestId)).to.be.revertedWithCustomError(
+                oracle,
+                'NotEnoughStake'
+            );
         });
 
         it('Should not be able to accept job if time limit reached', async function () {
@@ -132,7 +141,10 @@ describe('ConclaveOperator Contract', function () {
             } = await loadFixture(operatorFixture);
 
             await ethers.provider.send('evm_increaseTime', [61]);
-            await expect(oracle.connect(node).acceptJob(sampleRequestId)).to.be.revertedWithCustomError(oracle, 'TimeLimitExceeded');
+            await expect(oracle.connect(node).acceptJob(sampleRequestId)).to.be.revertedWithCustomError(
+                oracle,
+                'TimeLimitExceeded'
+            );
         });
 
         it('Should add job id to pending reward ids', async function () {
@@ -163,7 +175,10 @@ describe('ConclaveOperator Contract', function () {
             await ethers.provider.send('evm_increaseTime', [61]);
             const jobDetails = await oracle.getJobDetails(sampleRequestId);
             const response = getResponse(jobDetails.numCount);
-            await expect(oracle.connect(node).submitResponse(sampleRequestId, response)).to.emit(oracle, 'ResponseSubmitted');
+            await expect(oracle.connect(node).submitResponse(sampleRequestId, response)).to.emit(
+                oracle,
+                'ResponseSubmitted'
+            );
 
             const nodeSubmission = await oracle.s_nodeDataId(sampleRequestId, operator.address);
             const dataHash = ethers.utils.keccak256(
@@ -206,10 +221,9 @@ describe('ConclaveOperator Contract', function () {
                 getResponse,
             } = await loadFixture(operatorFixture);
 
-            await expect(oracle.connect(node).submitResponse(sampleRequestId, getResponse(1))).to.be.revertedWithCustomError(
-                oracle,
-                'ResponseSubmissionNotAuthorized'
-            );
+            await expect(
+                oracle.connect(node).submitResponse(sampleRequestId, getResponse(1))
+            ).to.be.revertedWithCustomError(oracle, 'ResponseSubmissionNotAuthorized');
         });
 
         it('Should not be able to submit invalid response', async function () {
@@ -222,10 +236,9 @@ describe('ConclaveOperator Contract', function () {
 
             await oracle.connect(node).acceptJob(sampleRequestId);
             await ethers.provider.send('evm_increaseTime', [61]);
-            await expect(oracle.connect(node).submitResponse(sampleRequestId, getResponse(2))).to.be.revertedWithCustomError(
-                oracle,
-                'InvalidResponse'
-            );
+            await expect(
+                oracle.connect(node).submitResponse(sampleRequestId, getResponse(2))
+            ).to.be.revertedWithCustomError(oracle, 'InvalidResponse');
         });
 
         it('Should not be able to submit response if minimum validator not reached', async function () {
@@ -257,10 +270,9 @@ describe('ConclaveOperator Contract', function () {
             const request = await oracle.getJobDetails(requestId);
             await oracle.connect(node).acceptJob(request.jobId);
             await ethers.provider.send('evm_increaseTime', [jobAcceptanceLimitInSeconds + 1]);
-            await expect(oracle.connect(node).submitResponse(request.jobId, getResponse(numCount))).to.be.revertedWithCustomError(
-                oracle,
-                'MinValidatorNotReached'
-            );
+            await expect(
+                oracle.connect(node).submitResponse(request.jobId, getResponse(numCount))
+            ).to.be.revertedWithCustomError(oracle, 'MinValidatorNotReached');
         });
 
         it('Should not be able to submit response if not within the specified time limit', async function () {
@@ -277,10 +289,9 @@ describe('ConclaveOperator Contract', function () {
             await oracle.connect(node).acceptJob(sampleRequestId);
             const timeJump = jobAcceptanceLimitInSeconds + jobFulFillmentLimitInSeconds * request.numCount + 100000;
             await ethers.provider.send('evm_increaseTime', [timeJump]);
-            await expect(oracle.connect(node).submitResponse(sampleRequestId, getResponse(request.numCount))).to.be.revertedWithCustomError(
-                oracle,
-                'TimeLimitExceeded'
-            );
+            await expect(
+                oracle.connect(node).submitResponse(sampleRequestId, getResponse(request.numCount))
+            ).to.be.revertedWithCustomError(oracle, 'TimeLimitExceeded');
         });
 
         it('Should not be able to submit if request does not exist', async function () {
@@ -290,7 +301,10 @@ describe('ConclaveOperator Contract', function () {
                 getResponse,
             } = await loadFixture(operatorFixture);
 
-            await expect(oracle.connect(node).submitResponse(1, getResponse(1))).to.be.revertedWithCustomError(oracle, 'RequestNotExist');
+            await expect(oracle.connect(node).submitResponse(1, getResponse(1))).to.be.revertedWithCustomError(
+                oracle,
+                'RequestNotExist'
+            );
         });
 
         it('Should be able to trigger distribute staking reward function and distribute rewards', async function () {
@@ -310,27 +324,40 @@ describe('ConclaveOperator Contract', function () {
             } = await loadFixture(operatorFixture);
 
             const requestIds = await simulateJobCycle(1, [nodes[0]], 1, 5);
-            const { baseAdaFee, adaFeePerNum, baseTokenFee, tokenFeePerNum, numCount } = await oracle.getJobDetails(requestIds[0]);
+            const { baseAdaFee, adaFeePerNum, baseTokenFee, tokenFeePerNum, numCount } = await oracle.getJobDetails(
+                requestIds[0]
+            );
             for (const operator of operators) {
                 if (operator.address === operator1.address) continue;
                 const balance = await oracle.getStake(operator.address);
-                await unstake(operator, balance);
+                await unstake(operator, balance.ada, balance.token);
             }
 
-            const newRequestId = await submitRequest({ numCount: 1, adaFee, adaFeePerNum, tokenFee, tokenFeePerNum, minValidator, maxValidator });
+            const newRequestId = await submitRequest({
+                numCount: 1,
+                adaFee,
+                adaFeePerNum,
+                tokenFee,
+                tokenFeePerNum,
+                minValidator,
+                maxValidator,
+            });
             const newJobDetails = await oracle.getJobDetails(newRequestId);
 
             await oracle.connect(nodes[0]).acceptJob(newJobDetails.jobId);
             await ethers.provider.send('evm_increaseTime', [61]);
             await oracle.connect(nodes[0]).submitResponse(newJobDetails.jobId, getResponse(1));
 
-            const rewards = await oracle.s_operatorStakingRewards(operator1.address);
+            const rewards = await oracle.s_totalStakingRewards(operator1.address);
             const totalStakes = await oracle.s_totalStakes();
             const operatorStake = await oracle.getStake(operator1.address);
-            const weight = await oracle.calculateWeight(operatorStake, totalStakes);
+            const weight = await oracle.calculateWeight(operatorStake.token, totalStakes.token);
 
             const stakingAdaReward = await oracle.calculateShare(10 * 100, baseAdaFee.add(adaFeePerNum.mul(numCount)));
-            const stakingTokenReward = await oracle.calculateShare(10 * 100, baseTokenFee.add(tokenFeePerNum.mul(numCount)));
+            const stakingTokenReward = await oracle.calculateShare(
+                10 * 100,
+                baseTokenFee.add(tokenFeePerNum.mul(numCount))
+            );
 
             const adaShare = await oracle.calculateShare(weight, stakingAdaReward);
             const tokenShare = await oracle.calculateShare(weight, stakingTokenReward);
@@ -342,7 +369,7 @@ describe('ConclaveOperator Contract', function () {
     });
 
     describe('GetPendingRewards function', async function () {
-        it('Should display all pending reward from accepted jobs', async function () {
+        it.only('Should display all pending reward from accepted jobs', async function () {
             const {
                 oracle,
                 nodes: [node1, node2, node3, node4, node5],
@@ -354,9 +381,15 @@ describe('ConclaveOperator Contract', function () {
 
             for (const node of participatingNodes) {
                 for (let i = 0; i < requestIds.length; i++) {
-                    const { jobId, finalResultDataId, baseAdaFee, adaFeePerNum, baseTokenFee, tokenFeePerNum, numCount } = await oracle.getJobDetails(
-                        requestIds[i]
-                    );
+                    const {
+                        jobId,
+                        finalResultDataId,
+                        baseAdaFee,
+                        adaFeePerNum,
+                        baseTokenFee,
+                        tokenFeePerNum,
+                        numCount,
+                    } = await oracle.getJobDetails(requestIds[i]);
                     const reward = await oracle.connect(node).getPendingRewards(jobId);
                     const opeartorAddr = await oracle.getOwner(node.address);
                     const nodeDataId = await oracle.connect(node).s_nodeDataId(jobId, opeartorAddr);
@@ -365,8 +398,14 @@ describe('ConclaveOperator Contract', function () {
                         const totalResponses = await oracle.s_dataIdVotes(jobId, finalResultDataId);
                         const weight = await oracle.calculateWeight(1, totalResponses);
 
-                        const totalAdaRewards = await oracle.calculateShare(90 * 100, baseAdaFee.add(adaFeePerNum.mul(numCount)));
-                        const totalTokenRewards = await oracle.calculateShare(90 * 100, baseTokenFee.add(tokenFeePerNum.mul(numCount)));
+                        const totalAdaRewards = await oracle.calculateShare(
+                            90 * 100,
+                            baseAdaFee.add(adaFeePerNum.mul(numCount))
+                        );
+                        const totalTokenRewards = await oracle.calculateShare(
+                            90 * 100,
+                            baseTokenFee.add(tokenFeePerNum.mul(numCount))
+                        );
                         const adaShare = await oracle.calculateShare(weight, totalAdaRewards);
                         const tokenShare = await oracle.calculateShare(weight, totalTokenRewards);
 
@@ -378,6 +417,35 @@ describe('ConclaveOperator Contract', function () {
                     }
                 }
             }
+        });
+    });
+
+    describe.only('ClaimPendingRewards function', function () {
+        it('Should add pending rewards to stake balance', async function () {
+            const { oracle, nodes, simulateJobCycle } = await loadFixture(operatorFixture);
+            const requestCount = 3;
+            const requestIds = await simulateJobCycle(requestCount, nodes, 3, 10);
+
+            for (const node of nodes) {
+                const balance = await oracle.getStake(await oracle.getOwner(node.address));
+                const pendingRewards = await oracle.connect(node).getTotalPendingRewards();
+                await oracle.connect(node).claimPendingRewards();
+                const newBalance = await oracle.getStake(await oracle.getOwner(node.address));
+
+                expect(newBalance.ada).to.be.equal(balance.ada.add(pendingRewards.adaReward));
+                expect(newBalance.token).to.be.equal(balance.token.add(pendingRewards.tokenReward));
+            }
+        });
+
+        it('Should revert when no pending rewards', async function () {
+            const { oracle, nodes, simulateJobCycleNotFinalized } = await loadFixture(operatorFixture);
+
+            await simulateJobCycleNotFinalized(3, nodes, 3, 10);
+
+            await expect(oracle.connect(nodes[0]).claimPendingRewards()).to.be.revertedWithCustomError(
+                oracle,
+                'NoPendingRewards'
+            );
         });
     });
 });
