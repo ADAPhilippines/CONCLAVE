@@ -10,22 +10,20 @@ using Nethereum.Util;
 
 namespace Conclave.Oracle.Node.Services;
 
-public class EthereumWalletServices : WalletServiceBase
+public class EthAccountServices : WalletServiceBase
 {
     private readonly Web3 Web3;
     private readonly Account Account;
     private readonly AccountOfflineTransactionSigner TransactionSigner = new AccountOfflineTransactionSigner();
-    public EthereumWalletServices(IOptions<SettingsParameters> settings) : base(settings.Value.PrivateKey, settings.Value.EthereumRPC)
+    public EthAccountServices(IOptions<SettingsParameters> settings, IConfiguration configuration) : base(settings.Value.PrivateKey, settings.Value.EthereumRPC)
     {
         Account = new Account(settings.Value.PrivateKey);
         Web3 = new Web3(Account, settings.Value.EthereumRPC);
         Address = Account.Address;
     }
 
-    public async Task<HexBigInteger> GetBalanceAsync()
-    {
-        return await Web3.Eth.GetBalance.SendRequestAsync(Address);
-    }
+    public async Task<HexBigInteger> GetBalanceAsync() => await Web3.Eth.GetBalance.SendRequestAsync(Address);
+    
 
     public async Task<T> CallContractReadFunctionAsync<T>(
         string contractAddress,

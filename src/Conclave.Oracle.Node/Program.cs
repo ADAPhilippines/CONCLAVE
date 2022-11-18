@@ -9,7 +9,6 @@ IConfiguration config = builder.Environment.IsDevelopment() ? builder.Configurat
 
 string? network = config.GetValue<string>("BlockFrostNetwork");
 string? apiKey = config.GetValue<string>("BlockFrostAPIKey");
-
 builder.Services.AddLogging(opt =>
      {
          opt.AddSimpleConsole(c =>
@@ -20,7 +19,7 @@ builder.Services.AddLogging(opt =>
      });
 builder.Services.Configure<SettingsParameters>(config);
 builder.Services.AddCardanoService(network!, apiKey!);
-builder.Services.AddSingleton<EthereumWalletServices>();
+builder.Services.AddSingleton<EthAccountServices>();
 builder.Services.AddSingleton<OracleContractService>();
 builder.Services.AddHostedService<OracleWorker>();
 builder.Services.AddControllers();

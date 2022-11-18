@@ -1,6 +1,3 @@
-using Conclave.Oracle.Node.Models;
-using Microsoft.Extensions.Options;
-
 namespace Conclave.Oracle.Node.Services.Interfaces;
 
 public interface IWalletService

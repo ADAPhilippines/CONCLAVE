@@ -9,15 +9,12 @@ namespace Conclave.Oracle.Node.Services;
 public class OracleContractService : ContractServiceBase
 {
     private readonly ILogger<OracleContractService> _logger;
-    private readonly CardanoServices _cardanoService;
-    private readonly EthereumWalletServices _ethereumWalletServices;
-    private readonly IHostApplicationLifetime _hostApplicationLifetime;
+    private readonly EthAccountServices _ethAccountServices;
 
     public OracleContractService(
         ILogger<OracleContractService> logger,
         IOptions<SettingsParameters> settings,
-        EthereumWalletServices ethereumWalletServices,
-        IHostApplicationLifetime hostApplicationLifetime,
+        EthAccountServices ethAccountServices,
         CardanoServices cardanoService
         ) : base(
                 settings.Value.ContractAddress,
@@ -25,30 +22,28 @@ public class OracleContractService : ContractServiceBase
                 settings.Value.EthereumRPC,
                 settings.Value.ContractABI)
     {
-        _cardanoService = cardanoService;
         _logger = logger;
-        _ethereumWalletServices = ethereumWalletServices;
-        _hostApplicationLifetime = hostApplicationLifetime;
+        _ethAccountServices = ethAccountServices;
     }
 
     public async Task<bool> IsDelegatedAsync()
     {
-        return await _ethereumWalletServices.CallContractReadFunctionNoParamsAsync<bool>(ContractAddress, ABI, "isDelegated");
+        return await _ethAccountServices.CallContractReadFunctionNoParamsAsync<bool>(ContractAddress, ABI, "isDelegated");
     }
 
     public async Task<List<PendingRequestOutputDTO>?> GetPendingRequestsAsync()
     {
-        return await _ethereumWalletServices.CallContractReadFunctionNoParamsAsync<List<PendingRequestOutputDTO>>(ContractAddress, ABI, "getPendingRequests");
+        return await _ethAccountServices.CallContractReadFunctionNoParamsAsync<List<PendingRequestOutputDTO>>(ContractAddress, ABI, "getPendingRequests");
     }
 
     public async Task SubmitResultAsync(BigInteger requestId, List<BigInteger> decimals)
     {
-        await _ethereumWalletServices.CallContractWriteFunctionAsync(ContractAddress, _ethereumWalletServices.Address!, ABI, "submitResult", 0, requestId, decimals);
+        await _ethAccountServices.CallContractWriteFunctionAsync(ContractAddress, _ethAccountServices.Address!, ABI, "submitResult", 0, requestId, decimals);
     }
 
     public async Task ListenToRequestNumberEventWithCallbackAsync(Func<BigInteger, BigInteger, BigInteger, Task> generateDecimalAndSubmitAsync)
     {
-        await _ethereumWalletServices.ListenContractEventAsync<RequestCreatedEventDTO>(ContractAddress, ABI, "RequestCreated", (logs) =>
+        await _ethAccountServices.ListenContractEventAsync<RequestCreatedEventDTO>(ContractAddress, ABI, "RequestCreated", (logs) =>
         {
             foreach (EventLog<RequestCreatedEventDTO> log in logs)
             {
@@ -59,7 +54,7 @@ public class OracleContractService : ContractServiceBase
                     if (isDelegated is false)
                     {
                         _logger.LogError("Address no longer delegated.");
-                        _hostApplicationLifetime.StopApplication();
+                        Environment.Exit(0);
                     }
                     #endregion
 

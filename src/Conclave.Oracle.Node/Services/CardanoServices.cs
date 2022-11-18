@@ -19,103 +19,113 @@ public class CardanoServices
         _blockService = iblockService;
         _logger = logger;
         _hostApplicationLifetime = hostApplicationLifetime;
+        Environment.ExitCode = 0;
     }
 
-    public async Task<string> GetNearestBlockHashFromTimeMsAsync(int unixTime, BigInteger requestId)
+    public async Task<string> GetNearestBlockHashFromTimeSAsync(int unixTime, BigInteger requestId)
     {
         #region logs
-        _logger.BeginScope("Processing request Id#: {0}", requestId);
-        _logger.LogInformation("Getting nearest block hash.");
+        _logger.BeginScope("Processing request Id# : {0}", requestId);
         #endregion
 
         BlockContentResponse currentBlock = await GetLatestBlockAsync();
-        int currentTime = currentBlock!.Time;
 
-        if (unixTime < currentTime)
-        {
-            while (unixTime < currentTime)
-            {
-                currentBlock = await GetBlockFromHashAsync(currentBlock.PreviousBlock);
-                currentTime = currentBlock!.Time;
-            }
-            if (unixTime != currentTime)
-                currentBlock = await GetBlockFromHashAsync(currentBlock.NextBlock);
-        }
-        else if (unixTime > currentTime)
-        {
-            while (unixTime > currentTime)
-            {
-                _logger.LogInformation("Waiting for next block of {0}.", currentBlock.Hash);
-                currentBlock = await WaitForNextBlockAsync(currentBlock, requestId);
-                currentBlock = await GetBlockFromHashAsync(currentBlock!.NextBlock);
-                currentTime = currentBlock!.Time;
-                await Task.Delay(BLOCK_DURATION);
-            }
-        }
+        if (unixTime < currentBlock.Time)
+            currentBlock = await GetNearestBlockBeforeLatestAsync(currentBlock, unixTime);
+        else if (unixTime > currentBlock.Time)
+            currentBlock = await GetNearestBlockAfterLatestAsync(currentBlock, unixTime, requestId);
 
         #region logs
-        _logger.LogInformation("Nearest block hash : {0}", currentBlock.Hash);
+        _logger.LogInformation("Nearest block acquired : {0}", currentBlock.Hash);
         #endregion
         return currentBlock.Hash;
+    }
+
+    private async Task<BlockContentResponse> GetNearestBlockBeforeLatestAsync(BlockContentResponse currentBlock, int unixTime)
+    {
+        _logger.LogInformation("Getting nearest block from timestamp {0}.", unixTime);
+        while (unixTime < currentBlock.Time)
+            currentBlock = await GetBlockFromHashAsync(currentBlock.PreviousBlock);
+        if (unixTime != currentBlock.Time)
+            currentBlock = await GetBlockFromHashAsync(currentBlock.NextBlock);
+
+        return currentBlock;
+    }
+
+    private async Task<BlockContentResponse> GetNearestBlockAfterLatestAsync(BlockContentResponse currentBlock, int unixTime, BigInteger requestId)
+    {
+        _logger.LogInformation("Awaiting nearest block from timestamp {0}.", unixTime);
+        await Task.Delay(unixTime - currentBlock.Time + BLOCK_DURATION);
+
+        while (unixTime > currentBlock.Time)
+        {
+            currentBlock = await WaitForNextBlockAsync(currentBlock, requestId);
+            currentBlock = await GetBlockFromHashAsync(currentBlock!.NextBlock);
+        }
+
+        return currentBlock;
     }
 
     public async Task<List<string>> GetNextBlocksFromCurrentHashAsync(string blockHash, int nextBlocks, BigInteger requestId)
     {
         #region logs
-        _logger.BeginScope("Processing request Id#: {0}", requestId);
+        _logger.BeginScope("Processing request Id# : {0}", requestId);
         if (nextBlocks is not 0)
             _logger.LogInformation("Getting succeeding blocks after {0}.", blockHash);
         #endregion
 
-        List<string> blockHashes = new() { blockHash };
+        List<string> blockHashesRes = new() { blockHash };
         List<BlockContentResponse>? blockresponse = new List<BlockContentResponse>();
 
         if (nextBlocks is not 0)
             blockresponse = await GetNextBlocksFromHashAsync(blockHash, nextBlocks);
+        else
+            return blockHashesRes;
 
         while (blockresponse?.Count < nextBlocks - 1)
         {
-            _logger.LogInformation("Waiting {0} remaining blocks.", nextBlocks - blockresponse.Count);
+            //convert to function
+            _logger.LogInformation("Awaiting {0} remaining blocks", nextBlocks - blockresponse.Count);
             blockresponse = await GetNextBlocksFromHashAsync(blockHash, nextBlocks);
             await Task.Delay(BLOCK_DURATION * (nextBlocks - blockresponse!.Count));
         }
 
-        if (blockresponse is not null)
-            blockHashes.AddRange(blockresponse.Select(r => r.Hash));
+        blockHashesRes.AddRange(blockresponse!.Select(r => r.Hash));
 
         #region logs
         string blockHashesLogs = string.Empty;
-        blockHashes.ForEach((b) =>
+        blockHashesRes.ForEach((b) =>
         {
-            int i = blockHashes.IndexOf(b);
-            if (b == blockHashes.Last())
+            //convert to function
+            int i = blockHashesRes.IndexOf(b);
+            if (b == blockHashesRes.Last())
                 blockHashesLogs += string.Format("[{0}] {1}", i, b);
             else
                 blockHashesLogs += string.Format("[{0}] {1}\n", i, b);
         });
 
-        using (_logger.BeginScope("Block hash/es", requestId))
+        using (_logger.BeginScope("Block hashes", requestId))
             _logger.LogInformation(blockHashesLogs);
         #endregion
-        return blockHashes;
+        return blockHashesRes;
     }
 
     public async Task<BlockContentResponse> WaitForNextBlockAsync(BlockContentResponse currentBlock, BigInteger requestId)
     {
         #region logs
-        _logger.BeginScope("Processing request Id#: {0}", requestId);
-        _logger.LogInformation("Waiting next blocks of {0}.", currentBlock.Hash);
+        if (currentBlock.NextBlock is null)
+        {
+            _logger.BeginScope("Processing request Id# : {0}", requestId);
+            _logger.LogInformation("Awaiting next block after tip {0}.", currentBlock.Hash);
+        }
         #endregion
 
-        while (currentBlock!.NextBlock is null)
+        while (currentBlock.NextBlock is null)
         {
             currentBlock = await GetBlockFromHashAsync(currentBlock.Hash);
             await Task.Delay(BLOCK_DURATION);
         }
 
-        #region logs
-        _logger.LogInformation("Next block of {0} found : {1}", currentBlock.Hash, currentBlock.NextBlock);
-        #endregion
         return currentBlock;
     }
 
@@ -131,7 +141,7 @@ public class CardanoServices
             catch (ApiException e) when (e.StatusCode is 403)
             {
                 _logger.LogError("Error Getting Next Blocks: {0}. Closing the application.", e.Message);
-                _hostApplicationLifetime.StopApplication();
+                Environment.Exit(Environment.ExitCode);
             }
             catch (ApiException e)
             {
@@ -152,7 +162,7 @@ public class CardanoServices
             catch (ApiException e) when (e.StatusCode is 403)
             {
                 _logger.LogError("Error Getting Latest Block: {0}. Closing the application.", e.Message);
-                _hostApplicationLifetime.StopApplication();
+                Environment.Exit(Environment.ExitCode);
             }
             catch (ApiException e)
             {
@@ -173,7 +183,7 @@ public class CardanoServices
             catch (ApiException e) when (e.StatusCode is 403)
             {
                 _logger.LogError("Error Getting Latest Block: {0}. Closing the application.", e.Message);
-                _hostApplicationLifetime.StopApplication();
+                Environment.Exit(Environment.ExitCode);
             }
             catch (ApiException e)
             {
