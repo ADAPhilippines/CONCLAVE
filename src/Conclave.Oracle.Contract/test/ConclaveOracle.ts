@@ -172,6 +172,40 @@ describe.only('ConclaveOracle contract', function () {
             expect(balanceAfter.token).to.equal(balanceBefore.token.add(totalTokenFee));
         });
 
+        it('Should tag request properly', async function () {
+            const { oracle, consumer, simulateJobCycle, submitRequest, nodes, decimal } = await loadFixture(
+                operatorFixture
+            );
+
+            const requestIds = await simulateJobCycle(10, nodes, 5, 10);
+
+            for (const requestId of requestIds) {
+                const requestInfo = await oracle.getJobDetails(requestId);
+                expect(requestInfo.status).to.equal(2);
+            }
+
+            const request: Request = {
+                numCount: 2,
+                adaFee: ethers.utils.parseEther('1'),
+                tokenFee: ethers.utils.parseUnits('100', decimal),
+                adaFeePerNum: ethers.utils.parseEther('0.5'),
+                tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
+                minValidator: BigNumber.from(3),
+                maxValidator: BigNumber.from(5),
+            };
+
+            const requestId = await submitRequest(request);
+            const requestInfo = await oracle.getJobDetails(requestId);
+            expect(requestInfo.status).to.equal(0);
+            await ethers.provider.send('evm_increaseTime', [86400]);
+            await consumer.finalizeResult(requestId);
+
+            const updatedDequestInfo = await oracle.getJobDetails(requestId);
+            expect(updatedDequestInfo.status).to.equal(1);
+        });
+    });
+
+    describe('AggregateResult function', function () {
         it('Should deduct the fees to contract balance in case of a refund', async function () {
             const { oracle, submitRequest, decimal, consumer } = await loadFixture(operatorFixture);
 
@@ -198,6 +232,95 @@ describe.only('ConclaveOracle contract', function () {
             expect(balanceBefore.ada).to.equal(balanceAfter.ada);
             expect(balanceBefore.token).to.equal(balanceAfter.token);
             expect(requestInfo.status).to.equal(1);
+        });
+
+        it('Should choose the highest votes when aggregating', async function () {
+            const { oracle, simulateJobCycle, nodes } = await loadFixture(operatorFixture);
+
+            const requestIds = await simulateJobCycle(10, nodes, 5, 10);
+
+            for (const requestId of requestIds) {
+                const requestInfo = await oracle.getJobDetails(requestId);
+                const votes = await oracle.s_dataIdVotes(requestId, requestInfo.finalResultDataId);
+                expect(votes).to.be.greaterThanOrEqual(5);
+            }
+        });
+
+        it('Should not be able to aggregate if not the original requester', async function () {
+            const {
+                oracle,
+                submitRequest,
+                decimal,
+                operators: [operator1, operator2],
+            } = await loadFixture(operatorFixture);
+
+            const request: Request = {
+                numCount: 2,
+                adaFee: ethers.utils.parseEther('1'),
+                tokenFee: ethers.utils.parseUnits('100', decimal),
+                adaFeePerNum: ethers.utils.parseEther('0.5'),
+                tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
+                minValidator: BigNumber.from(5),
+                maxValidator: BigNumber.from(10),
+            };
+
+            const requestId = await submitRequest(request);
+            await ethers.provider.send('evm_increaseTime', [86400]);
+
+            await expect(oracle.connect(operator2).aggregateResult(requestId)).to.be.revertedWithCustomError(
+                oracle,
+                'NotAuthorized'
+            );
+        });
+
+        it('Should not be able to aggregate when job acceptance in progress', async function () {
+            const {
+                oracle,
+                submitRequest,
+                decimal,
+                operators: [operator1, operator2],
+                consumer,
+            } = await loadFixture(operatorFixture);
+
+            const request: Request = {
+                numCount: 2,
+                adaFee: ethers.utils.parseEther('1'),
+                tokenFee: ethers.utils.parseUnits('100', decimal),
+                adaFeePerNum: ethers.utils.parseEther('0.5'),
+                tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
+                minValidator: BigNumber.from(5),
+                maxValidator: BigNumber.from(10),
+            };
+
+            const requestId = await submitRequest(request);
+            await expect(consumer.finalizeResult(requestId)).to.be.revertedWithCustomError(
+                oracle,
+                'JobAcceptanceInProgress'
+            );
+        });
+
+        it('Should not be able to aggregate twice', async function () {
+            const { oracle, submitRequest, decimal, consumer } = await loadFixture(operatorFixture);
+
+            const request: Request = {
+                numCount: 2,
+                adaFee: ethers.utils.parseEther('1'),
+                tokenFee: ethers.utils.parseUnits('100', decimal),
+                adaFeePerNum: ethers.utils.parseEther('0.5'),
+                tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
+                minValidator: BigNumber.from(5),
+                maxValidator: BigNumber.from(10),
+            };
+
+            const requestId = await submitRequest(request);
+
+            await ethers.provider.send('evm_increaseTime', [86400]);
+            await consumer.finalizeResult(requestId);
+
+            await expect(consumer.finalizeResult(requestId)).to.be.revertedWithCustomError(
+                oracle,
+                'JobAlreadyFinalized'
+            );
         });
     });
 });
