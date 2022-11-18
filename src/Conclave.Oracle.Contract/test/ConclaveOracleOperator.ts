@@ -4,7 +4,7 @@ import { ethers } from 'hardhat';
 import { BigNumber } from 'ethers';
 import { operatorFixture, delegateNodeFixture } from './Fixture';
 
-describe('ConclaveOperator Contract', function () {
+describe.only('ConclaveOperator Contract', function () {
     describe('DelegateNode function', function () {
         it('Should delegate node', async function () {
             const {
@@ -76,7 +76,7 @@ describe('ConclaveOperator Contract', function () {
 
             const job = await oracle.getJobDetails(sampleRequestId);
             expect(job.validators.length).to.equal(1);
-            expect(job.validators.includes(node.address)).to.equal(true);
+            expect(job.validators.includes(await oracle.getOwner(node.address))).to.equal(true);
         });
 
         it('Should not accept job if request does not exist', async function () {
@@ -369,7 +369,7 @@ describe('ConclaveOperator Contract', function () {
     });
 
     describe('GetPendingRewards function', async function () {
-        it.only('Should display all pending reward from accepted jobs', async function () {
+        it('Should display all pending reward from accepted jobs', async function () {
             const {
                 oracle,
                 nodes: [node1, node2, node3, node4, node5],
@@ -420,7 +420,7 @@ describe('ConclaveOperator Contract', function () {
         });
     });
 
-    describe.only('ClaimPendingRewards function', function () {
+    describe('ClaimPendingRewards function', function () {
         it('Should add pending rewards to stake balance', async function () {
             const { oracle, nodes, simulateJobCycle } = await loadFixture(operatorFixture);
             const requestCount = 3;
@@ -431,9 +431,12 @@ describe('ConclaveOperator Contract', function () {
                 const pendingRewards = await oracle.connect(node).getTotalPendingRewards();
                 await oracle.connect(node).claimPendingRewards();
                 const newBalance = await oracle.getStake(await oracle.getOwner(node.address));
+                const totalDeductions = await oracle.s_totalDeductedStakes(await oracle.getOwner(node.address));
 
-                expect(newBalance.ada).to.be.equal(balance.ada.add(pendingRewards.adaReward));
-                expect(newBalance.token).to.be.equal(balance.token.add(pendingRewards.tokenReward));
+                expect(newBalance.ada).to.be.equal(balance.ada.add(pendingRewards.adaReward).sub(totalDeductions.ada));
+                expect(newBalance.token).to.be.equal(
+                    balance.token.add(pendingRewards.tokenReward).sub(totalDeductions.token)
+                );
             }
         });
 
