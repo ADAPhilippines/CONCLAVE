@@ -2,7 +2,6 @@ using Conclave.Oracle.Node.Services;
 using Conclave.Oracle.Node.Models;
 using Conclave.Oracle.Node.Utils;
 using System.Numerics;
-using Conclave.Oracle.Node.Exceptions;
 using Microsoft.Extensions.Options;
 using Conclave.Oracle.Node.Contracts.Definition;
 using Conclave.Oracle.Node.Helpers;
