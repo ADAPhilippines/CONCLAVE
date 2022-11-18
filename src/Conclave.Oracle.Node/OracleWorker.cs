@@ -2,7 +2,6 @@ using Conclave.Oracle.Node.Services;
 using Conclave.Oracle.Node.Models;
 using Conclave.Oracle.Node.Utils;
 using System.Numerics;
-using Conclave.Oracle.Node.Exceptions;
 using Microsoft.Extensions.Options;
 using Conclave.Oracle.Node.Contracts.Definition;
 using Conclave.Oracle.Node.Helpers;
@@ -47,7 +46,7 @@ public class OracleWorker : BackgroundService
     {
         #region logs
         if (_environment.IsDevelopment())
-            _logger.LogInformation("Account : {0}\nContract Address : {1}",_configuration.GetValue<string>("PrivateKey"), _options.Value.ContractAddress);
+            _logger.LogInformation("Account : {0}\nContract Address : {1}", _configuration.GetValue<string>("PrivateKey"), _options.Value.ContractAddress);
         #endregion
 
         await VerifyPrivateKeyDelegationAsync();

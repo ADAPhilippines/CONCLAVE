@@ -12,7 +12,6 @@ public class ContractServiceBase : IContract, IWalletService
     {
         ContractAddress = contractAddress;
         PrivateKey = configuration.GetValue<string>("PrivateKey") ?? string.Empty;
-        Console.WriteLine(PrivateKey);
         RPC = rpc;
         ABI = abi;
     }

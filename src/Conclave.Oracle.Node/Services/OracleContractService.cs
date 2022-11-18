@@ -20,7 +20,7 @@ public class OracleContractService : ContractServiceBase
         ) : base(
                 settings.Value.ContractAddress,
                 settings.Value.EthereumRPC,
-                settings.Value.ContractABI, 
+                settings.Value.ContractABI,
                 configuration)
     {
         _logger = logger;
