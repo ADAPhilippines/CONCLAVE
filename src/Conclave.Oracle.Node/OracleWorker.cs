@@ -47,7 +47,7 @@ public class OracleWorker : BackgroundService
     {
         #region logs
         if (_environment.IsDevelopment())
-            _logger.LogInformation("Account : {0}\nContract Address : {1}",_configuration.GetValue<string>("PrivateKey"), _options.Value.ContractAddress);
+            _logger.LogInformation("Account : {0}\nContract Address : {1}", _configuration.GetValue<string>("PrivateKey"), _options.Value.ContractAddress);
         #endregion
 
         await VerifyPrivateKeyDelegationAsync();
