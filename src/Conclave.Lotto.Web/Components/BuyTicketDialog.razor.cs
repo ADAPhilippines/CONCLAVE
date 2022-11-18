@@ -13,10 +13,15 @@ public partial class BuyTicketDialog
     [Parameter]
     public Session SessionDetails { get; set; } = new();
 
-    static int test  = 5;
-    
+    static int test = 5;
+
     private List<int> Entries = new List<int>(new int[test]);
-    private EventCallback<List<int>> EntriesChanged {get; set;}
+    private EventCallback<List<int>> EntriesChanged { get; set; }
+
+    private List<Inputs> TicketEntries = new List<Inputs>(){
+        new() {},
+        new() {}
+    };
 
     private Dictionary<int, MudTextField<int>> InputTextRef = new();
 
@@ -30,10 +35,14 @@ public partial class BuyTicketDialog
     {
         if (MudDialog is not null) MudDialog.Cancel();
     }
-    
-    private void OnKeyPressed(KeyboardEventArgs args, int index)
+
+    private async Task OnKeyPressed(Inputs entry)
     {
-        if(args.Code == "Enter")
-            InputTextRef[index+1].FocusAsync();
+        Console.WriteLine(entry.Value);
+        if (entry.Value.Length >= 3)
+        {
+            int nextIndex = Entries.IndexOf(entry) + 1;
+            await Entries[nextIndex].ElementRef.FocuAsync();
+        }
     }
 }
