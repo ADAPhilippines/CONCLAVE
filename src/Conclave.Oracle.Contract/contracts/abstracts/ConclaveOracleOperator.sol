@@ -473,6 +473,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
     function _isDistributorNode(address node) internal view returns (bool) {
         uint256 randomNumber = s_distributorRandomNumber % 100;
         uint256 randomNumberWeight = randomNumber * 100;
+
         uint256 weight = _calculateWeight(
             s_stakes[s_nodeToOwner[node]].token,
             s_totalStakes.token
