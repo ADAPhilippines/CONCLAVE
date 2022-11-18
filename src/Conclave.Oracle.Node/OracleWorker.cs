@@ -1,92 +1,180 @@
 using Conclave.Oracle.Node.Services;
 using Conclave.Oracle.Node.Models;
-using Conclave.Oracle.Node.Constants;
 using Conclave.Oracle.Node.Utils;
 using System.Numerics;
+using Conclave.Oracle.Node.Exceptions;
+using Microsoft.Extensions.Options;
+using Conclave.Oracle.Node.Contracts.Definition;
+using Conclave.Oracle.Node.Helpers;
 
 namespace Conclave.Oracle;
 
 public class OracleWorker : BackgroundService
 {
+    private const int RETRY_DURATION = 4000;
+    #region private variables
     private readonly ILogger<OracleWorker> _logger;
     private readonly OracleContractService _oracleContractService;
     private readonly CardanoServices _cardanoService;
-    private readonly EthereumWalletServices _ethereumWalletServices;
+    private readonly EthAccountServices _ethAccountServices;
+    private readonly IOptions<SettingsParameters> _options;
+    private readonly IHostApplicationLifetime _hostApplicationLifetime;
+    private readonly IHostEnvironment _environment;
+    private readonly IConfiguration _configuration;
+    #endregion
     public OracleWorker(
         ILogger<OracleWorker> logger,
         OracleContractService oracleContractService,
         CardanoServices cardanoService,
-        EthereumWalletServices ethereumWalletServices
-        ) : base()
+        EthAccountServices ethAccountServices,
+        IOptions<SettingsParameters> options,
+        IHostEnvironment environment,
+        IConfiguration configuration,
+        IHostApplicationLifetime hostApplicationLifetime)
+        : base()
     {
+        _configuration = configuration;
         _cardanoService = cardanoService;
         _logger = logger;
         _oracleContractService = oracleContractService;
-        _ethereumWalletServices = ethereumWalletServices;
+        _ethAccountServices = ethAccountServices;
+        _options = options;
+        _hostApplicationLifetime = hostApplicationLifetime;
+        _environment = environment;
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        DateTimeOffset dto = new DateTimeOffset(DateTime.UtcNow);
-        string unixTimeMs = dto.ToUnixTimeMilliseconds().ToString();
+        #region logs
+        if (_environment.IsDevelopment())
+            _logger.LogInformation("Account : {0}\nContract Address : {1}",_configuration.GetValue<string>("PrivateKey"), _options.Value.ContractAddress);
+        #endregion
 
-        _logger.LogInformation(unixTimeMs);
-        //Error Handling
-        await CheckPrivateKeyDelegationAsync();
-        _ = Task.Run(async () =>
-        {
-            await GetPendingRequestsAsync();
-        });
+        await VerifyPrivateKeyDelegationAsync();
 
-        _ = Task.Run(async () =>
-        {
-            await ListenToRequestAsync();
-        });
-    }
+        _ = Task.Run(async () => await GetPendingRequestsAsync());
 
-    public async Task CheckPrivateKeyDelegationAsync()
-    {
-        _logger.LogInformation("Checking address from PrivateKey is Delegated...");
-        //Todo: Error Handling;
-        bool isDelegated = await _oracleContractService.IsDelegatedAsync();
-
-        if (isDelegated) _logger.LogInformation($"The Private Key Is Delegated!");
-        else _logger.LogInformation($"The Private Key Is not Delegated. Please delegate");
+        _ = Task.Run(async () => await ListenToRequestAsync());
     }
 
     public async Task GetPendingRequestsAsync()
     {
-        _logger.LogInformation("Checking for pending Requests...");
-        //Todo: Error Handling;
-        List<BigInteger>? pendingRequests = await _oracleContractService.GetPendingRequestsAsync();
-        _logger.LogInformation("Number of Pending requests: {0}", pendingRequests?.Count ?? 0);
-        // run process for generating number from blockhash for pending       
+        #region delegation checker
+        await DelegationCheckerAsync();
+        #endregion
+        #region logs
+        _logger.LogInformation("Starting pending requests handler.");
+        #endregion
+
+        List<PendingRequestOutputDTO>? pendingRequests = await _oracleContractService.GetPendingRequestsAsync();
+        if (pendingRequests?.Count is 0)
+            _logger.LogInformation("No pending requests found.");
+        else
+            PendingRequestHandler(pendingRequests);
     }
 
     public async Task ListenToRequestAsync()
     {
-        _logger.LogInformation("Listening to contract events...");
-        await _oracleContractService.ListenToRequestNumberEventAsync(GenerateAndSubmitDecimalsAsync);
-        _logger.LogInformation("Currently Listening to Requests...");
+        #region delegation checker
+        await DelegationCheckerAsync();
+        #endregion
+        #region logs
+        _logger.LogInformation("Starting contract event listener.");
+        #endregion
+
+        await _oracleContractService.ListenToRequestNumberEventWithCallbackAsync(GenerateAndSubmitDecimalsAsync);
     }
 
-    public async Task GenerateAndSubmitDecimalsAsync(BigInteger requestId, BigInteger unixTimeMs, BigInteger numberOfdecimals)
+    public async Task GenerateAndSubmitDecimalsAsync(BigInteger requestId, BigInteger unixTimeS, BigInteger numberOfdecimals)
     {
-        int slot = NetworkUtils.Preview.UnixTimeMsToSlot(unixTimeMs);
-        string firstBlockHash = await _cardanoService.GetNearestBlockHashFromSlot(slot);
-        List<string> blockHashesList = await _cardanoService.GetNextBlocksFromCurrentHash(firstBlockHash, numberOfdecimals);
-        List<BigInteger> decimalsList = blockHashesList.Select((dec) => StringUtils.HexStringToBigInteger(dec)).ToList();
-        await SubmitDecimals(requestId, decimalsList);
+        #region delegation checker
+        await DelegationCheckerAsync();
+        #endregion
+
+        List<BigInteger> decimalsList = await GenerateDecimalsAsync(requestId, unixTimeS, numberOfdecimals);
+
+        #region logs
+        string listLog = string.Empty;
+        decimalsList.ForEach((b) =>
+        {
+            int i = decimalsList.IndexOf(b);
+            if (b == decimalsList.Last())
+                listLog += string.Format("[{0}] {1}", i, b);
+            else
+                listLog += string.Format("[{0}] {1}\n", i, b);
+        });
+
+        _logger.BeginScope("Processing request Id# : {0}", requestId);
+        using (_logger.BeginScope("Decimals"))
+            _logger.LogInformation(listLog);
+        #endregion
+
+        await SubmitDecimalsAsync(requestId, decimalsList);
     }
 
-    public async Task SubmitDecimals(BigInteger requestId, List<BigInteger> decimalsList)
+    #region helpers
+    public async Task VerifyPrivateKeyDelegationAsync()
     {
-        Console.ForegroundColor = ConsoleColor.DarkYellow;
-        Console.WriteLine("Submitting requestId {0}...", requestId);
-        Console.ForegroundColor = ConsoleColor.White;
+        #region logs
+        _logger.LogInformation("Checking current account {0} is delegated", _ethAccountServices.Address);
+        #endregion
+
+        bool IsDelegated = await _oracleContractService.IsDelegatedAsync();
+
+        while (IsDelegated is false)
+            IsDelegated = await DelegationFalseHandlerAsync(IsDelegated);
+    }
+
+    public async Task SubmitDecimalsAsync(BigInteger requestId, List<BigInteger> decimalsList)
+    {
+        #region delegation checker
+        await DelegationCheckerAsync();
+        #endregion
+
         await _oracleContractService.SubmitResultAsync(requestId, decimalsList);
-        Console.ForegroundColor = ConsoleColor.DarkGreen;
-        Console.WriteLine("RequestId {0} Submitted!", requestId);
-        Console.ForegroundColor = ConsoleColor.White;
+
+        #region logs        
+        LoggingHelper.LogWithScope<OracleWorker>(_logger, "Submitting request Id# : {0}", "Submitted", requestId);
+        #endregion
     }
+
+    public async Task<List<BigInteger>> GenerateDecimalsAsync(BigInteger requestId, BigInteger unixTimeS, BigInteger numberOfdecimals)
+    {
+        string firstBlockHash = await _cardanoService.GetNearestBlockHashFromTimeSAsync((int)unixTimeS, requestId);
+        List<string> blockHashesList = await _cardanoService.GetNextBlocksFromCurrentHashAsync(firstBlockHash, (int)(numberOfdecimals - 1), requestId);
+        return blockHashesList.Select((dec) => StringUtils.HexStringToBigInteger(dec)).ToList();
+    }
+
+    public async Task DelegationCheckerAsync()
+    {
+        if ((await _oracleContractService.IsDelegatedAsync()) is false)
+        {
+            _logger.LogError("Account no longer delegated.");
+            Environment.Exit(0);
+        }
+    }
+
+    public void PendingRequestHandler(List<PendingRequestOutputDTO>? pendingRequests)
+    {
+        pendingRequests?.ForEach(async (request) =>
+        {
+            using (_logger.BeginScope("PENDING: Request Id# {0}", request.RequestId))
+                _logger.LogInformation("TimeStamp: {0}\nNumbers: {1}", request.TimeStamp, request.NumberOfDecimals);
+            await GenerateAndSubmitDecimalsAsync(request.RequestId, request.TimeStamp, request.NumberOfDecimals);
+        });
+    }
+
+    public async Task<bool> DelegationFalseHandlerAsync(bool isDelegated)
+    {
+        isDelegated = await _oracleContractService.IsDelegatedAsync();
+        if (isDelegated)
+            _logger.LogInformation($"Account is delegated!");
+        else
+        {
+            _logger.LogWarning("Account is not delegated. Please delegate to address {0}\nDelegation may take a few seconds to confirm...", _ethAccountServices.Address);
+            await Task.Delay(RETRY_DURATION);
+        }
+        return isDelegated;
+    }
+    #endregion
 }

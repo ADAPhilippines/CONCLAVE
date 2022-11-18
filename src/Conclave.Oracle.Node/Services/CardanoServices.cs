@@ -5,63 +5,192 @@ namespace Conclave.Oracle.Node.Services;
 
 public class CardanoServices
 {
+    #region constant variables
+    private const int RETRIAL_DURATION = 3000;
+    private const int BLOCK_DURATION = 20000;
+    #endregion
+    #region private variables
     private readonly IBlockService _blockService;
-    public CardanoServices(IBlockService iblockService)
+    private readonly ILogger<CardanoServices> _logger;
+    private readonly IHostApplicationLifetime _hostApplicationLifetime;
+    #endregion
+    public CardanoServices(IBlockService iblockService, ILogger<CardanoServices> logger, IHostApplicationLifetime hostApplicationLifetime)
     {
         _blockService = iblockService;
+        _logger = logger;
+        _hostApplicationLifetime = hostApplicationLifetime;
+        Environment.ExitCode = 0;
     }
 
-    public async Task<string> GetNearestBlockHashFromSlot(int slot)
+    public async Task<string> GetNearestBlockHashFromTimeSAsync(int unixTime, BigInteger requestId)
     {
-        BlockContentResponse? blockBefore = null;
-        BlockContentResponse? blockAfter = null;
-        int blockDelta = 0;
+        #region logs
+        _logger.BeginScope("Processing request Id# : {0}", requestId);
+        #endregion
 
-        while (blockAfter is null && blockBefore is null)
-        {
-            blockAfter = await GetBlockFromSlot(slot + blockDelta);
-            if (slot is not 0)
-                blockBefore = await GetBlockFromSlot(slot - blockDelta);
-            blockDelta++;
-        }
-        return blockAfter?.Hash ?? blockBefore?.Hash!;
+        BlockContentResponse currentBlock = await GetLatestBlockAsync();
+
+        if (unixTime < currentBlock.Time)
+            currentBlock = await GetNearestBlockBeforeLatestAsync(currentBlock, unixTime);
+        else if (unixTime > currentBlock.Time)
+            currentBlock = await GetNearestBlockAfterLatestAsync(currentBlock, unixTime, requestId);
+
+        #region logs
+        _logger.LogInformation("Nearest block acquired : {0}", currentBlock.Hash);
+        #endregion
+        return currentBlock.Hash;
     }
 
-    public async Task<BlockContentResponse?> GetBlockFromSlot(int slot)
+    private async Task<BlockContentResponse> GetNearestBlockBeforeLatestAsync(BlockContentResponse currentBlock, int unixTime)
     {
-        try
-        {
-            return await _blockService.GetSlotAsync(slot);
-        }
-        catch
-        {
-            return null;
-        }
+        _logger.LogInformation("Getting nearest block from timestamp {0}.", unixTime);
+        while (unixTime < currentBlock.Time)
+            currentBlock = await GetBlockFromHashAsync(currentBlock.PreviousBlock);
+        if (unixTime != currentBlock.Time)
+            currentBlock = await GetBlockFromHashAsync(currentBlock.NextBlock);
+
+        return currentBlock;
     }
 
-    public async Task<List<string>> GetNextBlocksFromCurrentHash(string blockHash, int nextBlocks)
+    private async Task<BlockContentResponse> GetNearestBlockAfterLatestAsync(BlockContentResponse currentBlock, int unixTime, BigInteger requestId)
     {
-        List<string> blockHashes = new List<string>() { blockHash };
-        List<BlockContentResponse>? blockresponse = null;
+        _logger.LogInformation("Awaiting nearest block from timestamp {0}.", unixTime);
+        await Task.Delay(unixTime - currentBlock.Time + BLOCK_DURATION);
+
+        while (unixTime > currentBlock.Time)
+        {
+            currentBlock = await WaitForNextBlockAsync(currentBlock, requestId);
+            currentBlock = await GetBlockFromHashAsync(currentBlock!.NextBlock);
+        }
+
+        return currentBlock;
+    }
+
+    public async Task<List<string>> GetNextBlocksFromCurrentHashAsync(string blockHash, int nextBlocks, BigInteger requestId)
+    {
+        #region logs
+        _logger.BeginScope("Processing request Id# : {0}", requestId);
+        if (nextBlocks is not 0)
+            _logger.LogInformation("Getting succeeding blocks after {0}.", blockHash);
+        #endregion
+
+        List<string> blockHashesRes = new() { blockHash };
+        List<BlockContentResponse>? blockresponse = new List<BlockContentResponse>();
 
         if (nextBlocks is not 0)
-            blockresponse = await _blockService.GetNextBlockAsync(blockHash, nextBlocks - 1, 1) as List<BlockContentResponse>;
-        if (blockresponse is not null)
-            blockHashes.AddRange(blockresponse.Select(r => r.Hash));
+            blockresponse = await GetNextBlocksFromHashAsync(blockHash, nextBlocks);
+        else
+            return blockHashesRes;
 
-        return blockHashes;
+        while (blockresponse?.Count < nextBlocks - 1)
+        {
+            //convert to function
+            _logger.LogInformation("Awaiting {0} remaining blocks", nextBlocks - blockresponse.Count);
+            blockresponse = await GetNextBlocksFromHashAsync(blockHash, nextBlocks);
+            await Task.Delay(BLOCK_DURATION * (nextBlocks - blockresponse!.Count));
+        }
+
+        blockHashesRes.AddRange(blockresponse!.Select(r => r.Hash));
+
+        #region logs
+        string blockHashesLogs = string.Empty;
+        blockHashesRes.ForEach((b) =>
+        {
+            //convert to function
+            int i = blockHashesRes.IndexOf(b);
+            if (b == blockHashesRes.Last())
+                blockHashesLogs += string.Format("[{0}] {1}", i, b);
+            else
+                blockHashesLogs += string.Format("[{0}] {1}\n", i, b);
+        });
+
+        using (_logger.BeginScope("Block hashes", requestId))
+            _logger.LogInformation(blockHashesLogs);
+        #endregion
+        return blockHashesRes;
     }
 
-    public async Task<List<string>> GetNextBlocksFromCurrentHash(string blockHash, BigInteger nextBlocks)
+    public async Task<BlockContentResponse> WaitForNextBlockAsync(BlockContentResponse currentBlock, BigInteger requestId)
     {
-        List<string> blockHashes = new List<string>() { blockHash };
-        List<BlockContentResponse>? blockresponse = null;
+        #region logs
+        if (currentBlock.NextBlock is null)
+        {
+            _logger.BeginScope("Processing request Id# : {0}", requestId);
+            _logger.LogInformation("Awaiting next block after tip {0}.", currentBlock.Hash);
+        }
+        #endregion
 
-        if (nextBlocks != BigInteger.Zero)
-            blockresponse = await _blockService.GetNextBlockAsync(blockHash, (int)nextBlocks - 1, 1) as List<BlockContentResponse>;
-        if (blockresponse is not null)
-            blockHashes.AddRange(blockresponse.Select(r => r.Hash));
+        while (currentBlock.NextBlock is null)
+        {
+            currentBlock = await GetBlockFromHashAsync(currentBlock.Hash);
+            await Task.Delay(BLOCK_DURATION);
+        }
 
-        return blockHashes;
+        return currentBlock;
     }
+
+    #region Native BlockFrost Functions
+    private async Task<List<BlockContentResponse>?> GetNextBlocksFromHashAsync(string blockHash, int nextBlocks)
+    {
+        while (true)
+        {
+            try
+            {
+                return await _blockService.GetNextBlockAsync(blockHash, nextBlocks, 1) as List<BlockContentResponse>;
+            }
+            catch (ApiException e) when (e.StatusCode is 403)
+            {
+                _logger.LogError("Error Getting Next Blocks: {0}. Closing the application.", e.Message);
+                Environment.Exit(Environment.ExitCode);
+            }
+            catch (ApiException e)
+            {
+                _logger.LogError("Error Getting Next Blocks: {0}. Retrying...", e.Message);
+                await Task.Delay(RETRIAL_DURATION);
+            }
+        }
+    }
+
+    private async Task<BlockContentResponse> GetLatestBlockAsync()
+    {
+        while (true)
+        {
+            try
+            {
+                return await _blockService.GetLatestBlockAsync();
+            }
+            catch (ApiException e) when (e.StatusCode is 403)
+            {
+                _logger.LogError("Error Getting Latest Block: {0}. Closing the application.", e.Message);
+                Environment.Exit(Environment.ExitCode);
+            }
+            catch (ApiException e)
+            {
+                _logger.LogError("Error Getting Latest Block: {0}. Retrying...", e.Message);
+                await Task.Delay(RETRIAL_DURATION);
+            }
+        }
+    }
+
+    private async Task<BlockContentResponse> GetBlockFromHashAsync(string hash)
+    {
+        while (true)
+        {
+            try
+            {
+                return await _blockService.GetBlocksAsync(hash);
+            }
+            catch (ApiException e) when (e.StatusCode is 403)
+            {
+                _logger.LogError("Error Getting Latest Block: {0}. Closing the application.", e.Message);
+                Environment.Exit(Environment.ExitCode);
+            }
+            catch (ApiException e)
+            {
+                _logger.LogError("Error Getting Block: {0}. Retrying...", e.Message);
+                await Task.Delay(RETRIAL_DURATION);
+            }
+        }
+    }
+    #endregion
 }

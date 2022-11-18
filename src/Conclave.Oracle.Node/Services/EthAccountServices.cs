@@ -10,23 +10,20 @@ using Nethereum.Util;
 
 namespace Conclave.Oracle.Node.Services;
 
-public class EthereumWalletServices : WalletServiceBase
+public class EthAccountServices : WalletServiceBase
 {
     private readonly Web3 Web3;
     private readonly Account Account;
     private readonly AccountOfflineTransactionSigner TransactionSigner = new AccountOfflineTransactionSigner();
-    public EthereumWalletServices(
-        IOptions<SettingsParameters> settings) : base(settings.Value.PrivateKey, settings.Value.EthereumRPC)
+    public EthAccountServices(IOptions<SettingsParameters> settings, IConfiguration configuration) : base(settings.Value.EthereumRPC, configuration)
     {
-        Account = new Account(settings.Value.PrivateKey);
+        Account = new Account(configuration.GetValue<string>("PrivateKey"));
         Web3 = new Web3(Account, settings.Value.EthereumRPC);
         Address = Account.Address;
     }
-    
-    public async Task<HexBigInteger> GetBalance()
-    {
-        return await Web3.Eth.GetBalance.SendRequestAsync(Account.Address);
-    }
+
+    public async Task<HexBigInteger> GetBalanceAsync() => await Web3.Eth.GetBalance.SendRequestAsync(Address);
+
 
     public async Task<T> CallContractReadFunctionAsync<T>(
         string contractAddress,
@@ -44,6 +41,13 @@ public class EthereumWalletServices : WalletServiceBase
         Contract contract = Web3.Eth.GetContract(abi, contractAddress);
         Function readFunction = contract.GetFunction(functionName);
         return await readFunction.CallAsync<T>();
+    }
+
+    public async Task<dynamic> CallContractReadFunctionNoParamsAsync(string contractAddress, string abi, string functionName)
+    {
+        Contract contract = Web3.Eth.GetContract(abi, contractAddress);
+        Function readFunction = contract.GetFunction(functionName);
+        return await readFunction.CallAsync<dynamic>();
     }
 
     public async Task<TransactionReceipt> CallContractWriteFunctionAsync(
