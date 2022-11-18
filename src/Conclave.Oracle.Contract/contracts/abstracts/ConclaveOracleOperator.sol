@@ -119,9 +119,9 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
     mapping(uint256 => uint256[]) /* dataId => random numbers */
         private s_jobRandomNumbers;
     mapping(address => Stake) /* operator => rewards */
-        private s_totalNodeRewards;
+        public s_totalNodeRewards;
     mapping(address => Stake) /* operator => totalRewards */
-        private s_totalDeductedStakes;
+        public s_totalDeductedStakes;
     mapping(address => Stake) /* operator => totalStakingRewards */
         public s_totalStakingRewards;
     mapping(address => address) /* owner => node */
@@ -138,7 +138,6 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         public s_nodeRegistrations;
 
     address public s_latestDistributorNode;
-    Stake public s_totalPendingStakingRewards;
     mapping(address => uint24) public s_nodeAllowances;
     mapping(address => PendingRewardJobIds)
         private s_operatorPendingRewardJobIds;
@@ -224,7 +223,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
 
         s_nodeRegistrations[jobId][s_nodeToOwner[msg.sender]] = true;
         s_pendingRewardJobIds[s_nodeToOwner[msg.sender]].push(jobId);
-        request.validators.push(msg.sender);
+        request.validators.push(s_nodeToOwner[msg.sender]);
 
         emit JobAccepted(jobId, msg.sender, request.jobAcceptanceExpiration);
         if (request.validators.length == request.maxValidator) {
@@ -364,13 +363,12 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
             );
             uint256 totalAda = _calculateShare(
                 90 * 100,
-                (request.baseAdaFee + request.adaFeePerNum * request.numCount)
+                request.baseAdaFee + (request.adaFeePerNum * request.numCount)
             );
             uint256 totalToken = _calculateShare(
                 90 * 100,
-                (request.baseTokenFee +
-                    request.tokenFeePerNum *
-                    request.numCount)
+                request.baseTokenFee +
+                    (request.tokenFeePerNum * request.numCount)
             );
             ada = _calculateShare(weight, totalAda);
             token = _calculateShare(weight, totalToken);
@@ -398,12 +396,35 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
                 s_nodeToOwner[msg.sender]
             ];
 
-            if (nodeDataId != request.finalResultDataId) continue;
+            uint256 adaFee = request.baseAdaFee +
+                (request.adaFeePerNum * request.numCount);
+            uint256 tokenFee = request.baseTokenFee +
+                (request.tokenFeePerNum * request.numCount);
 
-            (uint256 ada, uint256 token) = getPendingRewards(request.jobId);
-            s_totalNodeRewards[s_nodeToOwner[msg.sender]].ada += ada;
-            s_totalNodeRewards[s_nodeToOwner[msg.sender]].token += token;
-            _addStake(s_nodeToOwner[msg.sender], ada, token);
+            if (nodeDataId == request.finalResultDataId) {
+                // Add rewards to stake balances
+                (uint256 ada, uint256 token) = getPendingRewards(request.jobId);
+                s_totalNodeRewards[s_nodeToOwner[msg.sender]].ada += ada;
+                s_totalNodeRewards[s_nodeToOwner[msg.sender]].token += token;
+                _addStake(s_nodeToOwner[msg.sender], ada, token);
+            } else {
+                // Deduct fees from stake balances
+                if (adaFee > s_stakes[s_nodeToOwner[msg.sender]].ada) {
+                    adaFee = s_stakes[s_nodeToOwner[msg.sender]].ada;
+                }
+
+                if (tokenFee > s_stakes[s_nodeToOwner[msg.sender]].token) {
+                    tokenFee = s_stakes[s_nodeToOwner[msg.sender]].token;
+                }
+
+                s_totalDeductedStakes[s_nodeToOwner[msg.sender]].ada += adaFee;
+                s_totalDeductedStakes[s_nodeToOwner[msg.sender]]
+                    .token += tokenFee;
+                s_totalPendingStakingRewards.ada += adaFee;
+                s_totalPendingStakingRewards.token += tokenFee;
+
+                _subStake(s_nodeToOwner[msg.sender], adaFee, tokenFee);
+            }
             // @TODO: send node allowance
         }
         delete s_pendingRewardJobIds[s_nodeToOwner[msg.sender]];
@@ -421,6 +442,10 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
 
         for (uint i = 0; i < jobIds.length; i++) {
             JobRequest storage request = _getJobRequest(jobIds[i]);
+
+            // Skip refunded jobs
+            if (request.status == RequestStatus.Refunded) continue;
+
             if (request.status == RequestStatus.Pending) {
                 s_operatorPendingRewardJobIds[s_nodeToOwner[msg.sender]]
                     .pending
