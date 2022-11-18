@@ -150,7 +150,12 @@ export async function delegateNodeFixture() {
         minTokenStakingRewards,
     } = await stakingFixture();
 
-    const stakeAndDelegate = async (operator: SignerWithAddress, node: SignerWithAddress, ada: BigNumber, token: BigNumber) => {
+    const stakeAndDelegate = async (
+        operator: SignerWithAddress,
+        node: SignerWithAddress,
+        ada: BigNumber,
+        token: BigNumber
+    ) => {
         await approveAndStake(operator, ada, token);
         await oracle.connect(operator).delegateNode(node.address);
     };
@@ -214,7 +219,7 @@ export async function operatorFixture() {
     const consumer = await Consumer.deploy(oracle.address, token.address);
 
     // transfer assets to consumer
-    const ethAmount = ethers.utils.parseEther('500');
+    const ethAmount = ethers.utils.parseEther('100');
     const cnclvAmount = ethers.utils.parseUnits('10000000', decimal);
 
     await accounts[0].sendTransaction({
@@ -249,8 +254,7 @@ export async function operatorFixture() {
         const formattedTokenBalance = ethers.utils.formatUnits(await token.balanceOf(operator.address), decimal);
         const formattedAdaBalance = await operator.getBalance();
         const randomTokenAmount = getRandomStakeAmount(Number(formattedMinTokenStake), Number(formattedTokenBalance));
-        const randomAdaAmount = getRandomStakeAmount(Number(formattedMinAdaStake), Number(formattedAdaBalance));
-        await stakeAndDelegate(operator, nodes[index], randomAdaAmount, randomTokenAmount);
+        await stakeAndDelegate(operator, nodes[index], minAdaStake, randomTokenAmount);
 
         index++;
     }
@@ -290,7 +294,7 @@ export async function operatorFixture() {
         return requestId;
     };
 
-    const submitResponseAndFinalize = async (requestId: BigNumber, participatingNodes: SignerWithAddress[]) => {
+    const submitResponses = async (requestId: BigNumber, participatingNodes: SignerWithAddress[]) => {
         for (const node of participatingNodes) {
             await oracle.connect(node).acceptJob(requestId);
         }
@@ -305,7 +309,13 @@ export async function operatorFixture() {
             await oracle.connect(node).submitResponse(requestId, [res1, res2][Math.round(Math.random())]);
         }
 
-        await ethers.provider.send('evm_increaseTime', [jobAcceptanceLimitInSeconds + jobFulFillmentLimitInSeconds * numCount + 1]);
+        await ethers.provider.send('evm_increaseTime', [
+            jobAcceptanceLimitInSeconds + jobFulFillmentLimitInSeconds * numCount + 1,
+        ]);
+    };
+
+    const submitResponseAndFinalize = async (requestId: BigNumber, participatingNodes: SignerWithAddress[]) => {
+        await submitResponses(requestId, participatingNodes);
         await consumer.finalizeResult(requestId);
 
         const jobDetails = await oracle.getJobDetails(requestId);
@@ -313,7 +323,15 @@ export async function operatorFixture() {
         return jobDetails;
     };
 
-    const sampleRequestId = await submitRequest({ numCount, adaFee, adaFeePerNum, tokenFee, tokenFeePerNum, minValidator, maxValidator });
+    const sampleRequestId = await submitRequest({
+        numCount,
+        adaFee,
+        adaFeePerNum,
+        tokenFee,
+        tokenFeePerNum,
+        minValidator,
+        maxValidator,
+    });
 
     const getResponse = (count: number) => {
         const res = [];
@@ -344,6 +362,34 @@ export async function operatorFixture() {
             });
 
             await submitResponseAndFinalize(requestId, participatingNodes);
+
+            requestIds.push(requestId);
+        }
+
+        return requestIds;
+    };
+
+    const simulateJobCycleNotFinalized = async (
+        requestCount: number,
+        participatingNodes: SignerWithAddress[],
+        minValidator: number,
+        maxValidator: number
+    ): Promise<BigNumber[]> => {
+        const requestIds: BigNumber[] = [];
+
+        for (let i = 0; i < requestCount; i++) {
+            let numCount = Math.floor(Math.random() * 5) + 1;
+            const requestId = await submitRequest({
+                numCount,
+                adaFee,
+                adaFeePerNum,
+                tokenFee,
+                tokenFeePerNum,
+                minValidator: ethers.BigNumber.from(minValidator),
+                maxValidator: ethers.BigNumber.from(maxValidator),
+            });
+
+            await submitResponses(requestId, participatingNodes);
 
             requestIds.push(requestId);
         }
@@ -386,5 +432,7 @@ export async function operatorFixture() {
         submitRequest,
         submitResponseAndFinalize,
         simulateJobCycle,
+        submitResponses,
+        simulateJobCycleNotFinalized,
     };
 }
