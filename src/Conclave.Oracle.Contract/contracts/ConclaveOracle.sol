@@ -3,6 +3,7 @@ pragma solidity ^0.8.17;
 
 import "./abstracts/ConclaveOracleOperator.sol";
 import "./interfaces/IConclaveOracle.sol";
+import "hardhat/console.sol";
 
 contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
     uint32 s_minNumCount = 1;
@@ -135,7 +136,7 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
             revert NotAuthorized();
         }
 
-        if (jobRequest.minValidator < jobRequest.responseCount) {
+        if (jobRequest.minValidator > jobRequest.responseCount) {
             // @TODO: Should be able to aggregate if minValidator not met within jobAcceptance limit
             // REFUND 10% of slashed amount to consumer
             // PAY THE HONEST NODES
