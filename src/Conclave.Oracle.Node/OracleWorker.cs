@@ -20,6 +20,7 @@ public class OracleWorker : BackgroundService
     private readonly IOptions<SettingsParameters> _options;
     private readonly IHostApplicationLifetime _hostApplicationLifetime;
     private readonly IHostEnvironment _environment;
+    private readonly IConfiguration _configuration;
     #endregion
     public OracleWorker(
         ILogger<OracleWorker> logger,
@@ -28,9 +29,11 @@ public class OracleWorker : BackgroundService
         EthAccountServices ethAccountServices,
         IOptions<SettingsParameters> options,
         IHostEnvironment environment,
+        IConfiguration configuration,
         IHostApplicationLifetime hostApplicationLifetime)
         : base()
     {
+        _configuration = configuration;
         _cardanoService = cardanoService;
         _logger = logger;
         _oracleContractService = oracleContractService;
@@ -44,7 +47,7 @@ public class OracleWorker : BackgroundService
     {
         #region logs
         if (_environment.IsDevelopment())
-            _logger.LogInformation("Account : {0}\nContract Address : {1}", _options.Value.PrivateKey, _options.Value.ContractAddress);
+            _logger.LogInformation("Account : {0}\nContract Address : {1}",_configuration.GetValue<string>("PrivateKey"), _options.Value.ContractAddress);
         #endregion
 
         await VerifyPrivateKeyDelegationAsync();

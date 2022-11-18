@@ -14,13 +14,14 @@ public class OracleContractService : ContractServiceBase
     public OracleContractService(
         ILogger<OracleContractService> logger,
         IOptions<SettingsParameters> settings,
+        IConfiguration configuration,
         EthAccountServices ethAccountServices,
         CardanoServices cardanoService
         ) : base(
                 settings.Value.ContractAddress,
-                settings.Value.PrivateKey,
                 settings.Value.EthereumRPC,
-                settings.Value.ContractABI)
+                settings.Value.ContractABI, 
+                configuration)
     {
         _logger = logger;
         _ethAccountServices = ethAccountServices;

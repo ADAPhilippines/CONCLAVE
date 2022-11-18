@@ -8,9 +8,9 @@ public class WalletServiceBase : IWalletService
     public string Address { get; init; } = string.Empty;
     public string PrivateKey { get; init; }
     public string RPC { get; init; }
-    public WalletServiceBase(string privateKey, string rpc)
+    public WalletServiceBase(string rpc, IConfiguration configuration)
     {
-        PrivateKey = privateKey;
+        PrivateKey = configuration.GetValue<string>("PrivateKey") ?? string.Empty;
         RPC = rpc;
     }
 }
