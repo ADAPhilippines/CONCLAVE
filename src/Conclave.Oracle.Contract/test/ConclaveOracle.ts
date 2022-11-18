@@ -4,7 +4,7 @@ import { ethers } from 'hardhat';
 import { BigNumber } from 'ethers';
 import { operatorFixture, delegateNodeFixture, Request } from './Fixture';
 
-describe.only('ConclaveOracle contract', function () {
+describe('ConclaveOracle contract', function () {
     describe('RequestRandomNumbers function', function () {
         it('Should accept valid requests', async function () {
             const { oracle, consumer, submitRequest, decimal } = await loadFixture(operatorFixture);
