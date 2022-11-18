@@ -4,6 +4,7 @@ pragma solidity ^0.8.17;
 import "../interfaces/IConclaveOracleOperator.sol";
 import "./Staking.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "hardhat/console.sol";
 
 abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
     error InsufficientAllowance(uint256 required, uint256 actual);
@@ -105,6 +106,11 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         uint256[] dataIds;
     }
 
+    struct PendingRewardJobIds {
+        uint256[] pending;
+        uint256[] finalized;
+    }
+
     uint256 private s_distributorRandomNumber;
     uint256 private s_minAdaStakingRewards;
     uint256 private s_minTokenStakingRewards;
@@ -134,6 +140,8 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
     address public s_latestDistributorNode;
     Stake public s_totalPendingStakingRewards;
     mapping(address => uint24) public s_nodeAllowances;
+    mapping(address => PendingRewardJobIds)
+        private s_operatorPendingRewardJobIds;
 
     constructor(
         IERC20 token,
@@ -309,6 +317,21 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         return _getJobRequest(jobId);
     }
 
+    function getTotalPendingRewards()
+        external
+        view
+        returns (uint256 adaReward, uint256 tokenReward)
+    {
+        uint256[] storage jobIds = s_pendingRewardJobIds[
+            s_nodeToOwner[msg.sender]
+        ];
+        for (uint256 i = 0; i < jobIds.length; i++) {
+            (uint256 ada, uint256 token) = getPendingRewards(jobIds[i]);
+            adaReward += ada;
+            tokenReward += token;
+        }
+    }
+
     function isJobReady(uint256 jobId) external view override returns (bool) {
         JobRequest storage request = _getJobRequest(jobId);
         return block.timestamp > request.jobAcceptanceExpiration;
@@ -355,58 +378,59 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
     }
 
     function claimPendingRewards() external {
-        if (s_pendingRewardJobIds[s_nodeToOwner[msg.sender]].length == 0) {
+        _filterPendingJobs(s_pendingRewardJobIds[s_nodeToOwner[msg.sender]]);
+
+        uint256[] storage finalizedJobIds = s_operatorPendingRewardJobIds[
+            s_nodeToOwner[msg.sender]
+        ].finalized;
+
+        uint256[] storage pendingJobIds = s_operatorPendingRewardJobIds[
+            s_nodeToOwner[msg.sender]
+        ].pending;
+
+        if (finalizedJobIds.length == 0) {
             revert NoPendingRewards();
         }
 
-        for (
-            uint i = 0;
-            i < s_pendingRewardJobIds[s_nodeToOwner[msg.sender]].length;
-            i++
-        ) {
-            JobRequest storage request = _getJobRequest(
-                s_pendingRewardJobIds[s_nodeToOwner[msg.sender]][i]
+        for (uint i = 0; i < finalizedJobIds.length; i++) {
+            JobRequest storage request = _getJobRequest(finalizedJobIds[i]);
+            uint256 nodeDataId = s_nodeDataId[request.jobId][
+                s_nodeToOwner[msg.sender]
+            ];
+
+            if (nodeDataId != request.finalResultDataId) continue;
+
+            (uint256 ada, uint256 token) = getPendingRewards(request.jobId);
+            s_totalNodeRewards[s_nodeToOwner[msg.sender]].ada += ada;
+            s_totalNodeRewards[s_nodeToOwner[msg.sender]].token += token;
+            _addStake(s_nodeToOwner[msg.sender], ada, token);
+            // @TODO: send node allowance
+        }
+        delete s_pendingRewardJobIds[s_nodeToOwner[msg.sender]];
+        for (uint i = 0; i < pendingJobIds.length; i++) {
+            s_pendingRewardJobIds[s_nodeToOwner[msg.sender]].push(
+                pendingJobIds[i]
             );
-            if (
-                s_nodeDataId[request.jobId][msg.sender] ==
-                request.finalResultDataId
-            ) {
-                (uint256 ada, uint256 token) = getPendingRewards(
-                    s_pendingRewardJobIds[s_nodeToOwner[msg.sender]][i]
-                );
-                s_totalNodeRewards[s_nodeToOwner[msg.sender]].ada += ada;
-                s_totalNodeRewards[s_nodeToOwner[msg.sender]].token += token;
-                _addStake(s_nodeToOwner[msg.sender], ada, token);
+        }
+    }
+
+    function _filterPendingJobs(uint256[] memory jobIds) internal {
+        delete s_operatorPendingRewardJobIds[s_nodeToOwner[msg.sender]]
+            .finalized;
+        delete s_operatorPendingRewardJobIds[s_nodeToOwner[msg.sender]].pending;
+
+        for (uint i = 0; i < jobIds.length; i++) {
+            JobRequest storage request = _getJobRequest(jobIds[i]);
+            if (request.status == RequestStatus.Pending) {
+                s_operatorPendingRewardJobIds[s_nodeToOwner[msg.sender]]
+                    .pending
+                    .push(jobIds[i]);
             } else {
-                uint256 adaFee = request.baseAdaFee +
-                    (request.adaFeePerNum * request.numCount);
-                uint256 tokenFee = request.baseTokenFee +
-                    (request.tokenFeePerNum * request.numCount);
-
-                if (
-                    adaFee > s_totalNodeRewards[s_nodeToOwner[msg.sender]].ada
-                ) {
-                    adaFee = s_totalNodeRewards[s_nodeToOwner[msg.sender]].ada;
-                }
-
-                if (
-                    tokenFee >
-                    s_totalNodeRewards[s_nodeToOwner[msg.sender]].token
-                ) {
-                    tokenFee = s_totalNodeRewards[s_nodeToOwner[msg.sender]]
-                        .token;
-                }
-
-                _subStake(s_nodeToOwner[msg.sender], adaFee, tokenFee);
-                s_totalDeductedStakes[s_nodeToOwner[msg.sender]].ada += adaFee;
-                s_totalDeductedStakes[s_nodeToOwner[msg.sender]]
-                    .token += tokenFee;
-                s_totalPendingStakingRewards.ada += adaFee;
-                s_totalPendingStakingRewards.token += tokenFee;
+                s_operatorPendingRewardJobIds[s_nodeToOwner[msg.sender]]
+                    .finalized
+                    .push(jobIds[i]);
             }
         }
-
-        delete s_pendingRewardJobIds[s_nodeToOwner[msg.sender]];
     }
 
     function getTotalRewards()
@@ -546,6 +570,4 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
     {
         return s_pendingRewardJobIds[s_nodeToOwner[node]];
     }
-
-    //@TODO helper isNodeDelegated()
 }
