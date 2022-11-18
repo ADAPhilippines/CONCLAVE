@@ -4,7 +4,7 @@ import { ethers } from 'hardhat';
 import { BigNumber } from 'ethers';
 import { stakingFixture } from './Fixture';
 
-describe('Staking Contract', function () {
+describe.only('Staking Contract', function () {
     describe('Stake function', function () {
         it('Should accept valid stake', async function () {
             const {
@@ -68,9 +68,9 @@ describe('Staking Contract', function () {
             } = await loadFixture(stakingFixture);
 
             await approve(addr);
-            await expect(oracle.connect(addr).stake(testAdaStake, testTokenStake, { value: testAdaStake })).to.be.revertedWith(
-                'ERC20: transfer amount exceeds balance'
-            );
+            await expect(
+                oracle.connect(addr).stake(testAdaStake, testTokenStake, { value: testAdaStake })
+            ).to.be.revertedWith('ERC20: transfer amount exceeds balance');
         });
 
         it('Should not stake invalid amount', async function () {
@@ -80,14 +80,15 @@ describe('Staking Contract', function () {
                 approveAndStake,
             } = await loadFixture(stakingFixture);
 
-            await expect(approveAndStake(addr, ethers.BigNumber.from('0'), ethers.BigNumber.from('0'))).to.be.revertedWithCustomError(
-                oracle,
-                'InvalidStakeAmount'
-            );
+            await expect(
+                approveAndStake(addr, ethers.BigNumber.from('0'), ethers.BigNumber.from('0'))
+            ).to.be.revertedWithCustomError(oracle, 'InvalidStakeAmount');
         });
 
         it('Should increment total stakes', async function () {
-            const { oracle, accountsWithTokens, testAdaStake, testTokenStake, approveAndStake } = await loadFixture(stakingFixture);
+            const { oracle, accountsWithTokens, testAdaStake, testTokenStake, approveAndStake } = await loadFixture(
+                stakingFixture
+            );
 
             for (const account of accountsWithTokens) {
                 await approveAndStake(account, testAdaStake, testTokenStake);
@@ -134,7 +135,10 @@ describe('Staking Contract', function () {
             } = await loadFixture(stakingFixture);
 
             await approveAndStake(addr, testAdaStake, testTokenStake);
-            await expect(unstake(addr, testAdaStake, testTokenStake.add(100))).to.be.revertedWithCustomError(oracle, 'InsufficientBalance');
+            await expect(unstake(addr, testAdaStake, testTokenStake.add(100))).to.be.revertedWithCustomError(
+                oracle,
+                'InsufficientBalance'
+            );
         });
 
         it('Should not unstake invalid amount', async function () {
@@ -144,10 +148,9 @@ describe('Staking Contract', function () {
                 unstake,
             } = await loadFixture(stakingFixture);
 
-            await expect(unstake(addr, ethers.BigNumber.from('0'), ethers.BigNumber.from('0'))).to.be.revertedWithCustomError(
-                oracle,
-                'InvalidStakeAmount'
-            );
+            await expect(
+                unstake(addr, ethers.BigNumber.from('0'), ethers.BigNumber.from('0'))
+            ).to.be.revertedWithCustomError(oracle, 'InvalidStakeAmount');
         });
 
         it('Should decrement total stakes', async function () {

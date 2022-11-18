@@ -259,16 +259,6 @@ export async function operatorFixture() {
         index++;
     }
 
-    type Request = {
-        numCount: number;
-        adaFee: BigNumber;
-        adaFeePerNum: BigNumber;
-        tokenFee: BigNumber;
-        tokenFeePerNum: BigNumber;
-        minValidator: BigNumber;
-        maxValidator: BigNumber;
-    };
-
     const submitRequest = async (request: Request) => {
         const tx = await consumer.requestRandomNumbers(
             request.numCount,
@@ -436,3 +426,13 @@ export async function operatorFixture() {
         simulateJobCycleNotFinalized,
     };
 }
+
+export type Request = {
+    numCount: number;
+    adaFee: BigNumber;
+    adaFeePerNum: BigNumber;
+    tokenFee: BigNumber;
+    tokenFeePerNum: BigNumber;
+    minValidator: BigNumber;
+    maxValidator: BigNumber;
+};
