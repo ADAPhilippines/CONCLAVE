@@ -4,7 +4,7 @@ import { ethers } from 'hardhat';
 import { BigNumber } from 'ethers';
 import { stakingFixture } from './Fixture';
 
-describe.only('Staking Contract', function () {
+describe('Staking Contract', function () {
     describe('Stake function', function () {
         it('Should accept valid stake', async function () {
             const {

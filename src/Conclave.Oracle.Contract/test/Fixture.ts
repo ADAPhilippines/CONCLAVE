@@ -235,9 +235,9 @@ export async function operatorFixture() {
         await token.connect(account).approve(oracle.address, ethers.constants.MaxUint256);
     }
 
-    const adaFee = ethers.utils.parseEther('150');
+    const adaFee = ethers.utils.parseEther('1');
     const adaFeePerNum = ethers.utils.parseEther('0.1');
-    const tokenFee = ethers.utils.parseUnits('1000000', decimal);
+    const tokenFee = ethers.utils.parseUnits('1000', decimal);
     const tokenFeePerNum = ethers.utils.parseUnits('100', decimal);
     const minValidator = ethers.BigNumber.from('1');
     const maxValidator = ethers.BigNumber.from('1');

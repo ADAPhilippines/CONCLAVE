@@ -2,9 +2,10 @@ import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { ethers } from 'hardhat';
 import { BigNumber } from 'ethers';
-import { operatorFixture, delegateNodeFixture } from './Fixture';
+import { operatorFixture, delegateNodeFixture, Request } from './Fixture';
+import { send } from 'process';
 
-describe.only('ConclaveOperator Contract', function () {
+describe('ConclaveOperator Contract', function () {
     describe('DelegateNode function', function () {
         it('Should delegate node', async function () {
             const {
@@ -314,56 +315,51 @@ describe.only('ConclaveOperator Contract', function () {
                 operators,
                 operators: [operator1, operator2],
                 getResponse,
-                adaFee,
-                tokenFee,
-                minValidator,
-                maxValidator,
                 submitRequest,
+                submitResponseAndFinalize,
                 unstake,
                 simulateJobCycle,
+                decimal,
             } = await loadFixture(operatorFixture);
 
-            const requestIds = await simulateJobCycle(1, [nodes[0]], 1, 5);
-            const { baseAdaFee, adaFeePerNum, baseTokenFee, tokenFeePerNum, numCount } = await oracle.getJobDetails(
-                requestIds[0]
-            );
+            const adaFee = ethers.utils.parseEther('150');
+            const adaPerNum = ethers.utils.parseEther('10');
+            const tokenFee = ethers.utils.parseUnits('100000', decimal);
+            const tokenPerNum = ethers.utils.parseUnits('100', decimal);
+
             for (const operator of operators) {
                 if (operator.address === operator1.address) continue;
                 const balance = await oracle.getStake(operator.address);
                 await unstake(operator, balance.ada, balance.token);
             }
 
-            const newRequestId = await submitRequest({
-                numCount: 1,
+            const request: Request = {
+                numCount: 2,
                 adaFee,
-                adaFeePerNum,
+                adaFeePerNum: adaPerNum,
                 tokenFee,
-                tokenFeePerNum,
-                minValidator,
-                maxValidator,
-            });
-            const newJobDetails = await oracle.getJobDetails(newRequestId);
+                tokenFeePerNum: tokenPerNum,
+                minValidator: BigNumber.from(1),
+                maxValidator: BigNumber.from(2),
+            };
 
-            await oracle.connect(nodes[0]).acceptJob(newJobDetails.jobId);
-            await ethers.provider.send('evm_increaseTime', [61]);
-            await oracle.connect(nodes[0]).submitResponse(newJobDetails.jobId, getResponse(1));
-
-            const rewards = await oracle.s_totalStakingRewards(operator1.address);
-            const totalStakes = await oracle.s_totalStakes();
-            const operatorStake = await oracle.getStake(operator1.address);
-            const weight = await oracle.calculateWeight(operatorStake.token, totalStakes.token);
-
-            const stakingAdaReward = await oracle.calculateShare(10 * 100, baseAdaFee.add(adaFeePerNum.mul(numCount)));
-            const stakingTokenReward = await oracle.calculateShare(
-                10 * 100,
-                baseTokenFee.add(tokenFeePerNum.mul(numCount))
+            const requestId = await submitRequest(request);
+            const { baseAdaFee, adaFeePerNum, baseTokenFee, tokenFeePerNum, numCount } = await oracle.getJobDetails(
+                requestId
             );
 
-            const adaShare = await oracle.calculateShare(weight, stakingAdaReward);
-            const tokenShare = await oracle.calculateShare(weight, stakingTokenReward);
+            await ethers.provider.send('evm_increaseTime', [60]);
+            await submitResponseAndFinalize(requestId, [nodes[0]]);
 
-            expect(rewards.ada).to.be.equal(adaShare);
-            expect(rewards.token).to.be.equal(tokenShare);
+            const newRequestId = await submitRequest(request);
+            await ethers.provider.send('evm_increaseTime', [60]);
+            await submitResponseAndFinalize(newRequestId, [nodes[0]]);
+
+            const stakingRewards = await oracle.s_totalStakingRewards(operator1.address);
+            const operatorStakingRewards = await oracle.s_totalStakingRewards(operator1.address);
+
+            expect(stakingRewards.ada).to.be.equal(operatorStakingRewards.ada);
+            expect(stakingRewards.token).to.be.equal(operatorStakingRewards.token);
             expect(await oracle.s_latestDistributorNode()).to.equal(nodes[0].address);
         });
     });
