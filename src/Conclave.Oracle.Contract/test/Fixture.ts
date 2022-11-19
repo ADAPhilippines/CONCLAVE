@@ -166,6 +166,14 @@ export async function delegateNodeFixture() {
         return ethers.utils.parseUnits(amount.toString(), decimal);
     };
 
+    const calculateShare = (share: BigNumber, total: BigNumber): BigNumber => {
+        return share.mul(total).div(ethers.BigNumber.from('10000'));
+    };
+
+    const calculateWeight = (amount: BigNumber, total: BigNumber): BigNumber => {
+        return amount.mul(ethers.BigNumber.from('10000')).div(total);
+    };
+
     return {
         token,
         decimal,
@@ -183,6 +191,8 @@ export async function delegateNodeFixture() {
         unstake,
         stakeAndDelegate,
         getRandomStakeAmount,
+        calculateShare,
+        calculateWeight,
         jobAcceptanceLimitInSeconds,
         jobFulFillmentLimitInSeconds,
         minAdaStakingRewards,
@@ -208,6 +218,8 @@ export async function operatorFixture() {
         approve,
         approveAndStake,
         unstake,
+        calculateShare,
+        calculateWeight,
         jobAcceptanceLimitInSeconds,
         jobFulFillmentLimitInSeconds,
         minAdaStakingRewards,
@@ -424,6 +436,8 @@ export async function operatorFixture() {
         simulateJobCycle,
         submitResponses,
         simulateJobCycleNotFinalized,
+        calculateShare,
+        calculateWeight,
     };
 }
 
