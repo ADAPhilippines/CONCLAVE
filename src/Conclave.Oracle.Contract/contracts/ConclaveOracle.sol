@@ -185,7 +185,7 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
 
             // update oracle fees
             _calculateOracleFees(
-                jobRequest.baseTokenFee,
+                jobRequest.baseAdaFee,
                 jobRequest.adaFeePerNum,
                 jobRequest.baseTokenFee,
                 jobRequest.tokenFeePerNum
@@ -198,18 +198,16 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         view
         override
         returns (
-            uint256,
-            uint256,
-            uint256,
-            uint256
+            uint256 ada,
+            uint256 adaFeePerNum,
+            uint256 token,
+            uint256 tokenFeePerNum
         )
     {
-        return (
-            s_adaFeeAverage,
-            s_adaFeePerNumAverage,
-            s_tokenFeeAverage,
-            s_tokenFeePerNumAverage
-        );
+        ada = s_adaFeeAverage;
+        adaFeePerNum = s_adaFeePerNumAverage;
+        token = s_tokenFeeAverage;
+        tokenFeePerNum = s_tokenFeePerNumAverage;
     }
 
     function _calculateOracleFees(
@@ -248,6 +246,9 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         uint256 newValue,
         uint256 totalCount
     ) internal pure returns (uint256) {
+        if (totalCount == 1) {
+            return newValue;
+        }
         return (previousAverage * (totalCount - 1) + newValue) / totalCount;
     }
 
