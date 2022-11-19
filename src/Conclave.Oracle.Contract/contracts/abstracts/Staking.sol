@@ -8,6 +8,15 @@ abstract contract Staking is IStakeable {
     error InsufficientBalance(uint256 requested, uint256 balance);
     error InvalidStakeAmount();
 
+    event StakeAdded(address indexed staker, uint256 ada, uint256 token);
+    event StakeDeducted(address indexed staker, uint256 ada, uint256 token);
+    event StakingRewardsDistributed(
+        address indexed distributor,
+        uint256 ada,
+        uint256 token,
+        uint256 timestamp
+    );
+
     modifier onlyValidStake(uint256 ada, uint256 token) {
         if (ada == 0 && token == 0) {
             revert InvalidStakeAmount();
@@ -55,6 +64,8 @@ abstract contract Staking is IStakeable {
     {
         _token.transferFrom(msg.sender, address(this), token);
         _addStake(msg.sender, ada, token);
+
+        emit StakeAdded(msg.sender, ada, token);
     }
 
     function _unstake(uint256 ada, uint256 token)
@@ -62,8 +73,11 @@ abstract contract Staking is IStakeable {
         onlyValidStake(ada, token)
     {
         _subStake(msg.sender, ada, token);
-        _token.transfer(msg.sender, token);
-        payable(msg.sender).transfer(ada);
+
+        _transferToken(msg.sender, token);
+        _transferAda(msg.sender, ada);
+
+        emit StakeDeducted(msg.sender, ada, token);
     }
 
     function _addStake(

@@ -30,17 +30,10 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
     }
 
     modifier onlyValidator() {
-        if (s_stakes[s_nodeToOwner[msg.sender]].ada < s_minStake.ada) {
+        if (!_hasEnoughStakes(s_nodeToOwner[msg.sender])) {
             revert NotEnoughStake(
                 s_minStake.ada,
                 s_stakes[s_nodeToOwner[msg.sender]].ada
-            );
-        }
-
-        if (s_stakes[s_nodeToOwner[msg.sender]].token < s_minStake.token) {
-            revert NotEnoughStake(
-                s_minStake.token,
-                s_stakes[s_nodeToOwner[msg.sender]].token
             );
         }
         _;
@@ -78,32 +71,6 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         uint32 indexed numCount,
         uint256 indexed jobFulfillmentTimestamp
     );
-
-    enum RequestStatus {
-        Pending,
-        Refunded,
-        Fulfilled
-    }
-
-    struct JobRequest {
-        uint256 jobId;
-        uint256 baseAdaFee;
-        uint256 baseTokenFee;
-        uint256 adaFeePerNum;
-        uint256 tokenFeePerNum;
-        uint256 timestamp;
-        uint256 jobAcceptanceExpiration;
-        uint256 jobFulfillmentExpiration;
-        uint256 finalResultDataId;
-        uint24 responseCount;
-        uint24 numCount;
-        uint24 minValidator;
-        uint24 maxValidator;
-        address requester;
-        address[] validators;
-        uint256[] dataIds;
-        RequestStatus status;
-    }
 
     struct PendingRewardJobIds {
         uint256[] pending;
@@ -198,7 +165,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         emit NodeRegistered(node, msg.sender);
     }
 
-    function setNodeAllowance(uint24 allowance) external {
+    function setNodeAllowance(uint24 allowance) external override {
         require(allowance <= 100 && allowance >= 0, "Invalid allowance");
         s_nodeAllowances[msg.sender] = allowance;
     }
@@ -303,6 +270,14 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         ) {
             if (_isDistributorNode(msg.sender)) {
                 s_latestDistributorNode = msg.sender;
+
+                emit StakingRewardsDistributed(
+                    s_nodeToOwner[msg.sender],
+                    s_totalPendingStakingRewards.ada,
+                    s_totalPendingStakingRewards.token,
+                    block.timestamp
+                );
+
                 _distributeStakingRewards();
             }
         }
@@ -311,6 +286,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
     function getJobDetails(uint256 jobId)
         external
         view
+        override
         returns (JobRequest memory)
     {
         return _getJobRequest(jobId);
@@ -325,27 +301,13 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
             s_nodeToOwner[msg.sender]
         ];
         for (uint256 i = 0; i < jobIds.length; i++) {
-            (uint256 ada, uint256 token) = getPendingRewards(jobIds[i]);
+            (uint256 ada, uint256 token) = getPendingRewardsByJobId(jobIds[i]);
             adaReward += ada;
             tokenReward += token;
         }
     }
 
-    function isJobReady(uint256 jobId) external view override returns (bool) {
-        JobRequest storage request = _getJobRequest(jobId);
-        return block.timestamp > request.jobAcceptanceExpiration;
-    }
-
-    function isResponseSubmitted(uint256 jobId)
-        external
-        view
-        override
-        returns (bool)
-    {
-        return s_nodeDataId[jobId][s_nodeToOwner[msg.sender]] != 0;
-    }
-
-    function getPendingRewards(uint256 jobId)
+    function getPendingRewardsByJobId(uint256 jobId)
         public
         view
         override
@@ -404,7 +366,9 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
 
             if (nodeDataId == request.finalResultDataId) {
                 // Add rewards to stake balances
-                (uint256 ada, uint256 token) = getPendingRewards(request.jobId);
+                (uint256 ada, uint256 token) = getPendingRewardsByJobId(
+                    request.jobId
+                );
                 s_totalNodeRewards[s_nodeToOwner[msg.sender]].ada += ada;
                 s_totalNodeRewards[s_nodeToOwner[msg.sender]].token += token;
                 adaReward += ada;
@@ -449,6 +413,75 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         }
     }
 
+    function getTotalRewards()
+        external
+        view
+        override
+        returns (uint256, uint256)
+    {
+        return (
+            s_totalNodeRewards[s_nodeToOwner[msg.sender]].ada,
+            s_totalNodeRewards[s_nodeToOwner[msg.sender]].token
+        );
+    }
+
+    function getOwner(address node) external view override returns (address) {
+        return s_nodeToOwner[node];
+    }
+
+    function getNode(address owner) external view override returns (address) {
+        return s_ownerToNode[owner];
+    }
+
+    function getPendingRewardJobIds(address node)
+        external
+        view
+        override
+        returns (uint256[] memory)
+    {
+        return s_pendingRewardJobIds[s_nodeToOwner[node]];
+    }
+
+    function getNodeAllowance(address node)
+        external
+        view
+        override
+        returns (uint256)
+    {
+        return s_nodeAllowances[s_nodeToOwner[node]];
+    }
+
+    function isJobReady(uint256 jobId) external view override returns (bool) {
+        JobRequest storage request = _getJobRequest(jobId);
+        return
+            request.validators.length >= request.minValidator &&
+            block.timestamp < request.jobFulfillmentExpiration;
+    }
+
+    function isResponseSubmitted(uint256 jobId)
+        external
+        view
+        override
+        returns (bool)
+    {
+        return s_nodeDataId[jobId][s_nodeToOwner[msg.sender]] != 0;
+    }
+
+    function isNodeRegistered(address node)
+        external
+        view
+        override
+        returns (bool)
+    {
+        return _hasEnoughStakes(s_nodeToOwner[node]);
+    }
+
+    function _hasEnoughStakes(address operator) internal view returns (bool) {
+        return
+            s_stakes[operator].ada >= s_minStake.ada &&
+            s_stakes[operator].token >= s_minStake.token;
+    }
+
     function _filterPendingJobs(uint256[] memory jobIds) internal {
         delete s_operatorPendingRewardJobIds[s_nodeToOwner[msg.sender]]
             .finalized;
@@ -470,18 +503,6 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
                     .push(jobIds[i]);
             }
         }
-    }
-
-    function getTotalRewards()
-        external
-        view
-        override
-        returns (uint256, uint256)
-    {
-        return (
-            s_totalNodeRewards[s_nodeToOwner[msg.sender]].ada,
-            s_totalNodeRewards[s_nodeToOwner[msg.sender]].token
-        );
     }
 
     function _isDistributorNode(address node) internal view returns (bool) {
@@ -577,37 +598,5 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         returns (uint256)
     {
         return (amount * 10_000) / total;
-    }
-
-    function calculateShare(uint256 share, uint256 total)
-        public
-        pure
-        returns (uint256)
-    {
-        return (total * share) / 10_000;
-    }
-
-    function calculateWeight(uint256 amount, uint256 total)
-        public
-        pure
-        returns (uint256)
-    {
-        return (amount * 10_000) / total;
-    }
-
-    function getOwner(address node) external view returns (address) {
-        return s_nodeToOwner[node];
-    }
-
-    function getNode(address owner) external view returns (address) {
-        return s_ownerToNode[owner];
-    }
-
-    function getPendingRewardJobIds(address node)
-        external
-        view
-        returns (uint256[] memory)
-    {
-        return s_pendingRewardJobIds[s_nodeToOwner[node]];
     }
 }
