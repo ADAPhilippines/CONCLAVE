@@ -7,13 +7,13 @@ using Nethereum.Web3;
 using Nethereum.Contracts.CQS;
 using System.Threading;
 
-namespace Conclave.Oracle.Node.Contracts.Definition;
+namespace Conclave.Oracle.Node.Contracts.Definition.EventOutputs;
 
 [Event("RequestCreated")]
 public class RequestCreatedEventDTO : IEventDTO
 {
     [Parameter("uint256", "requestId", 1, true)]
-    public BigInteger RequestId { get; set; }
+    public BigInteger JobId { get; set; }
     [Parameter("uint256", "timestamp", 2, true)]
     public BigInteger TimeStamp { get; set; }
     [Parameter("uint256", "numberOfdecimals", 3, true)]

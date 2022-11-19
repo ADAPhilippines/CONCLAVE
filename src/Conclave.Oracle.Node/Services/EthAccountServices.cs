@@ -24,7 +24,6 @@ public class EthAccountServices : WalletServiceBase
 
     public async Task<HexBigInteger> GetBalanceAsync() => await Web3.Eth.GetBalance.SendRequestAsync(Address);
 
-
     public async Task<T> CallContractReadFunctionAsync<T>(
         string contractAddress,
         string abi,
@@ -50,16 +49,39 @@ public class EthAccountServices : WalletServiceBase
         return await readFunction.CallAsync<dynamic>();
     }
 
+    public async Task<TransactionReceipt> CallContractWriteFunctionNoParamsAsync(
+        string contractAddress,
+        string from,
+        string abi,
+        decimal value,
+        string functionName)
+    {
+        Contract contract = Web3.Eth.GetContract(abi, contractAddress);
+        Function writeFunction = contract.GetFunction(functionName);
+        HexBigInteger gas = await writeFunction.EstimateGasAsync();
+        string data = writeFunction.GetData();
+        HexBigInteger gasPrice = await Web3.Eth.GasPrice.SendRequestAsync();
+
+        return await Web3.Eth.TransactionManager.SendTransactionAndWaitForReceiptAsync(new TransactionInput(
+            data,
+            contractAddress,
+            from,
+            gas,
+            gasPrice,
+            new HexBigInteger(UnitConversion.Convert.ToWei(0)))
+        );
+    }
+
     public async Task<TransactionReceipt> CallContractWriteFunctionAsync(
         string contractAddress,
         string from,
         string abi,
-        string name,
         decimal value,
+        string functionName,
         params object[] inputs)
     {
         Contract contract = Web3.Eth.GetContract(abi, contractAddress);
-        Function writeFunction = contract.GetFunction(name);
+        Function writeFunction = contract.GetFunction(functionName);
         HexBigInteger gas = await writeFunction.EstimateGasAsync(inputs);
         string data = writeFunction.GetData(inputs);
         HexBigInteger gasPrice = await Web3.Eth.GasPrice.SendRequestAsync();
@@ -73,7 +95,6 @@ public class EthAccountServices : WalletServiceBase
             new HexBigInteger(UnitConversion.Convert.ToWei(0)))
         );
     }
-
 
     public async Task ListenContractEventAsync<T>(string contractAddress, string abi, string functionName, Func<List<EventLog<T>>, bool> callback) where T : new()
     {
@@ -95,13 +116,12 @@ public class EthAccountServices : WalletServiceBase
                 ).ToList();
 
                 if (filteredLogs.Count > 0)
-                {
                     _ = Task.Run(() =>
                     {
                         shouldRun = callback(filteredLogs);
                         lastLogs = filteredLogs;
                     });
-                }
+
                 await Task.Delay(100);
             }
         });
