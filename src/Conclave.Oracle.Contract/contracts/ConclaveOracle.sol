@@ -31,6 +31,25 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         uint256 indexed timestamp
     );
 
+    event JobRequestRefunded(
+        uint256 jobId,
+        address indexed requester,
+        uint256 indexed timestamp
+    );
+
+    event JobRequestFulfilled(
+        uint256 jobId,
+        address indexed requester,
+        uint256 indexed timestamp
+    );
+
+    event OracleFeesUpdated(
+        uint256 adaFeeAverage,
+        uint256 adaFeePerNumAverage,
+        uint256 tokenFeeAverage,
+        uint256 tokenFeePerNumAverage
+    );
+
     mapping(uint256 => JobRequest) /* jobId => jobRequest */
         private s_jobRequests;
 
@@ -56,6 +75,15 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
     }
 
     receive() external payable {}
+
+    function balance()
+        external
+        view
+        override
+        returns (uint256 ada, uint256 token)
+    {
+        return (address(this).balance, _token.balanceOf(address(this)));
+    }
 
     function requestRandomNumbers(
         uint24 numCount,
@@ -152,6 +180,12 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
             randomNumbers = new uint256[](jobRequest.numCount);
             status = uint(RequestStatus.Refunded);
             jobRequest.status = RequestStatus.Refunded;
+
+            emit JobRequestRefunded(
+                jobId,
+                jobRequest.requester,
+                block.timestamp
+            );
         } else {
             uint256 finalDataId;
             uint32 maxResponses;
@@ -189,6 +223,19 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
                 jobRequest.adaFeePerNum,
                 jobRequest.baseTokenFee,
                 jobRequest.tokenFeePerNum
+            );
+
+            emit JobRequestFulfilled(
+                jobId,
+                jobRequest.requester,
+                block.timestamp
+            );
+
+            emit OracleFeesUpdated(
+                s_adaFeeAverage,
+                s_adaFeePerNumAverage,
+                s_tokenFeeAverage,
+                s_tokenFeePerNumAverage
             );
         }
     }
@@ -372,9 +419,5 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         returns (JobRequest storage)
     {
         return s_jobRequests[jobId];
-    }
-
-    function balance() external view returns (uint256 ada, uint256 token) {
-        return (address(this).balance, _token.balanceOf(address(this)));
     }
 }
