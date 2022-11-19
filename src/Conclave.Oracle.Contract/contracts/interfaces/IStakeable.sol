@@ -2,9 +2,14 @@
 pragma solidity ^0.8.17;
 
 interface IStakeable {
-    function stake(uint256 amount) external;
+    struct Stake {
+        uint256 ada;
+        uint256 token;
+    }
 
-    function unstake(uint256 amount) external;
+    function stake(uint256 ada, uint256 token) external payable;
 
-    function getStake(address account) external view returns (uint256);
+    function unstake(uint256 ada, uint256 token) external;
+
+    function getStake(address staker) external view returns (Stake memory);
 }

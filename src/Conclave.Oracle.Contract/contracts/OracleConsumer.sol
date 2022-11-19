@@ -21,6 +21,8 @@ contract OracleConsumer {
     IConclaveOracle s_oracle;
     mapping(uint256 => Request) public s_results;
 
+    Request[] public s_requests;
+
     constructor(address oracle, address token) {
         s_oracle = IConclaveOracle(oracle);
         s_token = IERC20(token);
@@ -34,8 +36,8 @@ contract OracleConsumer {
         uint256 tokenFeePerNum,
         uint24 minValidator,
         uint24 maxValidator
-    ) external {
-        uint256 jobId = s_oracle.requestRandomNumbers(
+    ) external payable {
+        uint256 jobId = s_oracle.requestRandomNumbers{value: msg.value}(
             numCount,
             adaFee,
             adaFeePerNum,
@@ -47,6 +49,7 @@ contract OracleConsumer {
 
         s_results[jobId].jobId = jobId;
         s_results[jobId].status = RequestStatus.Pending;
+        s_requests.push(s_results[jobId]);
     }
 
     function finalizeResult(uint256 jobId) external {
