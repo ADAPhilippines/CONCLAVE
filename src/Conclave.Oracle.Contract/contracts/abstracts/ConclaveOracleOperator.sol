@@ -85,7 +85,6 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         Fulfilled
     }
 
-    /* ORACLE PROPERTIES */
     struct JobRequest {
         uint256 jobId;
         uint256 baseAdaFee;
@@ -95,8 +94,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         uint256 timestamp;
         uint256 jobAcceptanceExpiration;
         uint256 jobFulfillmentExpiration;
-        uint256 finalResultDataId; /* data ID result */
-        RequestStatus status;
+        uint256 finalResultDataId;
         uint24 responseCount;
         uint24 numCount;
         uint24 minValidator;
@@ -104,6 +102,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         address requester;
         address[] validators;
         uint256[] dataIds;
+        RequestStatus status;
     }
 
     struct PendingRewardJobIds {
@@ -136,11 +135,12 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         public s_dataIdVotes;
     mapping(uint256 => mapping(address => bool)) /* jobId => operator => isRegistered */
         public s_nodeRegistrations;
+    mapping(address => uint24) /* operator => nodeAllowance */
+        public s_nodeAllowances;
+    mapping(address => PendingRewardJobIds) /* operator => pendingRewardJobIds */
+        private s_operatorPendingRewardJobIds;
 
     address public s_latestDistributorNode;
-    mapping(address => uint24) public s_nodeAllowances;
-    mapping(address => PendingRewardJobIds)
-        private s_operatorPendingRewardJobIds;
 
     constructor(
         IERC20 token,
@@ -390,6 +390,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
             revert NoPendingRewards();
         }
 
+        uint256 adaReward = 0;
         for (uint i = 0; i < finalizedJobIds.length; i++) {
             JobRequest storage request = _getJobRequest(finalizedJobIds[i]);
             uint256 nodeDataId = s_nodeDataId[request.jobId][
@@ -406,6 +407,8 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
                 (uint256 ada, uint256 token) = getPendingRewards(request.jobId);
                 s_totalNodeRewards[s_nodeToOwner[msg.sender]].ada += ada;
                 s_totalNodeRewards[s_nodeToOwner[msg.sender]].token += token;
+                adaReward += ada;
+
                 _addStake(s_nodeToOwner[msg.sender], ada, token);
             } else {
                 // Deduct fees from stake balances
@@ -425,7 +428,18 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
 
                 _subStake(s_nodeToOwner[msg.sender], adaFee, tokenFee);
             }
-            // @TODO: send node allowance
+        }
+
+        if (s_nodeAllowances[s_nodeToOwner[msg.sender]] > 0 && adaReward > 0) {
+            uint256 nodeShare = _calculateShare(
+                s_nodeAllowances[s_nodeToOwner[msg.sender]] * 100,
+                adaReward
+            );
+
+            // deduct to total stake
+            _subStake(s_nodeToOwner[msg.sender], nodeShare, 0);
+
+            _transferAda(msg.sender, nodeShare);
         }
         delete s_pendingRewardJobIds[s_nodeToOwner[msg.sender]];
         for (uint i = 0; i < pendingJobIds.length; i++) {
