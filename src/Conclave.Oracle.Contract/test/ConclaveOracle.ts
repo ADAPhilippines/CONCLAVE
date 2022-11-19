@@ -323,4 +323,110 @@ describe('ConclaveOracle contract', function () {
             );
         });
     });
+
+    describe('GetAverageOracleFees function', function () {
+        it('Should return zero when no fulfilled requests yet', async function () {
+            const { oracle } = await loadFixture(operatorFixture);
+
+            const fees = await oracle.getAverageOracleFees();
+
+            expect(fees.ada).to.equal(0);
+            expect(fees.token).to.equal(0);
+            expect(fees.adaFeePerNum).to.equal(0);
+            expect(fees.tokenFeePerNum).to.equal(0);
+        });
+
+        it('Should update the average fees as request gets fulfilled', async function () {
+            const { oracle, simulateJobCycle, nodes, decimal, consumer, submitRequest, submitResponses } =
+                await loadFixture(operatorFixture);
+
+            const requestIds = await simulateJobCycle(20, nodes, 5, 10);
+
+            let adaFee, adaFeePerNum, tokenFee, tokenFeePerNum;
+            let totalAdaFee: BigNumber = ethers.BigNumber.from(0);
+            let totalAdaFeePerNum: BigNumber = ethers.BigNumber.from(0);
+            let totalTokenFee: BigNumber = ethers.BigNumber.from(0);
+            let totalTokenFeePerNum: BigNumber = ethers.BigNumber.from(0);
+
+            for (const requestId of requestIds) {
+                const request = await oracle.getJobDetails(requestId);
+
+                totalAdaFeePerNum = totalAdaFeePerNum.add(request.adaFeePerNum);
+                totalTokenFeePerNum = totalTokenFeePerNum.add(request.tokenFeePerNum);
+                totalAdaFee = totalAdaFee.add(request.baseAdaFee);
+                totalTokenFee = totalTokenFee.add(request.baseTokenFee);
+            }
+
+            const fees = await oracle.getAverageOracleFees();
+
+            adaFee = totalAdaFee.div(requestIds.length);
+            adaFeePerNum = totalAdaFeePerNum.div(requestIds.length);
+            tokenFee = totalTokenFee.div(requestIds.length);
+            tokenFeePerNum = totalTokenFeePerNum.div(requestIds.length);
+
+            expect(fees.ada).to.equal(adaFee);
+            expect(fees.token).to.equal(tokenFee);
+            expect(fees.adaFeePerNum).to.equal(adaFeePerNum);
+            expect(fees.tokenFeePerNum).to.equal(tokenFeePerNum);
+
+            const request: Request = {
+                numCount: 2,
+                adaFee: ethers.utils.parseEther('10'),
+                tokenFee: ethers.utils.parseUnits('2000', decimal),
+                adaFeePerNum: ethers.utils.parseEther('1'),
+                tokenFeePerNum: ethers.utils.parseUnits('200', decimal),
+                minValidator: BigNumber.from(5),
+                maxValidator: BigNumber.from(10),
+            };
+
+            const requestId = await submitRequest(request);
+            await submitResponses(requestId, nodes);
+            await ethers.provider.send('evm_increaseTime', [86400]);
+            await consumer.finalizeResult(requestId);
+
+            const newRequest = await oracle.getJobDetails(requestId);
+
+            totalAdaFee = totalAdaFee.add(newRequest.baseAdaFee);
+            totalTokenFee = totalTokenFee.add(newRequest.baseTokenFee);
+            totalAdaFeePerNum = totalAdaFeePerNum.add(newRequest.adaFeePerNum);
+            totalTokenFeePerNum = totalTokenFeePerNum.add(newRequest.tokenFeePerNum);
+
+            const newFees = await oracle.getAverageOracleFees();
+
+            const newAdaFee = totalAdaFee.div(requestIds.length + 1);
+            const newAdaFeePerNum = totalAdaFeePerNum.div(requestIds.length + 1);
+            const newTokenFee = totalTokenFee.div(requestIds.length + 1);
+            const newTokenFeePerNum = totalTokenFeePerNum.div(requestIds.length + 1);
+
+            expect(newFees.ada).to.equal(newAdaFee);
+            expect(newFees.token).to.equal(newTokenFee);
+            expect(newFees.adaFeePerNum).to.equal(newAdaFeePerNum);
+            expect(newFees.tokenFeePerNum).to.equal(newTokenFeePerNum);
+        });
+
+        it('Should not add fees when a request gets refunded', async function () {
+            const { oracle, submitRequest, nodes, decimal, consumer } = await loadFixture(operatorFixture);
+
+            const request: Request = {
+                numCount: 2,
+                adaFee: ethers.utils.parseEther('10'),
+                tokenFee: ethers.utils.parseUnits('2000', decimal),
+                adaFeePerNum: ethers.utils.parseEther('1'),
+                tokenFeePerNum: ethers.utils.parseUnits('200', decimal),
+                minValidator: BigNumber.from(5),
+                maxValidator: BigNumber.from(10),
+            };
+
+            const requestId = await submitRequest(request);
+            await ethers.provider.send('evm_increaseTime', [86400]);
+            await consumer.finalizeResult(requestId);
+
+            const fees = await oracle.getAverageOracleFees();
+
+            expect(fees.ada).to.equal(0);
+            expect(fees.token).to.equal(0);
+            expect(fees.adaFeePerNum).to.equal(0);
+            expect(fees.tokenFeePerNum).to.equal(0);
+        });
+    });
 });
