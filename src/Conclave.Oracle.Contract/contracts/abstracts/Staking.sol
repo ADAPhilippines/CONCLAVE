@@ -5,15 +5,6 @@ import "../interfaces/IStakeable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 abstract contract Staking is IStakeable {
-    /* STAKING PROPERTIES */
-    IERC20 public immutable _token;
-    Stake public s_totalStakes;
-    Stake public s_totalPendingStakingRewards;
-    mapping(address => Stake) public s_stakes;
-    address[] public s_stakers;
-
-    mapping(address => bool) public s_isStakers;
-
     error InsufficientBalance(uint256 requested, uint256 balance);
     error InvalidStakeAmount();
 
@@ -34,9 +25,29 @@ abstract contract Staking is IStakeable {
         _;
     }
 
+    IERC20 public immutable _token;
+
+    Stake public s_totalStakes;
+    Stake public s_totalPendingStakingRewards;
+    address[] public s_stakers;
+
+    mapping(address => Stake) public s_stakes;
+    mapping(address => bool) public s_isStakers;
+
     constructor(IERC20 token) {
         _token = token;
     }
+
+    function getStake(address staker)
+        external
+        view
+        override
+        returns (Stake memory)
+    {
+        return s_stakes[staker];
+    }
+
+    function _distributeStakingRewards() internal virtual;
 
     function _stake(uint256 ada, uint256 token)
         internal
@@ -82,14 +93,15 @@ abstract contract Staking is IStakeable {
         s_totalStakes.token -= token;
     }
 
-    function _distributeStakingRewards() internal virtual;
+    function _transferAda(address to, uint256 amount) internal {
+        require(amount > 0, "Amount must be greater than 0");
 
-    function getStake(address staker)
-        external
-        view
-        override
-        returns (Stake memory)
-    {
-        return s_stakes[staker];
+        payable(to).transfer(amount);
+    }
+
+    function _transferToken(address to, uint256 amount) internal {
+        require(amount > 0, "Amount must be greater than 0");
+
+        _token.transfer(to, amount);
     }
 }
