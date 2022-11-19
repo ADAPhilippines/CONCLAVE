@@ -370,6 +370,8 @@ describe('ConclaveOperator Contract', function () {
                 oracle,
                 nodes: [node1, node2, node3, node4, node5],
                 simulateJobCycle,
+                calculateWeight,
+                calculateShare,
             } = await loadFixture(operatorFixture);
 
             const participatingNodes = [node1, node2, node3, node4, node5];
@@ -386,24 +388,24 @@ describe('ConclaveOperator Contract', function () {
                         tokenFeePerNum,
                         numCount,
                     } = await oracle.getJobDetails(requestIds[i]);
-                    const reward = await oracle.connect(node).getPendingRewards(jobId);
+                    const reward = await oracle.connect(node).getPendingRewardsByJobId(jobId);
                     const opeartorAddr = await oracle.getOwner(node.address);
                     const nodeDataId = await oracle.connect(node).s_nodeDataId(jobId, opeartorAddr);
 
                     if (finalResultDataId.eq(nodeDataId)) {
                         const totalResponses = await oracle.s_dataIdVotes(jobId, finalResultDataId);
-                        const weight = await oracle.calculateWeight(1, totalResponses);
+                        const weight = calculateWeight(BigNumber.from(1), BigNumber.from(totalResponses));
 
-                        const totalAdaRewards = await oracle.calculateShare(
-                            90 * 100,
+                        const totalAdaRewards = calculateShare(
+                            BigNumber.from(90).mul(100),
                             baseAdaFee.add(adaFeePerNum.mul(numCount))
                         );
-                        const totalTokenRewards = await oracle.calculateShare(
-                            90 * 100,
+                        const totalTokenRewards = calculateShare(
+                            BigNumber.from(90).mul(100),
                             baseTokenFee.add(tokenFeePerNum.mul(numCount))
                         );
-                        const adaShare = await oracle.calculateShare(weight, totalAdaRewards);
-                        const tokenShare = await oracle.calculateShare(weight, totalTokenRewards);
+                        const adaShare = calculateShare(weight, totalAdaRewards);
+                        const tokenShare = calculateShare(weight, totalTokenRewards);
 
                         expect(reward.ada).to.be.equal(adaShare);
                         expect(reward.token).to.be.equal(tokenShare);
@@ -448,7 +450,7 @@ describe('ConclaveOperator Contract', function () {
         });
 
         it('Should send node allowance upon claiming reward', async function () {
-            const { oracle, nodes, operators, simulateJobCycle } = await loadFixture(operatorFixture);
+            const { oracle, nodes, operators, simulateJobCycle, calculateShare } = await loadFixture(operatorFixture);
             const requestCount = 3;
             const requestIds = await simulateJobCycle(requestCount, nodes, 3, 10);
 
@@ -462,7 +464,7 @@ describe('ConclaveOperator Contract', function () {
             const receipt = await tx.wait();
             const allowancePercentage = await oracle.s_nodeAllowances(operators[0].address);
 
-            const allowance = await oracle.calculateShare(allowancePercentage * 100, pendingRewards.adaReward);
+            const allowance = calculateShare(BigNumber.from(allowancePercentage).mul(100), pendingRewards.adaReward);
             const nodeBalanceAfter = await nodes[0].getBalance();
             const operatorBalanceAfter = await operators[0].getBalance();
             const contractBalanceAfter = await oracle.balance();
