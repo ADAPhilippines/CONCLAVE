@@ -446,5 +446,31 @@ describe('ConclaveOperator Contract', function () {
                 'NoPendingRewards'
             );
         });
+
+        it('Should send node allowance upon claiming reward', async function () {
+            const { oracle, nodes, operators, simulateJobCycle } = await loadFixture(operatorFixture);
+            const requestCount = 3;
+            const requestIds = await simulateJobCycle(requestCount, nodes, 3, 10);
+
+            await oracle.connect(operators[0]).setNodeAllowance(10);
+            const opeartorBalance = await operators[0].getBalance();
+            const pendingRewards = await oracle.connect(nodes[0]).getTotalPendingRewards();
+            const nodeBalanceBefore = await nodes[0].getBalance();
+            const contractBalanceBefore = await oracle.balance();
+
+            const tx = await oracle.connect(nodes[0]).claimPendingRewards();
+            const receipt = await tx.wait();
+            const allowancePercentage = await oracle.s_nodeAllowances(operators[0].address);
+
+            const allowance = await oracle.calculateShare(allowancePercentage * 100, pendingRewards.adaReward);
+            const nodeBalanceAfter = await nodes[0].getBalance();
+            const operatorBalanceAfter = await operators[0].getBalance();
+            const contractBalanceAfter = await oracle.balance();
+            const gasUsed = receipt.cumulativeGasUsed.mul(receipt.effectiveGasPrice);
+
+            expect(contractBalanceAfter.ada).to.equal(contractBalanceBefore.ada.sub(allowance));
+            expect(nodeBalanceAfter).to.be.equal(nodeBalanceBefore.add(allowance).sub(gasUsed));
+            expect(operatorBalanceAfter).to.equal(opeartorBalance);
+        });
     });
 });
