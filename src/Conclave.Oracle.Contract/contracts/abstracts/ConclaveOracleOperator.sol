@@ -80,7 +80,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
     uint256 private s_distributorRandomNumber;
     uint256 private s_minAdaStakingRewards;
     uint256 private s_minTokenStakingRewards;
-    Stake private s_minStake;
+    Stake public s_minStake;
 
     mapping(uint256 => uint256[]) /* dataId => random numbers */
         private s_jobRandomNumbers;
