@@ -9,7 +9,11 @@ abstract contract Staking is IStakeable {
     error InvalidStakeAmount();
 
     event StakeAdded(address indexed staker, uint256 baseToken, uint256 token);
-    event StakeDeducted(address indexed staker, uint256 baseToken, uint256 token);
+    event StakeDeducted(
+        address indexed staker,
+        uint256 baseToken,
+        uint256 token
+    );
     event StakingRewardsDistributed(
         address indexed distributor,
         uint256 baseToken,

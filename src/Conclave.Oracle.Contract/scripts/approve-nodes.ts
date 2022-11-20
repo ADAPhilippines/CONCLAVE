@@ -20,7 +20,6 @@ async function main() {
 
         await Promise.all(nodeApprovals);
     } catch (err) {
-        console.log(chalk.red('Consumer contract not found on this network.'));
         console.log(err);
         process.exit(1);
     }

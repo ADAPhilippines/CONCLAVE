@@ -21,7 +21,7 @@ async function main() {
                 token.address
             )}\nminValidatorTokenStake: ${chalk.blue(
                 minValidatorTokenStake.toString()
-            )}\nminValidatorbaseTokenStake: ${chalk.blue(
+            )}\nminValidatorBaseTokenStake: ${chalk.blue(
                 minValidatorbaseTokenStake.toString()
             )}\njobAcceptanceLimitInSeconds: ${chalk.blue(
                 jobAcceptanceLimitInSeconds.toString()
@@ -45,7 +45,7 @@ async function main() {
         config.oracleAddress = oracle.address;
         writeFileSync('./config.json', JSON.stringify(config, null, 2));
     } catch (err) {
-        console.log(chalk.red('Token contract not found on this network.'));
+        console.log(err);
         process.exit(1);
     }
 }

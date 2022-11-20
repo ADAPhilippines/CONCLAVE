@@ -23,7 +23,6 @@ async function main() {
         console.log(chalk.green(`BaseToken successfully transferred!`));
         console.log('\n\n');
     } catch (err) {
-        console.log(chalk.red('Consumer contract not found on this network.'));
         console.log(err);
         process.exit(1);
     }

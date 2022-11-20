@@ -1,7 +1,6 @@
 import { ethers } from 'hardhat';
 import { BigNumber } from 'ethers';
 import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import chalk from 'chalk';
 
 export default async function fixture() {
     const {
@@ -14,7 +13,7 @@ export default async function fixture() {
         minbaseTokenStake,
         minTokenStake,
         consumer,
-        testbaseTokenStake,
+        testBaseTokenStake,
         testTokenStake,
         stake,
         approve,
@@ -34,7 +33,7 @@ export default async function fixture() {
         minbaseTokenStake,
         minTokenStake,
         consumer,
-        testbaseTokenStake,
+        testBaseTokenStake,
         testTokenStake,
         stake,
         approve,
@@ -84,7 +83,7 @@ export async function stakingFixture() {
         jobFulFillmentLimitInSeconds
     );
 
-    const testbaseTokenStake = ethers.utils.parseEther('50');
+    const testBaseTokenStake = ethers.utils.parseEther('50');
     const testTokenStake = ethers.utils.parseUnits('100000', decimal);
 
     const stake = async (account: SignerWithAddress, baseToken: BigNumber, token: BigNumber) => {
@@ -117,7 +116,7 @@ export async function stakingFixture() {
         minTokenStake,
         minbaseTokenStakingRewards,
         minTokenStakingRewards,
-        testbaseTokenStake,
+        testBaseTokenStake,
         testTokenStake,
         stake,
         approve,
@@ -138,7 +137,7 @@ export async function delegateNodeFixture() {
         accountsWithoutTokens,
         minbaseTokenStake,
         minTokenStake,
-        testbaseTokenStake,
+        testBaseTokenStake,
         testTokenStake,
         stake,
         approve,
@@ -183,7 +182,7 @@ export async function delegateNodeFixture() {
         accountsWithoutTokens,
         minbaseTokenStake,
         minTokenStake,
-        testbaseTokenStake,
+        testBaseTokenStake,
         testTokenStake,
         stake,
         approve,
@@ -212,7 +211,7 @@ export async function operatorFixture() {
         getRandomStakeAmount,
         minbaseTokenStake,
         minTokenStake,
-        testbaseTokenStake,
+        testBaseTokenStake,
         testTokenStake,
         stake,
         approve,
@@ -409,7 +408,7 @@ export async function operatorFixture() {
         minbaseTokenStake,
         minTokenStake,
         consumer,
-        testbaseTokenStake,
+        testBaseTokenStake,
         testTokenStake,
         stake,
         approve,

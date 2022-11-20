@@ -15,7 +15,6 @@ async function main() {
         config.consumerAddress = consumer.address;
         writeFileSync('./config.json', JSON.stringify(config, null, 2));
     } catch (err) {
-        console.log(chalk.red('Token or Oracle contract not found on this network.'));
         console.log(err);
         process.exit(1);
     }

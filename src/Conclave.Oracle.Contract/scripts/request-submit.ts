@@ -9,7 +9,6 @@ async function main() {
         const token = await ethers.getContractAt('Token', config.tokenAddress);
         const decimal = await token.decimals();
     } catch (err) {
-        console.log(chalk.red('Consumer contract not found on this network.'));
         console.log(err);
         process.exit(1);
     }
