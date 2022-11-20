@@ -11,9 +11,9 @@ describe('ConclaveOracle contract', function () {
 
             const request: Request = {
                 numCount: 2,
-                adaFee: ethers.utils.parseEther('1'),
+                baseTokenFee: ethers.utils.parseEther('1'),
                 tokenFee: ethers.utils.parseUnits('100', decimal),
-                adaFeePerNum: ethers.utils.parseEther('0.5'),
+                baseTokenFeePerNum: ethers.utils.parseEther('0.5'),
                 tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
                 minValidator: BigNumber.from(3),
                 maxValidator: BigNumber.from(5),
@@ -31,26 +31,26 @@ describe('ConclaveOracle contract', function () {
 
             const request: Request = {
                 numCount: 2,
-                adaFee: ethers.utils.parseEther('1'),
+                baseTokenFee: ethers.utils.parseEther('1'),
                 tokenFee: ethers.utils.parseUnits('100', decimal),
-                adaFeePerNum: ethers.utils.parseEther('0.5'),
+                baseTokenFeePerNum: ethers.utils.parseEther('0.5'),
                 tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
                 minValidator: BigNumber.from(3),
                 maxValidator: BigNumber.from(5),
             };
 
-            const totalAdaFee = request.adaFee.add(request.adaFeePerNum.mul(request.numCount));
+            const totalbaseTokenFee = request.baseTokenFee.add(request.baseTokenFeePerNum.mul(request.numCount));
 
             await expect(
                 oracle.requestRandomNumbers(
                     request.numCount,
-                    request.adaFee,
-                    request.adaFeePerNum,
+                    request.baseTokenFee,
+                    request.baseTokenFeePerNum,
                     request.tokenFee,
                     request.tokenFeePerNum,
                     request.minValidator,
                     request.maxValidator,
-                    { value: totalAdaFee }
+                    { value: totalbaseTokenFee }
                 )
             ).to.emit(oracle, 'JobRequestCreated');
         });
@@ -60,9 +60,9 @@ describe('ConclaveOracle contract', function () {
 
             const notWithinMinRequest: Request = {
                 numCount: 0,
-                adaFee: ethers.utils.parseEther('1'),
+                baseTokenFee: ethers.utils.parseEther('1'),
                 tokenFee: ethers.utils.parseUnits('100', decimal),
-                adaFeePerNum: ethers.utils.parseEther('0.5'),
+                baseTokenFeePerNum: ethers.utils.parseEther('0.5'),
                 tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
                 minValidator: BigNumber.from(3),
                 maxValidator: BigNumber.from(5),
@@ -70,9 +70,9 @@ describe('ConclaveOracle contract', function () {
 
             const notWithinMaxRequest: Request = {
                 numCount: 501,
-                adaFee: ethers.utils.parseEther('1'),
+                baseTokenFee: ethers.utils.parseEther('1'),
                 tokenFee: ethers.utils.parseUnits('100', decimal),
-                adaFeePerNum: ethers.utils.parseEther('0.5'),
+                baseTokenFeePerNum: ethers.utils.parseEther('0.5'),
                 tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
                 minValidator: BigNumber.from(3),
                 maxValidator: BigNumber.from(5),
@@ -93,9 +93,9 @@ describe('ConclaveOracle contract', function () {
 
             const request: Request = {
                 numCount: 2,
-                adaFee: ethers.utils.parseEther('1'),
+                baseTokenFee: ethers.utils.parseEther('1'),
                 tokenFee: ethers.utils.parseUnits('100', decimal),
-                adaFeePerNum: ethers.utils.parseEther('0.5'),
+                baseTokenFeePerNum: ethers.utils.parseEther('0.5'),
                 tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
                 minValidator: BigNumber.from(6),
                 maxValidator: BigNumber.from(2),
@@ -109,21 +109,21 @@ describe('ConclaveOracle contract', function () {
 
             const request: Request = {
                 numCount: 2,
-                adaFee: ethers.utils.parseEther('1'),
+                baseTokenFee: ethers.utils.parseEther('1'),
                 tokenFee: ethers.utils.parseUnits('100', decimal),
-                adaFeePerNum: ethers.utils.parseEther('0.5'),
+                baseTokenFeePerNum: ethers.utils.parseEther('0.5'),
                 tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
                 minValidator: BigNumber.from(5),
                 maxValidator: BigNumber.from(10),
             };
 
-            const totalFee = request.adaFee.add(request.adaFeePerNum.mul(request.numCount));
+            const totalFee = request.baseTokenFee.add(request.baseTokenFeePerNum.mul(request.numCount));
 
             await expect(
                 consumer.requestRandomNumbers(
                     request.numCount,
-                    request.adaFee,
-                    request.adaFeePerNum,
+                    request.baseTokenFee,
+                    request.baseTokenFeePerNum,
                     request.tokenFee,
                     request.tokenFeePerNum,
                     request.minValidator,
@@ -138,8 +138,8 @@ describe('ConclaveOracle contract', function () {
             await expect(
                 consumer.requestRandomNumbers(
                     request.numCount,
-                    request.adaFee,
-                    request.adaFeePerNum,
+                    request.baseTokenFee,
+                    request.baseTokenFeePerNum,
                     request.tokenFee,
                     request.tokenFeePerNum,
                     request.minValidator,
@@ -154,21 +154,21 @@ describe('ConclaveOracle contract', function () {
 
             const request: Request = {
                 numCount: 2,
-                adaFee: ethers.utils.parseEther('1'),
+                baseTokenFee: ethers.utils.parseEther('1'),
                 tokenFee: ethers.utils.parseUnits('100', decimal),
-                adaFeePerNum: ethers.utils.parseEther('0.5'),
+                baseTokenFeePerNum: ethers.utils.parseEther('0.5'),
                 tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
                 minValidator: BigNumber.from(5),
                 maxValidator: BigNumber.from(10),
             };
 
-            const totalAdaFee = request.adaFee.add(request.adaFeePerNum.mul(request.numCount));
+            const totalbaseTokenFee = request.baseTokenFee.add(request.baseTokenFeePerNum.mul(request.numCount));
             const totalTokenFee = request.tokenFee.add(request.tokenFeePerNum.mul(request.numCount));
 
             const balanceBefore = await oracle.balance();
             await submitRequest(request);
             const balanceAfter = await oracle.balance();
-            expect(balanceAfter.ada).to.equal(balanceBefore.ada.add(totalAdaFee));
+            expect(balanceAfter.baseToken).to.equal(balanceBefore.baseToken.add(totalbaseTokenFee));
             expect(balanceAfter.token).to.equal(balanceBefore.token.add(totalTokenFee));
         });
 
@@ -186,9 +186,9 @@ describe('ConclaveOracle contract', function () {
 
             const request: Request = {
                 numCount: 2,
-                adaFee: ethers.utils.parseEther('1'),
+                baseTokenFee: ethers.utils.parseEther('1'),
                 tokenFee: ethers.utils.parseUnits('100', decimal),
-                adaFeePerNum: ethers.utils.parseEther('0.5'),
+                baseTokenFeePerNum: ethers.utils.parseEther('0.5'),
                 tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
                 minValidator: BigNumber.from(3),
                 maxValidator: BigNumber.from(5),
@@ -211,9 +211,9 @@ describe('ConclaveOracle contract', function () {
 
             const request: Request = {
                 numCount: 2,
-                adaFee: ethers.utils.parseEther('1'),
+                baseTokenFee: ethers.utils.parseEther('1'),
                 tokenFee: ethers.utils.parseUnits('100', decimal),
-                adaFeePerNum: ethers.utils.parseEther('0.5'),
+                baseTokenFeePerNum: ethers.utils.parseEther('0.5'),
                 tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
                 minValidator: BigNumber.from(5),
                 maxValidator: BigNumber.from(10),
@@ -229,7 +229,7 @@ describe('ConclaveOracle contract', function () {
 
             const requestInfo = await oracle.getJobDetails(requestId);
 
-            expect(balanceBefore.ada).to.equal(balanceAfter.ada);
+            expect(balanceBefore.baseToken).to.equal(balanceAfter.baseToken);
             expect(balanceBefore.token).to.equal(balanceAfter.token);
             expect(requestInfo.status).to.equal(1);
         });
@@ -256,9 +256,9 @@ describe('ConclaveOracle contract', function () {
 
             const request: Request = {
                 numCount: 2,
-                adaFee: ethers.utils.parseEther('1'),
+                baseTokenFee: ethers.utils.parseEther('1'),
                 tokenFee: ethers.utils.parseUnits('100', decimal),
-                adaFeePerNum: ethers.utils.parseEther('0.5'),
+                baseTokenFeePerNum: ethers.utils.parseEther('0.5'),
                 tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
                 minValidator: BigNumber.from(5),
                 maxValidator: BigNumber.from(10),
@@ -284,9 +284,9 @@ describe('ConclaveOracle contract', function () {
 
             const request: Request = {
                 numCount: 2,
-                adaFee: ethers.utils.parseEther('1'),
+                baseTokenFee: ethers.utils.parseEther('1'),
                 tokenFee: ethers.utils.parseUnits('100', decimal),
-                adaFeePerNum: ethers.utils.parseEther('0.5'),
+                baseTokenFeePerNum: ethers.utils.parseEther('0.5'),
                 tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
                 minValidator: BigNumber.from(5),
                 maxValidator: BigNumber.from(10),
@@ -304,9 +304,9 @@ describe('ConclaveOracle contract', function () {
 
             const request: Request = {
                 numCount: 2,
-                adaFee: ethers.utils.parseEther('1'),
+                baseTokenFee: ethers.utils.parseEther('1'),
                 tokenFee: ethers.utils.parseUnits('100', decimal),
-                adaFeePerNum: ethers.utils.parseEther('0.5'),
+                baseTokenFeePerNum: ethers.utils.parseEther('0.5'),
                 tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
                 minValidator: BigNumber.from(5),
                 maxValidator: BigNumber.from(10),
@@ -330,9 +330,9 @@ describe('ConclaveOracle contract', function () {
 
             const fees = await oracle.getAverageOracleFees();
 
-            expect(fees.ada).to.equal(0);
+            expect(fees.baseToken).to.equal(0);
             expect(fees.token).to.equal(0);
-            expect(fees.adaFeePerNum).to.equal(0);
+            expect(fees.baseTokenFeePerNum).to.equal(0);
             expect(fees.tokenFeePerNum).to.equal(0);
         });
 
@@ -342,38 +342,38 @@ describe('ConclaveOracle contract', function () {
 
             const requestIds = await simulateJobCycle(20, nodes, 5, 10);
 
-            let adaFee, adaFeePerNum, tokenFee, tokenFeePerNum;
-            let totalAdaFee: BigNumber = ethers.BigNumber.from(0);
-            let totalAdaFeePerNum: BigNumber = ethers.BigNumber.from(0);
+            let baseTokenFee, baseTokenFeePerNum, tokenFee, tokenFeePerNum;
+            let totalbaseTokenFee: BigNumber = ethers.BigNumber.from(0);
+            let totalbaseTokenFeePerNum: BigNumber = ethers.BigNumber.from(0);
             let totalTokenFee: BigNumber = ethers.BigNumber.from(0);
             let totalTokenFeePerNum: BigNumber = ethers.BigNumber.from(0);
 
             for (const requestId of requestIds) {
                 const request = await oracle.getJobDetails(requestId);
 
-                totalAdaFeePerNum = totalAdaFeePerNum.add(request.adaFeePerNum);
+                totalbaseTokenFeePerNum = totalbaseTokenFeePerNum.add(request.baseTokenFeePerNum);
                 totalTokenFeePerNum = totalTokenFeePerNum.add(request.tokenFeePerNum);
-                totalAdaFee = totalAdaFee.add(request.baseAdaFee);
+                totalbaseTokenFee = totalbaseTokenFee.add(request.baseBaseTokenFee);
                 totalTokenFee = totalTokenFee.add(request.baseTokenFee);
             }
 
             const fees = await oracle.getAverageOracleFees();
 
-            adaFee = totalAdaFee.div(requestIds.length);
-            adaFeePerNum = totalAdaFeePerNum.div(requestIds.length);
+            baseTokenFee = totalbaseTokenFee.div(requestIds.length);
+            baseTokenFeePerNum = totalbaseTokenFeePerNum.div(requestIds.length);
             tokenFee = totalTokenFee.div(requestIds.length);
             tokenFeePerNum = totalTokenFeePerNum.div(requestIds.length);
 
-            expect(fees.ada).to.equal(adaFee);
+            expect(fees.baseToken).to.equal(baseTokenFee);
             expect(fees.token).to.equal(tokenFee);
-            expect(fees.adaFeePerNum).to.equal(adaFeePerNum);
+            expect(fees.baseTokenFeePerNum).to.equal(baseTokenFeePerNum);
             expect(fees.tokenFeePerNum).to.equal(tokenFeePerNum);
 
             const request: Request = {
                 numCount: 2,
-                adaFee: ethers.utils.parseEther('10'),
+                baseTokenFee: ethers.utils.parseEther('10'),
                 tokenFee: ethers.utils.parseUnits('2000', decimal),
-                adaFeePerNum: ethers.utils.parseEther('1'),
+                baseTokenFeePerNum: ethers.utils.parseEther('1'),
                 tokenFeePerNum: ethers.utils.parseUnits('200', decimal),
                 minValidator: BigNumber.from(5),
                 maxValidator: BigNumber.from(10),
@@ -386,21 +386,21 @@ describe('ConclaveOracle contract', function () {
 
             const newRequest = await oracle.getJobDetails(requestId);
 
-            totalAdaFee = totalAdaFee.add(newRequest.baseAdaFee);
+            totalbaseTokenFee = totalbaseTokenFee.add(newRequest.baseBaseTokenFee);
             totalTokenFee = totalTokenFee.add(newRequest.baseTokenFee);
-            totalAdaFeePerNum = totalAdaFeePerNum.add(newRequest.adaFeePerNum);
+            totalbaseTokenFeePerNum = totalbaseTokenFeePerNum.add(newRequest.baseTokenFeePerNum);
             totalTokenFeePerNum = totalTokenFeePerNum.add(newRequest.tokenFeePerNum);
 
             const newFees = await oracle.getAverageOracleFees();
 
-            const newAdaFee = totalAdaFee.div(requestIds.length + 1);
-            const newAdaFeePerNum = totalAdaFeePerNum.div(requestIds.length + 1);
+            const newbaseTokenFee = totalbaseTokenFee.div(requestIds.length + 1);
+            const newbaseTokenFeePerNum = totalbaseTokenFeePerNum.div(requestIds.length + 1);
             const newTokenFee = totalTokenFee.div(requestIds.length + 1);
             const newTokenFeePerNum = totalTokenFeePerNum.div(requestIds.length + 1);
 
-            expect(newFees.ada).to.equal(newAdaFee);
+            expect(newFees.baseToken).to.equal(newbaseTokenFee);
             expect(newFees.token).to.equal(newTokenFee);
-            expect(newFees.adaFeePerNum).to.equal(newAdaFeePerNum);
+            expect(newFees.baseTokenFeePerNum).to.equal(newbaseTokenFeePerNum);
             expect(newFees.tokenFeePerNum).to.equal(newTokenFeePerNum);
         });
 
@@ -409,9 +409,9 @@ describe('ConclaveOracle contract', function () {
 
             const request: Request = {
                 numCount: 2,
-                adaFee: ethers.utils.parseEther('10'),
+                baseTokenFee: ethers.utils.parseEther('10'),
                 tokenFee: ethers.utils.parseUnits('2000', decimal),
-                adaFeePerNum: ethers.utils.parseEther('1'),
+                baseTokenFeePerNum: ethers.utils.parseEther('1'),
                 tokenFeePerNum: ethers.utils.parseUnits('200', decimal),
                 minValidator: BigNumber.from(5),
                 maxValidator: BigNumber.from(10),
@@ -423,9 +423,9 @@ describe('ConclaveOracle contract', function () {
 
             const fees = await oracle.getAverageOracleFees();
 
-            expect(fees.ada).to.equal(0);
+            expect(fees.baseToken).to.equal(0);
             expect(fees.token).to.equal(0);
-            expect(fees.adaFeePerNum).to.equal(0);
+            expect(fees.baseTokenFeePerNum).to.equal(0);
             expect(fees.tokenFeePerNum).to.equal(0);
         });
     });

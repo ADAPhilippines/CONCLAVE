@@ -30,8 +30,8 @@ contract OracleConsumer {
 
     function requestRandomNumbers(
         uint24 numCount,
-        uint256 adaFee,
-        uint256 adaFeePerNum,
+        uint256 baseTokenFee,
+        uint256 baseTokenFeePerNum,
         uint256 tokenFee,
         uint256 tokenFeePerNum,
         uint24 minValidator,
@@ -39,8 +39,8 @@ contract OracleConsumer {
     ) external payable {
         uint256 jobId = s_oracle.requestRandomNumbers{value: msg.value}(
             numCount,
-            adaFee,
-            adaFeePerNum,
+            baseTokenFee,
+            baseTokenFeePerNum,
             tokenFee,
             tokenFeePerNum,
             minValidator,
