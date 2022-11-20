@@ -15,8 +15,8 @@ describe('ConclaveOracle contract', function () {
                 tokenFee: ethers.utils.parseUnits('100', decimal),
                 baseTokenFeePerNum: ethers.utils.parseEther('0.5'),
                 tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
-                minValidator: BigNumber.from(3),
-                maxValidator: BigNumber.from(5),
+                minValidators: BigNumber.from(3),
+                maxValidators: BigNumber.from(5),
             };
 
             const requestId = await submitRequest(request);
@@ -35,8 +35,8 @@ describe('ConclaveOracle contract', function () {
                 tokenFee: ethers.utils.parseUnits('100', decimal),
                 baseTokenFeePerNum: ethers.utils.parseEther('0.5'),
                 tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
-                minValidator: BigNumber.from(3),
-                maxValidator: BigNumber.from(5),
+                minValidators: BigNumber.from(3),
+                maxValidators: BigNumber.from(5),
             };
 
             const totalbaseTokenFee = request.baseTokenFee.add(request.baseTokenFeePerNum.mul(request.numCount));
@@ -48,8 +48,8 @@ describe('ConclaveOracle contract', function () {
                     request.baseTokenFeePerNum,
                     request.tokenFee,
                     request.tokenFeePerNum,
-                    request.minValidator,
-                    request.maxValidator,
+                    request.minValidators,
+                    request.maxValidators,
                     { value: totalbaseTokenFee }
                 )
             ).to.emit(oracle, 'JobRequestCreated');
@@ -64,8 +64,8 @@ describe('ConclaveOracle contract', function () {
                 tokenFee: ethers.utils.parseUnits('100', decimal),
                 baseTokenFeePerNum: ethers.utils.parseEther('0.5'),
                 tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
-                minValidator: BigNumber.from(3),
-                maxValidator: BigNumber.from(5),
+                minValidators: BigNumber.from(3),
+                maxValidators: BigNumber.from(5),
             };
 
             const notWithinMaxRequest: Request = {
@@ -74,8 +74,8 @@ describe('ConclaveOracle contract', function () {
                 tokenFee: ethers.utils.parseUnits('100', decimal),
                 baseTokenFeePerNum: ethers.utils.parseEther('0.5'),
                 tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
-                minValidator: BigNumber.from(3),
-                maxValidator: BigNumber.from(5),
+                minValidators: BigNumber.from(3),
+                maxValidators: BigNumber.from(5),
             };
 
             await expect(submitRequest(notWithinMinRequest)).to.be.revertedWithCustomError(
@@ -97,8 +97,8 @@ describe('ConclaveOracle contract', function () {
                 tokenFee: ethers.utils.parseUnits('100', decimal),
                 baseTokenFeePerNum: ethers.utils.parseEther('0.5'),
                 tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
-                minValidator: BigNumber.from(6),
-                maxValidator: BigNumber.from(2),
+                minValidators: BigNumber.from(6),
+                maxValidators: BigNumber.from(2),
             };
 
             await expect(submitRequest(request)).to.be.revertedWithCustomError(oracle, 'InvalidValidatorRange');
@@ -113,8 +113,8 @@ describe('ConclaveOracle contract', function () {
                 tokenFee: ethers.utils.parseUnits('100', decimal),
                 baseTokenFeePerNum: ethers.utils.parseEther('0.5'),
                 tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
-                minValidator: BigNumber.from(5),
-                maxValidator: BigNumber.from(10),
+                minValidators: BigNumber.from(5),
+                maxValidators: BigNumber.from(10),
             };
 
             const totalFee = request.baseTokenFee.add(request.baseTokenFeePerNum.mul(request.numCount));
@@ -126,8 +126,8 @@ describe('ConclaveOracle contract', function () {
                     request.baseTokenFeePerNum,
                     request.tokenFee,
                     request.tokenFeePerNum,
-                    request.minValidator,
-                    request.maxValidator,
+                    request.minValidators,
+                    request.maxValidators,
                     { value: totalFee.sub(10) }
                 )
             ).to.be.revertedWithCustomError(oracle, 'ValueMismatch');
@@ -142,8 +142,8 @@ describe('ConclaveOracle contract', function () {
                     request.baseTokenFeePerNum,
                     request.tokenFee,
                     request.tokenFeePerNum,
-                    request.minValidator,
-                    request.maxValidator,
+                    request.minValidators,
+                    request.maxValidators,
                     { value: totalFee }
                 )
             ).to.be.revertedWith('ERC20: transfer amount exceeds balance');
@@ -158,8 +158,8 @@ describe('ConclaveOracle contract', function () {
                 tokenFee: ethers.utils.parseUnits('100', decimal),
                 baseTokenFeePerNum: ethers.utils.parseEther('0.5'),
                 tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
-                minValidator: BigNumber.from(5),
-                maxValidator: BigNumber.from(10),
+                minValidators: BigNumber.from(5),
+                maxValidators: BigNumber.from(10),
             };
 
             const totalbaseTokenFee = request.baseTokenFee.add(request.baseTokenFeePerNum.mul(request.numCount));
@@ -190,8 +190,8 @@ describe('ConclaveOracle contract', function () {
                 tokenFee: ethers.utils.parseUnits('100', decimal),
                 baseTokenFeePerNum: ethers.utils.parseEther('0.5'),
                 tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
-                minValidator: BigNumber.from(3),
-                maxValidator: BigNumber.from(5),
+                minValidators: BigNumber.from(3),
+                maxValidators: BigNumber.from(5),
             };
 
             const requestId = await submitRequest(request);
@@ -215,8 +215,8 @@ describe('ConclaveOracle contract', function () {
                 tokenFee: ethers.utils.parseUnits('100', decimal),
                 baseTokenFeePerNum: ethers.utils.parseEther('0.5'),
                 tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
-                minValidator: BigNumber.from(5),
-                maxValidator: BigNumber.from(10),
+                minValidators: BigNumber.from(5),
+                maxValidators: BigNumber.from(10),
             };
 
             const balanceBefore = await oracle.balance();
@@ -260,8 +260,8 @@ describe('ConclaveOracle contract', function () {
                 tokenFee: ethers.utils.parseUnits('100', decimal),
                 baseTokenFeePerNum: ethers.utils.parseEther('0.5'),
                 tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
-                minValidator: BigNumber.from(5),
-                maxValidator: BigNumber.from(10),
+                minValidators: BigNumber.from(5),
+                maxValidators: BigNumber.from(10),
             };
 
             const requestId = await submitRequest(request);
@@ -288,8 +288,8 @@ describe('ConclaveOracle contract', function () {
                 tokenFee: ethers.utils.parseUnits('100', decimal),
                 baseTokenFeePerNum: ethers.utils.parseEther('0.5'),
                 tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
-                minValidator: BigNumber.from(5),
-                maxValidator: BigNumber.from(10),
+                minValidators: BigNumber.from(5),
+                maxValidators: BigNumber.from(10),
             };
 
             const requestId = await submitRequest(request);
@@ -308,8 +308,8 @@ describe('ConclaveOracle contract', function () {
                 tokenFee: ethers.utils.parseUnits('100', decimal),
                 baseTokenFeePerNum: ethers.utils.parseEther('0.5'),
                 tokenFeePerNum: ethers.utils.parseUnits('50', decimal),
-                minValidator: BigNumber.from(5),
-                maxValidator: BigNumber.from(10),
+                minValidators: BigNumber.from(5),
+                maxValidators: BigNumber.from(10),
             };
 
             const requestId = await submitRequest(request);
@@ -375,8 +375,8 @@ describe('ConclaveOracle contract', function () {
                 tokenFee: ethers.utils.parseUnits('2000', decimal),
                 baseTokenFeePerNum: ethers.utils.parseEther('1'),
                 tokenFeePerNum: ethers.utils.parseUnits('200', decimal),
-                minValidator: BigNumber.from(5),
-                maxValidator: BigNumber.from(10),
+                minValidators: BigNumber.from(5),
+                maxValidators: BigNumber.from(10),
             };
 
             const requestId = await submitRequest(request);
@@ -413,8 +413,8 @@ describe('ConclaveOracle contract', function () {
                 tokenFee: ethers.utils.parseUnits('2000', decimal),
                 baseTokenFeePerNum: ethers.utils.parseEther('1'),
                 tokenFeePerNum: ethers.utils.parseUnits('200', decimal),
-                minValidator: BigNumber.from(5),
-                maxValidator: BigNumber.from(10),
+                minValidators: BigNumber.from(5),
+                maxValidators: BigNumber.from(10),
             };
 
             const requestId = await submitRequest(request);

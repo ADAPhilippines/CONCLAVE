@@ -250,8 +250,8 @@ export async function operatorFixture() {
     const baseTokenFeePerNum = ethers.utils.parseEther('0.1');
     const tokenFee = ethers.utils.parseUnits('1000', decimal);
     const tokenFeePerNum = ethers.utils.parseUnits('100', decimal);
-    const minValidator = ethers.BigNumber.from('1');
-    const maxValidator = ethers.BigNumber.from('1');
+    const minValidators = ethers.BigNumber.from('1');
+    const maxValidators = ethers.BigNumber.from('1');
     const numCount = 1;
 
     const operators = accountsWithTokens;
@@ -277,8 +277,8 @@ export async function operatorFixture() {
             request.baseTokenFeePerNum,
             request.tokenFee,
             request.tokenFeePerNum,
-            request.minValidator,
-            request.maxValidator,
+            request.minValidators,
+            request.maxValidators,
             {
                 value: request.baseTokenFee.add(request.baseTokenFeePerNum.mul(request.numCount)),
             }
@@ -330,8 +330,8 @@ export async function operatorFixture() {
         baseTokenFeePerNum,
         tokenFee,
         tokenFeePerNum,
-        minValidator,
-        maxValidator,
+        minValidators,
+        maxValidators,
     });
 
     const getResponse = (count: number) => {
@@ -358,8 +358,8 @@ export async function operatorFixture() {
                 baseTokenFeePerNum,
                 tokenFee,
                 tokenFeePerNum,
-                minValidator: ethers.BigNumber.from(minValidator),
-                maxValidator: ethers.BigNumber.from(maxValidator),
+                minValidators: ethers.BigNumber.from(minValidator),
+                maxValidators: ethers.BigNumber.from(maxValidator),
             });
 
             await submitResponseAndFinalize(requestId, participatingNodes);
@@ -386,8 +386,8 @@ export async function operatorFixture() {
                 baseTokenFeePerNum,
                 tokenFee,
                 tokenFeePerNum,
-                minValidator: ethers.BigNumber.from(minValidator),
-                maxValidator: ethers.BigNumber.from(maxValidator),
+                minValidators: ethers.BigNumber.from(minValidator),
+                maxValidators: ethers.BigNumber.from(maxValidator),
             });
 
             await submitResponses(requestId, participatingNodes);
@@ -420,8 +420,8 @@ export async function operatorFixture() {
         baseTokenFeePerNum,
         tokenFee,
         tokenFeePerNum,
-        minValidator,
-        maxValidator,
+        minValidator: minValidators,
+        maxValidator: maxValidators,
         sampleRequestId,
         operators,
         nodes,
@@ -446,6 +446,6 @@ export type Request = {
     baseTokenFeePerNum: BigNumber;
     tokenFee: BigNumber;
     tokenFeePerNum: BigNumber;
-    minValidator: BigNumber;
-    maxValidator: BigNumber;
+    minValidators: BigNumber;
+    maxValidators: BigNumber;
 };

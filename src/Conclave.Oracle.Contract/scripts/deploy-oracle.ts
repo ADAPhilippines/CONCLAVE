@@ -9,8 +9,8 @@ async function main() {
         const token = await ethers.getContractAt('Token', config.tokenAddress);
         const decimal = await token.decimals();
 
-        const minValidatorTokenStake = ethers.utils.parseUnits('10000', decimal);
-        const minValidatorbaseTokenStake = ethers.utils.parseEther('500');
+        const minValidatorTokenStake = ethers.utils.parseUnits('100', decimal);
+        const minValidatorbaseTokenStake = ethers.utils.parseEther('50');
         const jobAcceptanceLimitInSeconds = 60; // 1 minute
         const jobFulFillmentLimitInSeconds = 60; // 1 minute per Number
         const minbaseTokenStakingRewards = ethers.utils.parseEther('10');
@@ -20,9 +20,9 @@ async function main() {
             chalk.yellow(`Deploying oracle contract: \nToken: ${chalk.blue(
                 token.address
             )}\nminValidatorTokenStake: ${chalk.blue(
-                minValidatorTokenStake.toString()
+                ethers.utils.formatUnits(minValidatorTokenStake, decimal)
             )}\nminValidatorBaseTokenStake: ${chalk.blue(
-                minValidatorbaseTokenStake.toString()
+                ethers.utils.formatEther(minValidatorbaseTokenStake)
             )}\njobAcceptanceLimitInSeconds: ${chalk.blue(
                 jobAcceptanceLimitInSeconds.toString()
             )}\njobFulFillmentLimitInSeconds: ${chalk.blue(

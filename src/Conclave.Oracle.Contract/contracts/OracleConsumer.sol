@@ -34,17 +34,19 @@ contract OracleConsumer {
         uint256 baseTokenFeePerNum,
         uint256 tokenFee,
         uint256 tokenFeePerNum,
-        uint24 minValidator,
-        uint24 maxValidator
+        uint24 minValidators,
+        uint24 maxValidators
     ) external payable {
+        uint256 totalTokenFee = tokenFee + (tokenFeePerNum * numCount);
+        s_token.transferFrom(msg.sender, address(this), totalTokenFee);
         uint256 jobId = s_oracle.requestRandomNumbers{value: msg.value}(
             numCount,
             baseTokenFee,
             baseTokenFeePerNum,
             tokenFee,
             tokenFeePerNum,
-            minValidator,
-            maxValidator
+            minValidators,
+            maxValidators
         );
 
         s_results[jobId].jobId = jobId;
@@ -60,9 +62,9 @@ contract OracleConsumer {
         (uint256[] memory result, uint status) = s_oracle.aggregateResult(
             jobId
         );
-
-        s_results[jobId].result = result;
-        s_results[jobId].status = RequestStatus(status);
+        Request storage jobRequest = s_results[jobId];
+        jobRequest.result = result;
+        jobRequest.status = RequestStatus(status);
 
         if (status == uint(RequestStatus.Refunded)) {
             // refund logic

@@ -265,8 +265,8 @@ describe('ConclaveOperator Contract', function () {
                 baseTokenFeePerNum,
                 tokenFee,
                 tokenFeePerNum,
-                minValidator: minValidator.add(2),
-                maxValidator: maxValidator.add(3),
+                minValidators: minValidator.add(2),
+                maxValidators: maxValidator.add(3),
             });
             const request = await oracle.getJobDetails(requestId);
             await oracle.connect(node).acceptJob(request.jobId);
@@ -339,8 +339,8 @@ describe('ConclaveOperator Contract', function () {
                 baseTokenFeePerNum: baseTokenPerNum,
                 tokenFee,
                 tokenFeePerNum: tokenPerNum,
-                minValidator: BigNumber.from(1),
-                maxValidator: BigNumber.from(2),
+                minValidators: BigNumber.from(1),
+                maxValidators: BigNumber.from(2),
             };
 
             const requestId = await submitRequest(request);

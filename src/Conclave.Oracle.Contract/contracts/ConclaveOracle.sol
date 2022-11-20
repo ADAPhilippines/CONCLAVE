@@ -318,8 +318,12 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
                 uint256 baseTokenDeduction = baseTokenRefund;
                 uint256 tokenDeduction = tokenRefund;
 
-                if (baseTokenDeduction > s_stakes[request.validators[i]].baseToken) {
-                    baseTokenDeduction = s_stakes[request.validators[i]].baseToken;
+                if (
+                    baseTokenDeduction >
+                    s_stakes[request.validators[i]].baseToken
+                ) {
+                    baseTokenDeduction = s_stakes[request.validators[i]]
+                        .baseToken;
                 }
 
                 if (tokenDeduction > s_stakes[request.validators[i]].token) {
@@ -329,7 +333,11 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
                 totalBaseTokenSlashed += baseTokenDeduction;
                 totalTokenSlashed += tokenDeduction;
 
-                _subStake(request.validators[i], baseTokenDeduction, tokenDeduction);
+                _subStake(
+                    request.validators[i],
+                    baseTokenDeduction,
+                    tokenDeduction
+                );
 
                 s_totalDeductedStakes[request.validators[i]]
                     .baseToken += baseTokenDeduction;
@@ -338,7 +346,10 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
             }
 
             uint256 weight = _calculateWeight(1, request.responseCount);
-            uint256 baseTokenRewardPerValidator = _calculateShare(weight, baseTokenRefund);
+            uint256 baseTokenRewardPerValidator = _calculateShare(
+                weight,
+                baseTokenRefund
+            );
             uint256 tokenRewardPerValidator = _calculateShare(
                 weight,
                 tokenRefund
@@ -366,7 +377,8 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
                     10 * 100,
                     totalBaseTokenSlashed
                 );
-                uint256 stakingRewardsShare = totalBaseTokenSlashed - requesterShare;
+                uint256 stakingRewardsShare = totalBaseTokenSlashed -
+                    requesterShare;
 
                 s_totalPendingStakingRewards.baseToken += stakingRewardsShare;
                 baseTokenRefund += requesterShare;
