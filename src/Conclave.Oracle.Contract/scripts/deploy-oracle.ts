@@ -9,36 +9,35 @@ async function main() {
         const token = await ethers.getContractAt('Token', config.tokenAddress);
         const decimal = await token.decimals();
 
-        const minValidatorStake = ethers.utils.parseUnits('10000', decimal);
+        const minValidatorTokenStake = ethers.utils.parseUnits('10000', decimal);
+        const minValidatorAdaStake = ethers.utils.parseEther('500');
         const jobAcceptanceLimitInSeconds = 60; // 1 minute
         const jobFulFillmentLimitInSeconds = 60; // 1 minute per Number
-        const slashingAmount = ethers.utils.parseUnits('1000', decimal);
         const minAdaStakingRewards = ethers.utils.parseEther('10');
         const minTokenStakingRewards = ethers.utils.parseUnits('10000', decimal);
 
         console.log(
             chalk.yellow(`Deploying oracle contract: \nToken: ${chalk.blue(
                 token.address
-            )}\nminValidatorStake: ${chalk.blue(
-                minValidatorStake.toString()
+            )}\nminValidatorTokenStake: ${chalk.blue(
+                minValidatorTokenStake.toString()
+            )}\nminValidatorAdaStake: ${chalk.blue(
+                minValidatorAdaStake.toString()
             )}\njobAcceptanceLimitInSeconds: ${chalk.blue(
                 jobAcceptanceLimitInSeconds.toString()
             )}\njobFulFillmentLimitInSeconds: ${chalk.blue(
                 jobFulFillmentLimitInSeconds.toString()
-            )}\nslashingAmount: ${chalk.blue(slashingAmount.toString())}\nminAdaStakingRewards: ${chalk.blue(
-                minAdaStakingRewards.toString()
-            )}\nminTokenStakingRewards: ${chalk.blue(minTokenStakingRewards.toString())}
-    `)
+            )}\nminTokenStakingRewards: ${chalk.blue(minTokenStakingRewards.toString())}`)
         );
 
         const oracle = await Oracle.deploy(
             token.address,
-            minValidatorStake,
+            minValidatorAdaStake,
+            minValidatorTokenStake,
+            minAdaStakingRewards,
+            minTokenStakingRewards,
             jobAcceptanceLimitInSeconds,
             jobFulFillmentLimitInSeconds,
-            slashingAmount,
-            minAdaStakingRewards,
-            minTokenStakingRewards
         );
 
         console.log(chalk.green(`Oracle successfully deployed to: ${chalk.blue(oracle.address)} \n\n`));
