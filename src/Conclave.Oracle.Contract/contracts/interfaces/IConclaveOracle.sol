@@ -4,8 +4,8 @@ pragma solidity ^0.8.17;
 interface IConclaveOracle {
     function requestRandomNumbers(
         uint24 numCount,
-        uint256 fee,
-        uint256 feePerNum,
+        uint256 baseTokenFee,
+        uint256 baseTokenFeePerNum,
         uint256 tokenFee,
         uint256 tokenFeePerNum,
         uint24 minValidator,
@@ -29,5 +29,5 @@ interface IConclaveOracle {
 
     function getPendingJobIds() external view returns (uint256[] memory);
 
-    function balance() external view returns (uint256 ada, uint256 token);
+    function balance() external view returns (uint256 baseToken, uint256 token);
 }
