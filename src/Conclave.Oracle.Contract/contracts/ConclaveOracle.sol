@@ -158,7 +158,10 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
     {
         JobRequest storage jobRequest = s_jobRequests[jobId];
 
-        if (block.timestamp < jobRequest.jobAcceptanceExpiration) {
+        if (
+            block.timestamp < jobRequest.jobAcceptanceExpiration &&
+            jobRequest.validators.length < jobRequest.maxValidator
+        ) {
             revert JobAcceptanceInProgress();
         }
 
