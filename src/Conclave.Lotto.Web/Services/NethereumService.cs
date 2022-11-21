@@ -17,7 +17,7 @@ public class NethereumService
     public IEthereumHostProvider _ethereumHostProvider { get; set; }
     public HttpClient _httpClient { get; set; }
 
-    public string AccountAddress { get; set; }
+    public string? AccountAddress { get; set; } = string.Empty;
 
     public NethereumService(MetamaskHostProvider metamaskHostProvider, HttpClient httpClient)
     {
