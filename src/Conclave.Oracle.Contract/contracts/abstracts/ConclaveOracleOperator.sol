@@ -63,6 +63,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
     event ResponseSubmitted(
         uint256 indexed jobId,
         address indexed requester,
+        address indexed node,
         uint256 totalResponseExpected,
         uint256 currentResponse
     );
@@ -259,6 +260,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         emit ResponseSubmitted(
             jobId,
             request.requester,
+            msg.sender,
             request.validators.length,
             request.responseCount
         );
@@ -295,14 +297,16 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
     function getTotalPendingRewards()
         external
         view
-        returns (uint256 adaReward, uint256 tokenReward)
+        returns (uint256 baseTokenReward, uint256 tokenReward)
     {
         uint256[] storage jobIds = s_pendingRewardJobIds[
             s_nodeToOwner[msg.sender]
         ];
         for (uint256 i = 0; i < jobIds.length; i++) {
-            (uint256 ada, uint256 token) = getPendingRewardsByJobId(jobIds[i]);
-            adaReward += ada;
+            (uint256 baseToken, uint256 token) = getPendingRewardsByJobId(
+                jobIds[i]
+            );
+            baseTokenReward += baseToken;
             tokenReward += token;
         }
     }
