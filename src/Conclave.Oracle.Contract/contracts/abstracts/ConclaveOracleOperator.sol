@@ -63,6 +63,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
     event ResponseSubmitted(
         uint256 indexed jobId,
         address indexed requester,
+        address indexed node,
         uint256 totalResponseExpected,
         uint256 currentResponse
     );
@@ -259,6 +260,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         emit ResponseSubmitted(
             jobId,
             request.requester,
+            msg.sender,
             request.validators.length,
             request.responseCount
         );
