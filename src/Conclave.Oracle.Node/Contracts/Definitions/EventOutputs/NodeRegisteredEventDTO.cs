@@ -3,7 +3,7 @@ using Nethereum.Contracts;
 
 namespace Conclave.Oracle.Node.Contracts.Definition.EventOutputs;
 
-[Event("RequestCreated")]
+[Event("NodeRegistered")]
 public class NodeRegisteredEventDTO : IEventDTO
 {
     [Parameter("address", "node", 1, true)]

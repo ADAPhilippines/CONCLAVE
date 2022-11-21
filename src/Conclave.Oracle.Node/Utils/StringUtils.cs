@@ -19,4 +19,9 @@ public static class StringUtils
     {
         return BigInteger.Parse(String.Concat("0", hex), NumberStyles.AllowHexSpecifier);
     }
+
+    public static List<BigInteger> HexStringListToBigIntegerList(List<string> hexStringList)
+    {
+        return hexStringList.Select((dec) => StringUtils.HexStringToBigInteger(dec)).ToList();
+    }
 }

@@ -25,7 +25,7 @@ public class CardanoServices
     public async Task<string> GetNearestBlockHashFromTimeSAsync(int unixTime, BigInteger requestId)
     {
         #region logs
-        _logger.BeginScope("Processing request Id# : {0}", requestId);
+        _logger.BeginScope("Processing job Id# : {0}", requestId);
         #endregion
 
         BlockContentResponse currentBlock = await GetLatestBlockAsync();
@@ -44,7 +44,7 @@ public class CardanoServices
     public async Task<List<string>> GetNextBlocksFromCurrentHashAsync(string blockHash, int nextBlocks, BigInteger requestId)
     {
         #region logs
-        _logger.BeginScope("Processing request Id# : {0}", requestId);
+        _logger.BeginScope("Processing job Id# : {0}", requestId);
         if (nextBlocks is not 0)
             _logger.LogInformation("Getting succeeding blocks after {0}.", blockHash);
         #endregion
@@ -80,11 +80,11 @@ public class CardanoServices
         return blockHashesRes;
     }
 
-    public async Task<List<BlockContentResponse>?> AwaitRemainingBlocksAsync(int nextBlocks, int currentCount, string blockHash)
+    private async Task<List<BlockContentResponse>?> AwaitRemainingBlocksAsync(int nextBlocks, int currentCount, string blockHash)
     {
         await Task.Delay(BLOCK_DURATION * (nextBlocks - currentCount));
         _logger.LogInformation("Awaiting {0} remaining blocks", nextBlocks - currentCount);
-        
+
         return await GetNextBlocksFromHashAsync(blockHash, nextBlocks);
     }
 
@@ -93,18 +93,18 @@ public class CardanoServices
         #region logs
         if (currentBlock.NextBlock is null)
         {
-            _logger.BeginScope("Processing request Id# : {0}", requestId);
+            _logger.BeginScope("Processing job Id# : {0}", requestId);
             _logger.LogInformation("Awaiting next block after tip {0}.", currentBlock.Hash);
         }
         #endregion
 
         while (currentBlock.NextBlock is null)
-            currentBlock = await ReQueryBlock(currentBlock.Hash);
+            currentBlock = await RefetchBlockAsync(currentBlock.Hash);
 
         return currentBlock;
     }
 
-    private async Task<BlockContentResponse> ReQueryBlock(string blockHash)
+    private async Task<BlockContentResponse> RefetchBlockAsync(string blockHash)
     {
         await Task.Delay(BLOCK_DURATION);
         return await GetBlockFromHashAsync(blockHash);

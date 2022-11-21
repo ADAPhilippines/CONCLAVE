@@ -1,18 +1,20 @@
 using Conclave.Oracle.Node.Services;
 using Conclave.Oracle.Node.Models;
-using Conclave.Oracle.Node.Utils;
 using System.Numerics;
 using Microsoft.Extensions.Options;
-using Conclave.Oracle.Node.Helpers;
 using Conclave.Oracle.Node.Contracts.Definition.FunctionOutputs;
 
 namespace Conclave.Oracle;
 
-public class OracleWorker : BackgroundService
+public partial class OracleWorker : BackgroundService
 {
-    private static bool s_IsDelegated = true;
+    #region static variables
+    private static bool s_IsRegistered = true;
+    #endregion
+    #region constant variables
     private const int RETRY_DURATION = 4000;
     private const int CHECK_REWARDS_DURATION = 30000;
+    #endregion
     #region private variables
     private readonly ILogger<OracleWorker> _logger;
     private readonly OracleContractService _oracleContractService;
@@ -42,145 +44,82 @@ public class OracleWorker : BackgroundService
         _options = options;
         _hostApplicationLifetime = hostApplicationLifetime;
         _environment = environment;
+
+        if (_environment.IsDevelopment())
+            _logger.LogInformation("Starting node in Account {0}.", _configuration.GetValue<string>("PrivateKey"));
+        else
+            _logger.LogInformation("Starting node.", _configuration.GetValue<string>("PrivateKey"));
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        #region logs
-        if (_environment.IsDevelopment())
-            _logger.LogInformation("Account : {0}\nContract Address : {1}", _configuration.GetValue<string>("PrivateKey"), _options.Value.ContractAddress);
-        #endregion
+        s_IsRegistered = await VerifyRegistrationAsync();
 
-        // await VerifyAccountDelegationAsync();
-
-        if (s_IsDelegated)
-            ProcessTasks();
+        if (s_IsRegistered)
+            await StartTasksAsync();
         else
-            await AwaitDelegationAsync();
+            await AwaitRegistrationAsync();
     }
 
-    public void ProcessTasks()
+    public async Task StartTasksAsync()
     {
-        _ = Task.Run(async () => await CheckRewardsForClaimingAsync());
+        await DelegationCheckerAsync();
 
-        _ = Task.Run(async () => await GetPendingRequestsAsync());
+        _ = Task.Run(async () => await ProcessPendingJobRequestsAsync());
 
-        _ = Task.Run(async () => await ListenToRequestsAsync());
+        _ = Task.Run(async () => await ListenToJobRequestCreatedEventAsync());
+
+        _ = Task.Run(async () => await ListenToJobRequestFulfilledEventAsync());
     }
 
-    public async Task GetPendingRequestsAsync()
+    public async Task ProcessPendingJobRequestsAsync()
     {
-        #region delegation checker
-        // await DelegationCheckerAsync();
-        #endregion
-        #region logs
         _logger.LogInformation("Starting pending requests handler.");
-        #endregion
 
-        List<PendingRequestOutputDTO>? pendingRequests = await _oracleContractService.GetPendingRequestsAsync();
+        GetPendingJobIdsOutputDTO pendingRequests = await _oracleContractService.GetPendingJobIdsAsync();
 
-        if (pendingRequests?.Count is 0)
-            _logger.LogInformation("No pending requests found.");
+        if (pendingRequests.JobIds.Count is not 0)
+            PendingRequestsHandler(pendingRequests.JobIds);
         else
-            PendingRequestHandler(pendingRequests);
+            _logger.LogInformation("No pending job requests found.");
     }
 
-    public async Task ListenToRequestsAsync()
+    public async Task ListenToJobRequestCreatedEventAsync()
     {
-        #region delegation checker
-        // await DelegationCheckerAsync();
-        #endregion
-        #region logs
-        _logger.LogInformation("Starting contract event listener.");
-        #endregion
+        _logger.LogInformation("Listening to request created event.");
 
-        await _oracleContractService.ListenToRequestNumberEventWithCallbackAsync(GenerateDecimalsAsync);
+        await _oracleContractService.ListenToJobRequestCreatedEventWithCallbackAsync(ProcessJobRequestAsync);
     }
 
-    public async Task CheckRewardsForClaimingAsync()
+    public async Task ListenToJobRequestFulfilledEventAsync()
     {
-        while (true)
-            await ClaimRewardsIfThresholdMetAsync();
+        _logger.LogInformation("Listening to request fulfilled event");
+
+        await _oracleContractService.ListenToJobRequestFulfilledEventAsync();
     }
 
-    public async Task VerifyAccountDelegationAsync()
+    public async void PendingRequestsHandler(List<BigInteger> jobIdsList)
     {
-        #region logs
-        _logger.LogInformation("Checking current account {0} is delegated", _ethAccountServices.Address);
-        #endregion
+        List<GetJobDetailsOutputDTO> jobDetailsList = await GetJobDetailsPerIdAsync(jobIdsList);
 
-        //no function from the contract yet
-        s_IsDelegated = await _oracleContractService.IsDelegatedAsync();
-    }
-
-    #region helpers
-
-    public async Task SubmitDecimalsAsync(BigInteger requestId, List<BigInteger> decimalsList)
-    {
-        #region delegation checker
-        // await DelegationCheckerAsync();
-        #endregion
-
-        await _oracleContractService.SubmitResponseAsync(requestId, decimalsList);
-
-        #region logs        
-        LoggingHelper.LogWithScope<OracleWorker>(_logger, "Submitting request Id# : {0}", "Submitted", requestId);
-        #endregion
-    }
-
-    public async Task<List<BigInteger>> GenerateDecimalsAsync(BigInteger requestId, BigInteger unixTimeS, BigInteger numberOfdecimals)
-    {
-        string firstBlockHash = await _cardanoService.GetNearestBlockHashFromTimeSAsync((int)unixTimeS, requestId);
-        List<string> blockHashesList = await _cardanoService.GetNextBlocksFromCurrentHashAsync(firstBlockHash, (int)(numberOfdecimals - 1), requestId);
-
-        return blockHashesList.Select((dec) => StringUtils.HexStringToBigInteger(dec)).ToList();
-    }
-
-    public async Task DelegationCheckerAsync()
-    {
-        if ((await _oracleContractService.IsDelegatedAsync()) is false)
-        {
-            _logger.LogError("Account no longer delegated.");
-            Environment.Exit(0);
-        }
-    }
-
-    public void PendingRequestHandler(List<PendingRequestOutputDTO>? pendingRequests)
-    {
         //filter pendingRequests
         //sort pendingRequests
-        pendingRequests?.ForEach(async (request) =>
-        {
-            using (_logger.BeginScope("PENDING: Request Id# {0}", request.RequestId))
-                _logger.LogInformation("TimeStamp: {0}\nNumbers: {1}", request.TimeStamp, request.NumberOfDecimals);
-
-            List<BigInteger> decimalsList = await GenerateDecimalsAsync(request.RequestId, request.TimeStamp, request.NumberOfDecimals);
-            await _oracleContractService.SubmitResponseAsync(request.RequestId, decimalsList);
-        });
+        jobDetailsList.ForEach(async (jobDetail) => await ProcessJobRequestAsync(jobDetail, "PENDING"));
     }
 
-    public void UpdateDelegation(bool delegation)
+    public async Task ProcessJobRequestAsync(GetJobDetailsOutputDTO jobDetails, string requestType)
     {
-        s_IsDelegated = delegation;
+        using (_logger.BeginScope("{0}: Job Id# {0}", requestType, jobDetails.JobId))
+            _logger.LogInformation("TimeStamp: {0}\nNumbers: {1}", jobDetails.Timestamp, jobDetails.NumCount);
+
+        await _oracleContractService.AcceptJobAsync(jobDetails.JobId);
+
+        bool isJobReady = await CheckIsJobReadyAfterAcceptanceExpirationAsync(jobDetails);
+
+        if (isJobReady)
+            await GenerateAndSubmitDecimalsAsync(jobDetails);
+        else
+            using (_logger.BeginScope("ACCEPTED: Job Id#: {0}", jobDetails.JobId))
+                _logger.LogInformation("Job cancelled.");
     }
-
-    public async Task AwaitDelegationAsync()
-    {
-        _logger.LogWarning("Account is not delegated. Please delegate to address {0}\nDelegation may take a few seconds to confirm...", _ethAccountServices.Address);
-
-        await _oracleContractService.ListenToNodeRegisteredEventWithCallbackAsync(ProcessTasks, UpdateDelegation);
-    }
-
-    public async Task ClaimRewardsIfThresholdMetAsync()
-    {
-        GetTotalRewardsOutputDTO rewards = await _oracleContractService.GetTotalRewardsAsync();
-
-        if (
-            rewards.ADAReward >= BigInteger.Parse(_options.Value.ADARewardThreshold) ||
-            rewards.CNCLVReward >= BigInteger.Parse(_options.Value.CNCLVRewardThreshold))
-            await _oracleContractService.ClaimPendingRewardsAsync();
-
-        await Task.Delay(CHECK_REWARDS_DURATION);
-    }
-    #endregion
 }
