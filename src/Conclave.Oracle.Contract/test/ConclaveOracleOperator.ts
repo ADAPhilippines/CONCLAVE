@@ -363,7 +363,7 @@ describe('ConclaveOperator Contract', function () {
     });
 
     describe('GetPendingRewards function', async function () {
-        it('Should display all pending reward from accepted jobs', async function () {
+        it.only('Should display all pending reward from accepted jobs', async function () {
             const {
                 oracle,
                 nodes: [node1, node2, node3, node4, node5],

@@ -12,7 +12,7 @@ export default async function fixture() {
         accountsWithoutTokens,
         minbaseTokenStake,
         minTokenStake,
-        testAdaStake,
+        testBaseTokenStake,
         testTokenStake,
         stake,
         approve,
@@ -31,7 +31,7 @@ export default async function fixture() {
         accountsWithoutTokens,
         minbaseTokenStake,
         minTokenStake,
-        testAdaStake,
+        testBaseTokenStake,
         testTokenStake,
         stake,
         approve,
@@ -257,14 +257,14 @@ export async function operatorFixture() {
             .connect(consumer)
             .requestRandomNumbers(
                 request.numCount,
-                request.adaFee,
-                request.adaFeePerNum,
+                request.baseTokenFee,
+                request.baseTokenFeePerNum,
                 request.tokenFee,
                 request.tokenFeePerNum,
-                request.minValidator,
-                request.maxValidator,
+                request.minValidators,
+                request.maxValidators,
                 {
-                    value: request.adaFee.add(request.adaFeePerNum.mul(request.numCount)),
+                    value: request.baseTokenFee.add(request.baseTokenFeePerNum.mul(request.numCount)),
                 }
             );
         const receipt = await ethers.provider.getTransactionReceipt(tx.hash);
@@ -315,12 +315,12 @@ export async function operatorFixture() {
     const sampleRequestId = await submitRequest(
         {
             numCount,
-            adaFee,
-            adaFeePerNum,
+            baseTokenFee,
+            baseTokenFeePerNum,
             tokenFee,
             tokenFeePerNum,
-            minValidator,
-            maxValidator,
+            minValidators,
+            maxValidators,
         },
         accountsWithTokens[0]
     );
@@ -346,12 +346,12 @@ export async function operatorFixture() {
             const requestId = await submitRequest(
                 {
                     numCount,
-                    adaFee,
-                    adaFeePerNum,
+                    baseTokenFee,
+                    baseTokenFeePerNum,
                     tokenFee,
                     tokenFeePerNum,
-                    minValidator: ethers.BigNumber.from(minValidator),
-                    maxValidator: ethers.BigNumber.from(maxValidator),
+                    minValidators: ethers.BigNumber.from(minValidator),
+                    maxValidators: ethers.BigNumber.from(maxValidator),
                 },
                 accounts[0]
             );
@@ -377,12 +377,12 @@ export async function operatorFixture() {
             const requestId = await submitRequest(
                 {
                     numCount,
-                    adaFee,
-                    adaFeePerNum,
+                    baseTokenFee,
+                    baseTokenFeePerNum,
                     tokenFee,
                     tokenFeePerNum,
-                    minValidator: ethers.BigNumber.from(minValidator),
-                    maxValidator: ethers.BigNumber.from(maxValidator),
+                    minValidators: ethers.BigNumber.from(minValidator),
+                    maxValidators: ethers.BigNumber.from(maxValidator),
                 },
                 accounts[0]
             );
@@ -404,7 +404,7 @@ export async function operatorFixture() {
         accountsWithoutTokens,
         minbaseTokenStake,
         minTokenStake,
-        testAdaStake,
+        testBaseTokenStake,
         testTokenStake,
         stake,
         approve,

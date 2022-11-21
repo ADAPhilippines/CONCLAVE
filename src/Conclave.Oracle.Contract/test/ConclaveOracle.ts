@@ -147,12 +147,12 @@ describe('ConclaveOracle contract', function () {
                     .connect(consumer)
                     .requestRandomNumbers(
                         request.numCount,
-                        request.adaFee,
-                        request.adaFeePerNum,
+                        request.baseTokenFee,
+                        request.baseTokenFeePerNum,
                         request.tokenFee,
                         request.tokenFeePerNum,
-                        request.minValidator,
-                        request.maxValidator,
+                        request.minValidators,
+                        request.maxValidators,
                         { value: totalFee.sub(10) }
                     )
             ).to.be.revertedWithCustomError(oracle, 'ValueMismatch');
@@ -165,12 +165,12 @@ describe('ConclaveOracle contract', function () {
                     .connect(consumer)
                     .requestRandomNumbers(
                         request.numCount,
-                        request.adaFee,
-                        request.adaFeePerNum,
+                        request.baseTokenFee,
+                        request.baseTokenFeePerNum,
                         request.tokenFee,
                         request.tokenFeePerNum,
-                        request.minValidator,
-                        request.maxValidator,
+                        request.minValidators,
+                        request.maxValidators,
                         { value: totalFee }
                     )
             ).to.be.revertedWith('ERC20: transfer amount exceeds balance');
