@@ -6,17 +6,6 @@ import "./interfaces/IConclaveOracle.sol";
 import "hardhat/console.sol";
 
 contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
-    uint32 s_minNumCount = 1;
-    uint32 s_maxNumCount = 500;
-    uint256 s_jobAcceptanceTimeLimitInSeconds;
-    uint256 s_jobFulfillmentLimitPerNumberInSeconds;
-    uint256 s_adaFeeAverage;
-    uint256 s_adaFeePerNumAverage;
-    uint256 s_tokenFeeAverage;
-    uint256 s_tokenFeePerNumAverage;
-    uint256 s_requestCount;
-    uint256 s_totalFulfilled;
-
     error ValueMismatch(uint256 stated, uint256 actual);
     error NumberCountNotInRange(uint256 min, uint256 max, uint256 actual);
     error NotAuthorized();
@@ -49,6 +38,18 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         uint256 tokenFeeAverage,
         uint256 tokenFeePerNumAverage
     );
+
+    uint32 s_minNumCount = 1;
+    uint32 s_maxNumCount = 500;
+    uint256 s_jobAcceptanceTimeLimitInSeconds;
+    uint256 s_jobFulfillmentLimitPerNumberInSeconds;
+    uint256 s_adaFeeAverage;
+    uint256 s_adaFeePerNumAverage;
+    uint256 s_tokenFeeAverage;
+    uint256 s_tokenFeePerNumAverage;
+    uint256 s_requestCount;
+    uint256 s_totalFulfilled;
+    uint256[] s_pendingJobRequestIds;
 
     mapping(uint256 => JobRequest) /* jobId => jobRequest */
         private s_jobRequests;
@@ -143,6 +144,7 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         jobRequest.numCount = numCount;
 
         s_requestCount++;
+        s_pendingJobRequestIds.push(jobId);
 
         emit JobRequestCreated(jobId, numCount, block.timestamp);
     }
@@ -238,6 +240,8 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
                 s_tokenFeePerNumAverage
             );
         }
+
+        _removeFromPendingJobIds(jobId);
     }
 
     function getAverageOracleFees()
@@ -286,6 +290,23 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
             tokenFeePerNum,
             s_totalFulfilled
         );
+    }
+
+    function _removeFromPendingJobIds(uint256 jobId) internal {
+        if (s_pendingJobRequestIds.length == 1) {
+            s_pendingJobRequestIds.pop();
+            return;
+        }
+
+        for (uint256 i = 0; i < s_pendingJobRequestIds.length; i++) {
+            if (s_pendingJobRequestIds[i] != jobId) continue;
+
+            s_pendingJobRequestIds[i] = s_pendingJobRequestIds[
+                s_pendingJobRequestIds.length - 1
+            ];
+            s_pendingJobRequestIds.pop();
+            break;
+        }
     }
 
     function _calculateAverage(
@@ -420,4 +441,11 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
     {
         return s_jobRequests[jobId];
     }
+
+    function getPendingJobIds()
+        external
+        view
+        override
+        returns (uint256[] memory)
+    {}
 }
