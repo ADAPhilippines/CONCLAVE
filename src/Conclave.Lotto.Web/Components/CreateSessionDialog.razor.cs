@@ -22,4 +22,10 @@ public partial class CreateSessionDialog
     {
         if (MudDialog is not null) MudDialog.Cancel();
     }
+
+    private void OnDateChanged(DateTime? dateSet)
+    {
+        if (dateSet.HasValue)
+            sessionDetails.StartDate = dateSet.Value;
+    }
 }

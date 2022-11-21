@@ -26,4 +26,6 @@ interface IConclaveOracle {
             uint256,
             uint256
         );
+
+    function balance() external view returns (uint256 ada, uint256 token);
 }
