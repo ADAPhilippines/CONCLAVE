@@ -27,5 +27,9 @@ interface IConclaveOracle {
             uint256
         );
 
+    function getPendingJobIds() external view returns (uint256[] memory);
+
+    function getNodeCount() external view returns (uint256);
+
     function balance() external view returns (uint256 baseToken, uint256 token);
 }

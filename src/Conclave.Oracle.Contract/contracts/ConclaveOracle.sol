@@ -442,4 +442,24 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
     {
         return s_jobRequests[jobId];
     }
+
+    function getPendingJobIds()
+        external
+        view
+        override
+        returns (uint256[] memory)
+    {
+        return s_pendingJobRequestIds;
+    }
+
+    function getNodeCount() external view override returns (uint256 counter) {
+        for (uint256 i = 0; i < s_stakers.length; i++) {
+            if (
+                s_stakes[s_stakers[i]].baseToken > s_minStake.baseToken &&
+                s_stakes[s_stakers[i]].token > s_minStake.token
+            ) {
+                counter++;
+            }
+        }
+    }
 }
