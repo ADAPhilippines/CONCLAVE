@@ -6,7 +6,7 @@
         <MudTh>Status</MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="Date">@context.StartDate?.ToString("dd/MM/yyyy")</MudTd>
+        <MudTd DataLabel="Date">@context.DateCreated.ToString("dd/MM/yyyy")</MudTd>
         <MudTd DataLabel="Session ID">@context.Id</MudTd>
         <MudTd DataLabel="Amount">@context.PrizePool</MudTd>
         <MudTd DataLabel="Transaction Type">@context.CurrentStatus</MudTd>

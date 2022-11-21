@@ -72,7 +72,7 @@ public partial class SessionPage : ComponentBase
         else if (chip.Text == "Latest")
             Sessions.Sort((a, b) =>
             {
-                return DateTime.Compare(a.DateCreated.Value, b.DateCreated.Value);
+                return DateTime.Compare(a.DateCreated, b.DateCreated);
             });
         else
             Sessions.Sort((a, b) => { return a.Id.CompareTo(b.Id); });
