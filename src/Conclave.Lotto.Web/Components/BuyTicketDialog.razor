@@ -11,10 +11,11 @@
                 @foreach (Inputs entry in TicketEntries)
                 {
                     <li>
-                        <input  class="mr-2 border-2 p-2" @ref="entry.ElementRef" @bind-value="entry.Value" @onkeyup="() => OnKeyPressed(entry)" @bind-value:event="oninput" />
+                        <input class="mr-2 border-2 p-2" @ref="entry.ElementRef" @bind-value="entry.Value"
+                        @onkeyup="() => OnKeyPressed(entry)" @bind-value:event="oninput" />
                     </li>
                 }
-        </ul>
+            </ul>
         </div>
     </DialogContent>
     <DialogActions>
