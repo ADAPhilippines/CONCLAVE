@@ -188,6 +188,11 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         if (jobRequest.minValidator > jobRequest.responseCount) {
             _refundFees(jobId);
             randomNumbers = new uint256[](jobRequest.numCount);
+
+            for (uint256 i = 0; i < randomNumbers.length; i++) {
+                jobRequest.results.push(randomNumbers[i]);
+            }
+
             status = uint(RequestStatus.Refunded);
             jobRequest.status = RequestStatus.Refunded;
 
