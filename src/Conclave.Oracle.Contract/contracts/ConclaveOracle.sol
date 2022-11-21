@@ -208,6 +208,11 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
             jobRequest.finalResultDataId = finalDataId;
             jobRequest.status = RequestStatus.Fulfilled;
             randomNumbers = _getRandomNumbers(finalDataId);
+
+            for (uint256 i = 0; i < randomNumbers.length; i++) {
+                jobRequest.results.push(randomNumbers[i]);
+            }
+
             status = uint(RequestStatus.Fulfilled);
             s_totalFulfilled++;
 
