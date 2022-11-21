@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices.JavaScript;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Conclave.Lotto.Web;
@@ -20,6 +19,7 @@ builder.Services.AddSingleton<MetamaskHostProvider>();
 builder.Services.AddMudServices();
 builder.Services.AddScoped<DataService>();
 builder.Services.AddScoped<NethereumService>();
+builder.Services.AddScoped<ClipboardService>();
 
 
 await builder.Build().RunAsync();
