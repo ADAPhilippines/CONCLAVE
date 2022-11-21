@@ -62,9 +62,12 @@ contract OracleConsumer {
         (uint256[] memory result, uint status) = s_oracle.aggregateResult(
             jobId
         );
-        Request storage jobRequest = s_results[jobId];
-        jobRequest.result = result;
-        jobRequest.status = RequestStatus(status);
+
+        for (uint i = 0; i < result.length; i++) {
+            s_results[jobId].result.push(result[i]);
+        }
+
+        s_results[jobId].status = RequestStatus(status);
 
         if (status == uint(RequestStatus.Refunded)) {
             // refund logic
@@ -78,4 +81,8 @@ contract OracleConsumer {
     }
 
     receive() external payable {}
+
+    function getResults(uint256 jobId) public view returns (Request memory r) {
+        r = s_results[jobId];
+    }
 }

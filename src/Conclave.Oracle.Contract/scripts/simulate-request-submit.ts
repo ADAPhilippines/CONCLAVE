@@ -52,15 +52,15 @@ async function main() {
         const submitJobTxReceipt = await oracle.connect(accounts[0]).submitResponse(req.jobId, [1337]);
         console.log("submitJobTxReceipt", submitJobTxReceipt.hash);
         await submitJobTxReceipt.wait();
-        await delay(numCount * 1000 * 60);
+        // await delay(numCount * 1000 * 60);
+        await ethers.provider.send('evm_increaseTime', [120]);
         const finalizeResultTxReceipt = await consumer.finalizeResult(req.jobId);
         await finalizeResultTxReceipt.wait();
         console.log("finalizeResultTxReceipt", finalizeResultTxReceipt.hash);
-        const finalizedRequest = await consumer.s_requests(0);
+        const finalizedRequest = await consumer.getResults(req.jobId);
         console.log("Request Data", req.jobId, finalizedRequest);
         const pendingRequest = await oracle.connect(accounts[0]).getTotalPendingRewards();
         console.log("PendingRewards", ethers.utils.formatEther(pendingRequest.baseTokenReward), ethers.utils.formatUnits(pendingRequest.tokenReward, decimal));
-        
     } catch (err) {
         console.log(err);
         process.exit(1);
