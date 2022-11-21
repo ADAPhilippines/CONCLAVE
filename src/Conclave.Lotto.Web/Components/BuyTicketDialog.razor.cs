@@ -13,17 +13,11 @@ public partial class BuyTicketDialog
     [Parameter]
     public Session SessionDetails { get; set; } = new();
 
-    static int test = 5;
-
-    private List<int> Entries = new List<int>(new int[test]);
-
     private List<Inputs> TicketEntries = new List<Inputs>(){
         new() {},
         new() {},
         new() {}
     };
-
-    private Dictionary<int, MudTextField<int>> InputTextRef = new();
 
     private void OnBtnDepositClicked()
     {
