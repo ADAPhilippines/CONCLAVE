@@ -119,7 +119,7 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
             msg.sender,
             numCount,
             block.timestamp,
-            s_requestCount + 1,
+            s_requestCount,
             block.number
         );
 
@@ -136,10 +136,12 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         jobRequest.baseTokenFee = tokenFee;
         jobRequest.tokenFeePerNum = tokenFeePerNum;
         jobRequest.timestamp = block.timestamp;
+        jobRequest.seed = block.timestamp;
         jobRequest.maxValidator = maxValidator;
         jobRequest.minValidator = minValidator;
         jobRequest.jobAcceptanceExpiration = jobAcceptanceTimeLimit;
         jobRequest.jobFulfillmentExpiration = jobFulfillmentLimit;
+        jobRequest.jobExpiration = jobFulfillmentLimit + 1 hours;
         jobRequest.requester = msg.sender;
         jobRequest.numCount = numCount;
 
