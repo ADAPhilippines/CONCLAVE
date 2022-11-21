@@ -1,17 +1,18 @@
 <div class="w-[550px]">
     <MudDialog>
         <DialogContent>
-            <MudTextField T="string" @bind-Value="@sessionDetails.Name" Label="Session Name"></MudTextField>
-            <MudTextField T="int" @bind-Value="@sessionDetails.PrizePool" Label="Initial Prize Pool"></MudTextField>
-            <MudTextField class="flex-1" T="int" @bind-Value="@sessionDetails.TicketPrice" Label="Ticket Price">
-            </MudTextField>
-            <MudTextField T="int" @bind-Value="@sessionDetails.Combinations" Label="Number of Combinations">
-            </MudTextField>
-            <MudSlider @bind-Value="@sessionDetails.Margin" Min="1" Max="100" Color="Color.Info">Margin:
-                @sessionDetails.Margin.ToString()%</MudSlider>
-            <MudTextField T="int" @bind-Value="@sessionDetails.MaxValue" Label="Maximum Value"></MudTextField>
-            <MudDatePicker Label="Only Calendar" DisableToolbar="true"
-                MinDate="@date" DateChanged="OnDateChanged"/>
+            <MudTextField T="string" @bind-Value="@sessionDetails.Name" Label="Session Name" />
+            <MudTextField T="int" @bind-Value="@sessionDetails.PrizePool" Label="Initial Prize Pool" />
+            <MudTextField class="flex-1" T="int" @bind-Value="@sessionDetails.TicketPrice" Label="Ticket Price" />
+            <MudTextField T="int" @bind-Value="@sessionDetails.Combinations" Label="Number of Combinations" />
+            <MudSlider @bind-Value="@sessionDetails.Combinations" Min="1" Max="99" Color="Color.Info" />
+            <MudTextField T="int" @bind-Value="@sessionDetails.MaxValue" Label="Maximum Value" />
+            <MudSlider @bind-Value="@sessionDetails.MaxValue" Min="0" Max="100" Color="Color.Info" />
+
+            <MudSlider @bind-Value="@sessionDetails.Margin" Min="1" Max="100" Color="Color.Info">
+                Margin: @sessionDetails.Margin.ToString()%
+            </MudSlider>
+            <MudDatePicker Label="Start Date" DisableToolbar="true" MinDate="@date" DateChanged="OnDateChanged" />
         </DialogContent>
         <DialogActions>
             <MudButton OnClick="OnBtnCancelClicked">Cancel</MudButton>
