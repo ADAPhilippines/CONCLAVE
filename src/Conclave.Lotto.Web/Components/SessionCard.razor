@@ -4,13 +4,13 @@
             <MudText>Session Id: @SessionDetails.Id</MudText>
             <MudText Typo="Typo.body2">Session Name: @SessionDetails.Name</MudText>
             <MudText Typo="Typo.body2">Current Prize</MudText>
-            <MudText Typo="Typo.h5">@SessionDetails.PrizePool</MudText>
+            <MudText Typo="Typo.h5">@string.Format("{0:n0}", SessionDetails.PrizePool)</MudText>
             <CountdownTimer ContainerType="Card" StartDateTime="@SessionDetails.StartDate"
                 DateCreated="@SessionDetails.DateCreated" />
             <MudText Typo="Typo.caption">Last Winning Combination Result:</MudText>
             <CombinationResult />
             @* NOTE: Create a buy ticket Modal *@
-            <MudText Typo="Typo.subtitle1">Ticket Price: @SessionDetails.TicketPrice</MudText>
+            <MudText Typo="Typo.subtitle1">Ticket Price: @string.Format("{0:n0}", SessionDetails.TicketPrice)</MudText>
             <MudButton Color="Color.Primary" OnClick="OnBtnBuyTicketClicked">Buy Ticket Now</MudButton>
         </MudCardContent>
     </MudCard>
