@@ -10,7 +10,6 @@ public partial class ConnectWalletsDialog
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
 
-
     public string MilkomedaValue { get; set; } = string.Empty;
 
     public string CardanoValue { get; set; } = string.Empty;

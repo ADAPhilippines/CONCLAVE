@@ -1,0 +1,23 @@
+[
+    {
+        "Date": "11-07-2022",
+        "SessionId": "123456",
+        "Combination": "6",
+        "Price": "10",
+        "Status": "OnGoing"
+    },
+    {
+        "Date": "11-07-2022",
+        "SessionId": "123456",
+        "Combination": "6",
+        "Price": "10",
+        "Status": "OnGoing"
+    },
+    {
+        "Date": "11-07-2022",
+        "SessionId": "123456",
+        "Combination": "6",
+        "Price": "10",
+        "Status": "OnGoing"
+    }
+]

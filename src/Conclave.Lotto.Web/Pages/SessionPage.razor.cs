@@ -16,6 +16,9 @@ public partial class SessionPage : ComponentBase
     private DataService DataService { get; set; } = new();
 
     [Inject]
+    private LottoService LottoService { get; set; } = default!;
+
+    [Inject]
     private NavigationManager NavigationManager { get; set; } = default!;
 
     private IEnumerable<LottoWinner> LottoWinners { get; set; } = default!;
@@ -28,11 +31,19 @@ public partial class SessionPage : ComponentBase
 
     private Status SessionStatus { get; set; } = Status.OnGoing;
 
-    protected override void OnInitialized()
+    // protected override void OnInitialized()
+    // {
+    //     LottoWinners = DataService.LottoWinners;
+    //     Sessions = DataService.Sessions;
+    //     PaginatedSessions = Sessions.GetRange(0, 3);
+    // }
+
+    protected override async Task OnInitializedAsync()
     {
-        LottoWinners = DataService.LottoWinners;
-        Sessions = DataService.Sessions;
+        Sessions = await LottoService.GetSessionListAsync();
         PaginatedSessions = Sessions.GetRange(0, 3);
+        // var test = await LottoService.GetTestString();
+        // Console.WriteLine(test);
     }
 
     private void OpenDialog()

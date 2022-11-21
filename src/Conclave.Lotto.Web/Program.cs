@@ -20,6 +20,8 @@ builder.Services.AddSingleton<MetamaskHostProvider>();
 builder.Services.AddMudServices();
 builder.Services.AddScoped<DataService>();
 builder.Services.AddScoped<NethereumService>();
+builder.Services.AddScoped<LottoService>();
+
 
 
 await builder.Build().RunAsync();
