@@ -63,6 +63,11 @@ interface IConclaveOracleOperator {
         view
         returns (uint256[] memory);
 
+    function getTotalPendingRewards()
+        external
+        view
+        returns (uint256 baseTokenReward, uint256 tokenReward);
+
     function claimPendingRewards() external;
 
     function isJobReady(uint256 jobId) external view returns (bool);
