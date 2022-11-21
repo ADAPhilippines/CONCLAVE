@@ -447,5 +447,7 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         view
         override
         returns (uint256[] memory)
-    {}
+    {
+        return s_pendingJobRequestIds;
+    }
 }
