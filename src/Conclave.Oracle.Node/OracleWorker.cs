@@ -79,7 +79,7 @@ public partial class OracleWorker : BackgroundService
         GetPendingJobIdsOutputDTO pendingRequests = await _oracleContractService.GetPendingJobIdsAsync();
 
         if (pendingRequests.JobIds.Count is not 0)
-            PendingRequestsHandler(pendingRequests.JobIds);
+            PendingRequestsHandlerAsync(pendingRequests.JobIds);
         else
             _logger.LogInformation("No pending job requests found.");
     }
@@ -98,7 +98,7 @@ public partial class OracleWorker : BackgroundService
         await _oracleContractService.ListenToJobRequestFulfilledEventAsync();
     }
 
-    public async void PendingRequestsHandler(List<BigInteger> jobIdsList)
+    public async void PendingRequestsHandlerAsync(List<BigInteger> jobIdsList)
     {
         List<GetJobDetailsOutputDTO> jobDetailsList = await GetJobDetailsPerIdAsync(jobIdsList);
 
