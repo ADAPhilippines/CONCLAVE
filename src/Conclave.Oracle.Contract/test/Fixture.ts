@@ -1,7 +1,6 @@
 import { ethers } from 'hardhat';
 import { BigNumber } from 'ethers';
 import type { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import chalk from 'chalk';
 
 export default async function fixture() {
     const {
@@ -11,10 +10,10 @@ export default async function fixture() {
         accounts,
         accountsWithTokens,
         accountsWithoutTokens,
-        minAdaStake,
+        minbaseTokenStake,
         minTokenStake,
         consumer,
-        testAdaStake,
+        testBaseTokenStake,
         testTokenStake,
         stake,
         approve,
@@ -31,10 +30,10 @@ export default async function fixture() {
         accounts,
         accountsWithTokens,
         accountsWithoutTokens,
-        minAdaStake,
+        minbaseTokenStake,
         minTokenStake,
         consumer,
-        testAdaStake,
+        testBaseTokenStake,
         testTokenStake,
         stake,
         approve,
@@ -67,28 +66,28 @@ export async function stakingFixture() {
 
     // deploy oracle
     const minTokenStake = ethers.utils.parseUnits('10000', decimal);
-    const minAdaStake = ethers.utils.parseEther('50');
+    const minbaseTokenStake = ethers.utils.parseEther('50');
     const jobAcceptanceLimitInSeconds = 60; // 1 minute
     const jobFulFillmentLimitInSeconds = 60; // 1 minute
-    const minAdaStakingRewards = ethers.utils.parseEther('10');
+    const minbaseTokenStakingRewards = ethers.utils.parseEther('10');
     const minTokenStakingRewards = ethers.utils.parseUnits('10000', decimal);
 
     const Oracle = await ethers.getContractFactory('ConclaveOracle');
     const oracle = await Oracle.deploy(
         token.address,
-        minAdaStake,
+        minbaseTokenStake,
         minTokenStake,
-        minAdaStakingRewards,
+        minbaseTokenStakingRewards,
         minTokenStakingRewards,
         jobAcceptanceLimitInSeconds,
         jobFulFillmentLimitInSeconds
     );
 
-    const testAdaStake = ethers.utils.parseEther('50');
+    const testBaseTokenStake = ethers.utils.parseEther('50');
     const testTokenStake = ethers.utils.parseUnits('100000', decimal);
 
-    const stake = async (account: SignerWithAddress, ada: BigNumber, token: BigNumber) => {
-        const tx = await oracle.connect(account).stake(ada, token, { value: ada });
+    const stake = async (account: SignerWithAddress, baseToken: BigNumber, token: BigNumber) => {
+        const tx = await oracle.connect(account).stake(baseToken, token, { value: baseToken });
         await tx.wait();
     };
     const approve = async (account: SignerWithAddress) => {
@@ -96,13 +95,13 @@ export async function stakingFixture() {
         await tx.wait();
     };
 
-    const approveAndStake = async (account: SignerWithAddress, ada: BigNumber, token: BigNumber) => {
+    const approveAndStake = async (account: SignerWithAddress, baseToken: BigNumber, token: BigNumber) => {
         await approve(account);
-        await stake(account, ada, token);
+        await stake(account, baseToken, token);
     };
 
-    const unstake = async (account: SignerWithAddress, ada: BigNumber, token: BigNumber) => {
-        const tx = await oracle.connect(account).unstake(ada, token);
+    const unstake = async (account: SignerWithAddress, baseToken: BigNumber, token: BigNumber) => {
+        const tx = await oracle.connect(account).unstake(baseToken, token);
         await tx.wait();
     };
 
@@ -113,11 +112,11 @@ export async function stakingFixture() {
         accounts,
         accountsWithTokens,
         accountsWithoutTokens,
-        minAdaStake,
+        minbaseTokenStake,
         minTokenStake,
-        minAdaStakingRewards,
+        minbaseTokenStakingRewards,
         minTokenStakingRewards,
-        testAdaStake,
+        testBaseTokenStake,
         testTokenStake,
         stake,
         approve,
@@ -136,9 +135,9 @@ export async function delegateNodeFixture() {
         accounts,
         accountsWithTokens,
         accountsWithoutTokens,
-        minAdaStake,
+        minbaseTokenStake,
         minTokenStake,
-        testAdaStake,
+        testBaseTokenStake,
         testTokenStake,
         stake,
         approve,
@@ -146,17 +145,17 @@ export async function delegateNodeFixture() {
         unstake,
         jobAcceptanceLimitInSeconds,
         jobFulFillmentLimitInSeconds,
-        minAdaStakingRewards,
+        minbaseTokenStakingRewards,
         minTokenStakingRewards,
     } = await stakingFixture();
 
     const stakeAndDelegate = async (
         operator: SignerWithAddress,
         node: SignerWithAddress,
-        ada: BigNumber,
+        baseToken: BigNumber,
         token: BigNumber
     ) => {
-        await approveAndStake(operator, ada, token);
+        await approveAndStake(operator, baseToken, token);
         await oracle.connect(operator).delegateNode(node.address);
     };
 
@@ -181,9 +180,9 @@ export async function delegateNodeFixture() {
         accounts,
         accountsWithTokens,
         accountsWithoutTokens,
-        minAdaStake,
+        minbaseTokenStake,
         minTokenStake,
-        testAdaStake,
+        testBaseTokenStake,
         testTokenStake,
         stake,
         approve,
@@ -195,7 +194,7 @@ export async function delegateNodeFixture() {
         calculateWeight,
         jobAcceptanceLimitInSeconds,
         jobFulFillmentLimitInSeconds,
-        minAdaStakingRewards,
+        minbaseTokenStakingRewards,
         minTokenStakingRewards,
     };
 }
@@ -210,9 +209,9 @@ export async function operatorFixture() {
         accountsWithoutTokens,
         stakeAndDelegate,
         getRandomStakeAmount,
-        minAdaStake,
+        minbaseTokenStake,
         minTokenStake,
-        testAdaStake,
+        testBaseTokenStake,
         testTokenStake,
         stake,
         approve,
@@ -222,7 +221,7 @@ export async function operatorFixture() {
         calculateWeight,
         jobAcceptanceLimitInSeconds,
         jobFulFillmentLimitInSeconds,
-        minAdaStakingRewards,
+        minbaseTokenStakingRewards,
         minTokenStakingRewards,
     } = await delegateNodeFixture();
 
@@ -247,12 +246,12 @@ export async function operatorFixture() {
         await token.connect(account).approve(oracle.address, ethers.constants.MaxUint256);
     }
 
-    const adaFee = ethers.utils.parseEther('1');
-    const adaFeePerNum = ethers.utils.parseEther('0.1');
+    const baseTokenFee = ethers.utils.parseEther('1');
+    const baseTokenFeePerNum = ethers.utils.parseEther('0.1');
     const tokenFee = ethers.utils.parseUnits('1000', decimal);
     const tokenFeePerNum = ethers.utils.parseUnits('100', decimal);
-    const minValidator = ethers.BigNumber.from('1');
-    const maxValidator = ethers.BigNumber.from('1');
+    const minValidators = ethers.BigNumber.from('1');
+    const maxValidators = ethers.BigNumber.from('1');
     const numCount = 1;
 
     const operators = accountsWithTokens;
@@ -261,12 +260,12 @@ export async function operatorFixture() {
     // stake and delegate
     let index = 0;
     for (const operator of operators) {
-        const formattedMinAdaStake = ethers.utils.formatEther(minAdaStake);
+        const formattedMinbaseTokenStake = ethers.utils.formatEther(minbaseTokenStake);
         const formattedMinTokenStake = ethers.utils.formatUnits(minTokenStake, decimal);
         const formattedTokenBalance = ethers.utils.formatUnits(await token.balanceOf(operator.address), decimal);
-        const formattedAdaBalance = await operator.getBalance();
+        const formattedbaseTokenBalance = await operator.getBalance();
         const randomTokenAmount = getRandomStakeAmount(Number(formattedMinTokenStake), Number(formattedTokenBalance));
-        await stakeAndDelegate(operator, nodes[index], minAdaStake, randomTokenAmount);
+        await stakeAndDelegate(operator, nodes[index], minbaseTokenStake, randomTokenAmount);
 
         index++;
     }
@@ -274,14 +273,14 @@ export async function operatorFixture() {
     const submitRequest = async (request: Request) => {
         const tx = await consumer.requestRandomNumbers(
             request.numCount,
-            request.adaFee,
-            request.adaFeePerNum,
+            request.baseTokenFee,
+            request.baseTokenFeePerNum,
             request.tokenFee,
             request.tokenFeePerNum,
-            request.minValidator,
-            request.maxValidator,
+            request.minValidators,
+            request.maxValidators,
             {
-                value: request.adaFee.add(request.adaFeePerNum.mul(request.numCount)),
+                value: request.baseTokenFee.add(request.baseTokenFeePerNum.mul(request.numCount)),
             }
         );
         const receipt = await ethers.provider.getTransactionReceipt(tx.hash);
@@ -327,12 +326,12 @@ export async function operatorFixture() {
 
     const sampleRequestId = await submitRequest({
         numCount,
-        adaFee,
-        adaFeePerNum,
+        baseTokenFee,
+        baseTokenFeePerNum,
         tokenFee,
         tokenFeePerNum,
-        minValidator,
-        maxValidator,
+        minValidators,
+        maxValidators,
     });
 
     const getResponse = (count: number) => {
@@ -355,12 +354,12 @@ export async function operatorFixture() {
             let numCount = Math.floor(Math.random() * 5) + 1;
             const requestId = await submitRequest({
                 numCount,
-                adaFee,
-                adaFeePerNum,
+                baseTokenFee,
+                baseTokenFeePerNum,
                 tokenFee,
                 tokenFeePerNum,
-                minValidator: ethers.BigNumber.from(minValidator),
-                maxValidator: ethers.BigNumber.from(maxValidator),
+                minValidators: ethers.BigNumber.from(minValidator),
+                maxValidators: ethers.BigNumber.from(maxValidator),
             });
 
             await submitResponseAndFinalize(requestId, participatingNodes);
@@ -383,12 +382,12 @@ export async function operatorFixture() {
             let numCount = Math.floor(Math.random() * 5) + 1;
             const requestId = await submitRequest({
                 numCount,
-                adaFee,
-                adaFeePerNum,
+                baseTokenFee,
+                baseTokenFeePerNum,
                 tokenFee,
                 tokenFeePerNum,
-                minValidator: ethers.BigNumber.from(minValidator),
-                maxValidator: ethers.BigNumber.from(maxValidator),
+                minValidators: ethers.BigNumber.from(minValidator),
+                maxValidators: ethers.BigNumber.from(maxValidator),
             });
 
             await submitResponses(requestId, participatingNodes);
@@ -406,10 +405,10 @@ export async function operatorFixture() {
         accounts,
         accountsWithTokens,
         accountsWithoutTokens,
-        minAdaStake,
+        minbaseTokenStake,
         minTokenStake,
         consumer,
-        testAdaStake,
+        testBaseTokenStake,
         testTokenStake,
         stake,
         approve,
@@ -417,19 +416,19 @@ export async function operatorFixture() {
         unstake,
         stakeAndDelegate,
         getRandomStakeAmount,
-        adaFee,
-        adaFeePerNum,
+        baseTokenFee,
+        baseTokenFeePerNum,
         tokenFee,
         tokenFeePerNum,
-        minValidator,
-        maxValidator,
+        minValidator: minValidators,
+        maxValidator: maxValidators,
         sampleRequestId,
         operators,
         nodes,
         getResponse,
         jobFulFillmentLimitInSeconds,
         jobAcceptanceLimitInSeconds,
-        minAdaStakingRewards,
+        minbaseTokenStakingRewards,
         minTokenStakingRewards,
         submitRequest,
         submitResponseAndFinalize,
@@ -443,10 +442,10 @@ export async function operatorFixture() {
 
 export type Request = {
     numCount: number;
-    adaFee: BigNumber;
-    adaFeePerNum: BigNumber;
+    baseTokenFee: BigNumber;
+    baseTokenFeePerNum: BigNumber;
     tokenFee: BigNumber;
     tokenFeePerNum: BigNumber;
-    minValidator: BigNumber;
-    maxValidator: BigNumber;
+    minValidators: BigNumber;
+    maxValidators: BigNumber;
 };

@@ -97,7 +97,7 @@ public partial class OracleWorker : BackgroundService
 
         await _oracleContractService.ListenToJobRequestFulfilledEventAsync();
     }
-
+    
     public async void PendingRequestsHandlerAsync(List<BigInteger> jobIdsList)
     {
         List<GetJobDetailsOutputDTO> jobDetailsList = await GetJobDetailsPerIdAsync(jobIdsList);

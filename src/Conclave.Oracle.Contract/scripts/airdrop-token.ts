@@ -24,7 +24,6 @@ async function main() {
 
         console.log('\n\n');
     } catch (err) {
-        console.log(chalk.red('Token contract not found on this network.'));
         console.log(err);
         process.exit(1);
     }

@@ -16,7 +16,7 @@ public static class BlockFrostServiceExtension
             ILogger<CardanoServices> logger = serviceProvider.GetRequiredService<ILogger<CardanoServices>>();
             IHostApplicationLifetime hostApplicationLifetime = serviceProvider.GetRequiredService<IHostApplicationLifetime>();
 
-            blockFrostService = new CardanoServices(blockService, logger, hostApplicationLifetime);
+            blockFrostService = new CardanoServices(blockService, logger);
             return blockFrostService;
         });
 

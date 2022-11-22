@@ -32,6 +32,7 @@ public class EthAccountServices : WalletServiceBase
     {
         Contract contract = Web3.Eth.GetContract(abi, contractAddress);
         Function readFunction = contract.GetFunction(functionName);
+        
         return await readFunction.CallAsync<T>(inputs);
     }
 
@@ -39,6 +40,7 @@ public class EthAccountServices : WalletServiceBase
     {
         Contract contract = Web3.Eth.GetContract(abi, contractAddress);
         Function readFunction = contract.GetFunction(functionName);
+
         return await readFunction.CallAsync<T>();
     }
 
@@ -46,6 +48,7 @@ public class EthAccountServices : WalletServiceBase
     {
         Contract contract = Web3.Eth.GetContract(abi, contractAddress);
         Function readFunction = contract.GetFunction(functionName);
+
         return await readFunction.CallAsync<dynamic>();
     }
 
@@ -59,8 +62,8 @@ public class EthAccountServices : WalletServiceBase
         Contract contract = Web3.Eth.GetContract(abi, contractAddress);
         Function writeFunction = contract.GetFunction(functionName);
         HexBigInteger gas = await writeFunction.EstimateGasAsync();
-        string data = writeFunction.GetData();
         HexBigInteger gasPrice = await Web3.Eth.GasPrice.SendRequestAsync();
+        string data = writeFunction.GetData();
 
         return await Web3.Eth.TransactionManager.SendTransactionAndWaitForReceiptAsync(new TransactionInput(
             data,
@@ -83,8 +86,8 @@ public class EthAccountServices : WalletServiceBase
         Contract contract = Web3.Eth.GetContract(abi, contractAddress);
         Function writeFunction = contract.GetFunction(functionName);
         HexBigInteger gas = await writeFunction.EstimateGasAsync(inputs);
-        string data = writeFunction.GetData(inputs);
         HexBigInteger gasPrice = await Web3.Eth.GasPrice.SendRequestAsync();
+        string data = writeFunction.GetData(inputs);
 
         return await Web3.Eth.TransactionManager.SendTransactionAndWaitForReceiptAsync(new TransactionInput(
             data,

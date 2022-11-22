@@ -33,8 +33,8 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
     );
 
     event OracleFeesUpdated(
-        uint256 adaFeeAverage,
-        uint256 adaFeePerNumAverage,
+        uint256 baseTokenFeeAverage,
+        uint256 baseTokenFeePerNumAverage,
         uint256 tokenFeeAverage,
         uint256 tokenFeePerNumAverage
     );
@@ -56,18 +56,18 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
 
     constructor(
         IERC20 token,
-        uint256 minAdaStake,
+        uint256 minBaseTokenStake,
         uint256 minTokenStake,
-        uint256 minAdaStakingRewards,
+        uint256 minBaseStakingRewards,
         uint256 minTokenStakingRewards,
         uint256 jobAcceptanceTimeLimitInSeconds,
         uint256 jobFulfillmentLimitPerNumberInSeconds
     )
         ConclaveOracleOperator(
             token,
-            minAdaStakingRewards,
+            minBaseStakingRewards,
             minTokenStakingRewards,
-            minAdaStake,
+            minBaseTokenStake,
             minTokenStake
         )
     {
@@ -81,7 +81,7 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         external
         view
         override
-        returns (uint256 ada, uint256 token)
+        returns (uint256 baseToken, uint256 token)
     {
         return (address(this).balance, _token.balanceOf(address(this)));
     }
@@ -131,8 +131,8 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
 
         JobRequest storage jobRequest = s_jobRequests[jobId];
         jobRequest.jobId = jobId;
-        jobRequest.baseAdaFee = fee;
-        jobRequest.adaFeePerNum = feePerNum;
+        jobRequest.baseBaseTokenFee = fee;
+        jobRequest.baseTokenFeePerNum = feePerNum;
         jobRequest.baseTokenFee = tokenFee;
         jobRequest.tokenFeePerNum = tokenFeePerNum;
         jobRequest.timestamp = block.timestamp;
@@ -208,10 +208,10 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
             status = uint(RequestStatus.Fulfilled);
             s_totalFulfilled++;
 
-            s_totalPendingStakingRewards.ada += _calculateShare(
+            s_totalPendingStakingRewards.baseToken += _calculateShare(
                 10 * 100,
-                (jobRequest.baseAdaFee +
-                    (jobRequest.adaFeePerNum * jobRequest.numCount))
+                (jobRequest.baseBaseTokenFee +
+                    (jobRequest.baseTokenFeePerNum * jobRequest.numCount))
             );
             s_totalPendingStakingRewards.token += _calculateShare(
                 10 * 100,
@@ -221,8 +221,8 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
 
             // update oracle fees
             _calculateOracleFees(
-                jobRequest.baseAdaFee,
-                jobRequest.adaFeePerNum,
+                jobRequest.baseBaseTokenFee,
+                jobRequest.baseTokenFeePerNum,
                 jobRequest.baseTokenFee,
                 jobRequest.tokenFeePerNum
             );
@@ -234,8 +234,8 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
             );
 
             emit OracleFeesUpdated(
-                s_adaFeeAverage,
-                s_adaFeePerNumAverage,
+                s_baseTokenFeeAverage,
+                s_baseTokenFeePerNumAverage,
                 s_tokenFeeAverage,
                 s_tokenFeePerNumAverage
             );
@@ -249,14 +249,14 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         view
         override
         returns (
-            uint256 ada,
-            uint256 adaFeePerNum,
+            uint256 baseToken,
+            uint256 baseTokenFeePerNum,
             uint256 token,
             uint256 tokenFeePerNum
         )
     {
-        ada = s_adaFeeAverage;
-        adaFeePerNum = s_adaFeePerNumAverage;
+        baseToken = s_baseTokenFeeAverage;
+        baseTokenFeePerNum = s_baseTokenFeePerNumAverage;
         token = s_tokenFeeAverage;
         tokenFeePerNum = s_tokenFeePerNumAverage;
     }
@@ -267,14 +267,14 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         uint256 tokenFee,
         uint256 tokenFeePerNum
     ) internal {
-        s_adaFeeAverage = _calculateAverage(
-            s_adaFeeAverage,
+        s_baseTokenFeeAverage = _calculateAverage(
+            s_baseTokenFeeAverage,
             fee,
             s_totalFulfilled
         );
 
-        s_adaFeePerNumAverage = _calculateAverage(
-            s_adaFeePerNumAverage,
+        s_baseTokenFeePerNumAverage = _calculateAverage(
+            s_baseTokenFeePerNumAverage,
             feePerNum,
             s_totalFulfilled
         );
@@ -323,43 +323,54 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
     function _refundFees(uint256 jobId) internal {
         JobRequest storage request = s_jobRequests[jobId];
 
-        uint256 adaRefund = request.baseAdaFee +
-            (request.numCount * request.adaFeePerNum);
+        uint256 baseTokenRefund = request.baseBaseTokenFee +
+            (request.numCount * request.baseTokenFeePerNum);
 
         uint256 tokenRefund = request.baseTokenFee +
             (request.numCount * request.tokenFeePerNum);
 
         if (request.validators.length > 0) {
-            uint256 totalAdaSlashed;
+            uint256 totalBaseTokenSlashed;
             uint256 totalTokenSlashed;
             // Slash stakes of validators who did not respond
             for (uint256 i = 0; i < request.validators.length; i++) {
                 if (s_nodeDataId[jobId][request.validators[i]] != 0) continue;
 
-                uint256 adaDeduction = adaRefund;
+                uint256 baseTokenDeduction = baseTokenRefund;
                 uint256 tokenDeduction = tokenRefund;
 
-                if (adaDeduction > s_stakes[request.validators[i]].ada) {
-                    adaDeduction = s_stakes[request.validators[i]].ada;
+                if (
+                    baseTokenDeduction >
+                    s_stakes[request.validators[i]].baseToken
+                ) {
+                    baseTokenDeduction = s_stakes[request.validators[i]]
+                        .baseToken;
                 }
 
                 if (tokenDeduction > s_stakes[request.validators[i]].token) {
                     tokenDeduction = s_stakes[request.validators[i]].token;
                 }
 
-                totalAdaSlashed += adaDeduction;
+                totalBaseTokenSlashed += baseTokenDeduction;
                 totalTokenSlashed += tokenDeduction;
 
-                _subStake(request.validators[i], adaDeduction, tokenDeduction);
+                _subStake(
+                    request.validators[i],
+                    baseTokenDeduction,
+                    tokenDeduction
+                );
 
                 s_totalDeductedStakes[request.validators[i]]
-                    .ada += adaDeduction;
+                    .baseToken += baseTokenDeduction;
                 s_totalDeductedStakes[request.validators[i]]
                     .token += tokenDeduction;
             }
 
             uint256 weight = _calculateWeight(1, request.responseCount);
-            uint256 adaRewardPerValidator = _calculateShare(weight, adaRefund);
+            uint256 baseTokenRewardPerValidator = _calculateShare(
+                weight,
+                baseTokenRefund
+            );
             uint256 tokenRewardPerValidator = _calculateShare(
                 weight,
                 tokenRefund
@@ -369,28 +380,29 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
             for (uint i = 0; i < request.validators.length; i++) {
                 if (s_nodeDataId[jobId][request.validators[i]] == 0) continue;
                 s_totalNodeRewards[request.validators[i]]
-                    .ada += adaRewardPerValidator;
+                    .baseToken += baseTokenRewardPerValidator;
                 s_totalNodeRewards[request.validators[i]]
                     .token += tokenRewardPerValidator;
                 _addStake(
                     request.validators[i],
-                    adaRewardPerValidator,
+                    baseTokenRewardPerValidator,
                     tokenRewardPerValidator
                 );
             }
 
-            totalAdaSlashed -= adaRefund;
+            totalBaseTokenSlashed -= baseTokenRefund;
             totalTokenSlashed -= tokenRefund;
 
-            if (totalAdaSlashed > 0) {
+            if (totalBaseTokenSlashed > 0) {
                 uint256 requesterShare = _calculateShare(
                     10 * 100,
-                    totalAdaSlashed
+                    totalBaseTokenSlashed
                 );
-                uint256 stakingRewardsShare = totalAdaSlashed - requesterShare;
+                uint256 stakingRewardsShare = totalBaseTokenSlashed -
+                    requesterShare;
 
-                s_totalPendingStakingRewards.ada += stakingRewardsShare;
-                adaRefund += requesterShare;
+                s_totalPendingStakingRewards.baseToken += stakingRewardsShare;
+                baseTokenRefund += requesterShare;
             }
 
             if (totalTokenSlashed > 0) {
@@ -408,7 +420,7 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         }
 
         _token.transfer(request.requester, tokenRefund);
-        payable(request.requester).transfer(adaRefund);
+        payable(request.requester).transfer(baseTokenRefund);
     }
 
     function _getJobId(

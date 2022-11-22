@@ -12,13 +12,11 @@ public class CardanoServices
     #region private variables
     private readonly IBlockService _blockService;
     private readonly ILogger<CardanoServices> _logger;
-    private readonly IHostApplicationLifetime _hostApplicationLifetime;
     #endregion
-    public CardanoServices(IBlockService iblockService, ILogger<CardanoServices> logger, IHostApplicationLifetime hostApplicationLifetime)
+    public CardanoServices(IBlockService iblockService, ILogger<CardanoServices> logger)
     {
         _blockService = iblockService;
         _logger = logger;
-        _hostApplicationLifetime = hostApplicationLifetime;
         Environment.ExitCode = 0;
     }
 

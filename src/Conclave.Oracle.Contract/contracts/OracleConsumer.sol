@@ -30,21 +30,23 @@ contract OracleConsumer {
 
     function requestRandomNumbers(
         uint24 numCount,
-        uint256 adaFee,
-        uint256 adaFeePerNum,
+        uint256 baseTokenFee,
+        uint256 baseTokenFeePerNum,
         uint256 tokenFee,
         uint256 tokenFeePerNum,
-        uint24 minValidator,
-        uint24 maxValidator
+        uint24 minValidators,
+        uint24 maxValidators
     ) external payable {
+        uint256 totalTokenFee = tokenFee + (tokenFeePerNum * numCount);
+        s_token.transferFrom(msg.sender, address(this), totalTokenFee);
         uint256 jobId = s_oracle.requestRandomNumbers{value: msg.value}(
             numCount,
-            adaFee,
-            adaFeePerNum,
+            baseTokenFee,
+            baseTokenFeePerNum,
             tokenFee,
             tokenFeePerNum,
-            minValidator,
-            maxValidator
+            minValidators,
+            maxValidators
         );
 
         s_results[jobId].jobId = jobId;
@@ -61,7 +63,10 @@ contract OracleConsumer {
             jobId
         );
 
-        s_results[jobId].result = result;
+        for (uint i = 0; i < result.length; i++) {
+            s_results[jobId].result.push(result[i]);
+        }
+
         s_results[jobId].status = RequestStatus(status);
 
         if (status == uint(RequestStatus.Refunded)) {
@@ -76,4 +81,8 @@ contract OracleConsumer {
     }
 
     receive() external payable {}
+
+    function getResults(uint256 jobId) public view returns (Request memory r) {
+        r = s_results[jobId];
+    }
 }
