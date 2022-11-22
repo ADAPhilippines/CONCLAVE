@@ -11,7 +11,7 @@ async function main() {
             chalk.yellow(`Approving ${chalk.blue(accounts.length)} nodes to spend in behalf of oracle contract`)
         );
         for (const account of accounts) {
-            console.log(chalk.yellow(`Approving ${chalk.blue(account.address)}...`));
+            console.log(chalk.yellow(`Approving ${chalk.blue(account.address)}`));
             const approve = await token.connect(account).approve(config.oracleAddress, ethers.constants.MaxUint256);
             const approval = approve.wait();
             nodeApprovals.push(approval);
@@ -20,7 +20,6 @@ async function main() {
 
         await Promise.all(nodeApprovals);
     } catch (err) {
-        console.log(chalk.red('Consumer contract not found on this network.'));
         console.log(err);
         process.exit(1);
     }

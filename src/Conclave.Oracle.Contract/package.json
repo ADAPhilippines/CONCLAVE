@@ -1,34 +1,37 @@
 {
-  "name": "conclave.oracle.contract",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "deploy-token": "npx hardhat run scripts/deploy-token.ts --network milkomedaDev",
-    "deploy-oracle": "npx hardhat run scripts/deploy-oracle.ts --network milkomedaDev",
-    "deploy-consumer": "npx hardhat run scripts/deploy-consumer.ts --network milkomedaDev",
-    "airdrop-token": "npx hardhat run scripts/airdrop-token.ts --network milkomedaDev",
-    "approve-consumer": "npx hardhat run scripts/approve-consumer.ts --network milkomedaDev",
-    "approve-nodes": "npx hardhat run scripts/approve-nodes.ts --network milkomedaDev",
-    "delegate-node": "npx hardhat run scripts/delegate-node.ts --network milkomedaDev",
-    "stake-nodes": "npx hardhat run scripts/stake-nodes.ts --network milkomedaDev",
-    "transfer-consumer-ada": "npx hardhat run scripts/transfer-consumer-ada.ts --network milkomedaDev",
-    "transfer-consumer-token": "npx hardhat run scripts/transfer-consumer-token.ts --network milkomedaDev",
-    "deploy-all": "npm run deploy-token && npm run deploy-oracle && npm run deploy-consumer",
-    "approve-all": "npm run approve-consumer && npm run approve-nodes",
-    "approve--stake-delegate": "npm run approve-nodes && npm run stake-nodes && npm run delegate-node",
-    "transfer-all": "npm run transfer-consumer-ada && npm run transfer-consumer-token",
-    "complete-setup": "npm run deploy-all && npm run airdrop-token && npm run approve-all && npm run transfer-all && npm run stake-nodes && npm run delegate-node"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^2.0.0",
-    "chalk": "^4.1.2",
-    "hardhat": "^2.12.2"
-  },
-  "dependencies": {
-    "@openzeppelin/contracts": "^4.7.3"
-  }
+    "name": "conclave.oracle.contract",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "return-base-tokens": "npx hardhat run scripts/account-return-base-token.ts",
+        "account-balance": "npx hardhat run scripts/account-balance.ts",
+        "deploy-token": "npx hardhat run scripts/deploy-token.ts",
+        "deploy-oracle": "npx hardhat run scripts/deploy-oracle.ts",
+        "deploy-consumer": "npx hardhat run scripts/deploy-consumer.ts",
+        "airdrop-token": "npx hardhat run scripts/airdrop-token.ts",
+        "airdrop-base-token": "npx hardhat run scripts/airdrop-base-token.ts",
+        "approve-consumer": "npx hardhat run scripts/approve-consumer.ts",
+        "approve-nodes": "npx hardhat run scripts/approve-nodes.ts",
+        "delegate-node": "npx hardhat run scripts/delegate-node.ts",
+        "stake-nodes": "npx hardhat run scripts/stake-nodes.ts",
+        "unstake-nodes": "npx hardhat run scripts/unstake-nodes.ts",
+        "transfer-consumer-token": "npx hardhat run scripts/transfer-consumer-token.ts",
+        "deploy-all": "npm run deploy-token && npm run deploy-oracle && npm run deploy-consumer",
+        "approve-all": "npm run approve-consumer && npm run approve-nodes",
+        "approve--stake-delegate": "npm run approve-nodes && npm run stake-nodes && npm run delegate-node",
+        "transfer-all": "npm run return-base-tokens && npm run airdrop-base-token",
+        "complete-setup": "npm run unstake-nodes && npm run transfer-all && npm run deploy-all && npm run airdrop-token && npm run approve-all && npm run stake-nodes && npm run delegate-node"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "@nomicfoundation/hardhat-toolbox": "^2.0.0",
+        "chalk": "^4.1.2",
+        "hardhat": "^2.12.2"
+    },
+    "dependencies": {
+        "@openzeppelin/contracts": "^4.7.3"
+    }
 }
