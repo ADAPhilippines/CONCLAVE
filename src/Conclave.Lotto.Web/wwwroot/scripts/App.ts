@@ -1,7 +1,6 @@
 import { ethers } from "ethers";
 
-
-export async function connectWallet() {
+async function connectWallet() {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     await provider.send("eth_requestAccounts", []);
     const signer = provider.getSigner();
@@ -56,4 +55,12 @@ window.interactContract = async (numberToStore: number) => {
     txRetrieve = await contract.retrieve();
     console.log("transaction", tx);
     console.log("new retrieved value ", txRetrieve._hex);
+}
+
+window.copyText = async (text: string) => {
+    try {
+        await navigator.clipboard.writeText(text);
+    } catch (error) {
+        console.log(error);
+    }
 }
