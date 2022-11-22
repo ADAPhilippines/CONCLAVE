@@ -43,6 +43,8 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
     uint32 s_maxNumCount = 500;
     uint256 s_jobAcceptanceTimeLimitInSeconds;
     uint256 s_jobFulfillmentLimitPerNumberInSeconds;
+    uint256 s_baseTokenFeeAverage;
+    uint256 s_baseTokenFeePerNumAverage;
     uint256 s_adaFeeAverage;
     uint256 s_adaFeePerNumAverage;
     uint256 s_tokenFeeAverage;
