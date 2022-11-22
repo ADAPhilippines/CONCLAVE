@@ -131,9 +131,9 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
 
         JobRequest storage jobRequest = s_jobRequests[jobId];
         jobRequest.jobId = jobId;
-        jobRequest.baseTokenFee = baseTokenFee;
-        jobRequest.baseTokenFeePerNum = baseTokenFeePerNum;
-        jobRequest.tokenFee = tokenFee;
+        jobRequest.baseBaseTokenFee = fee;
+        jobRequest.baseTokenFeePerNum = feePerNum;
+        jobRequest.baseTokenFee = tokenFee;
         jobRequest.tokenFeePerNum = tokenFeePerNum;
         jobRequest.timestamp = block.timestamp;
         jobRequest.seed = block.timestamp;
@@ -228,7 +228,7 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
             );
             s_totalPendingStakingRewards.token += _calculateShare(
                 10 * 100,
-                (jobRequest.tokenFee +
+                (jobRequest.baseTokenFee +
                     (jobRequest.tokenFeePerNum * jobRequest.numCount))
             );
 
@@ -339,7 +339,7 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         uint256 baseTokenRefund = request.baseBaseTokenFee +
             (request.numCount * request.baseTokenFeePerNum);
 
-        uint256 tokenRefund = request.tokenFee +
+        uint256 tokenRefund = request.baseTokenFee +
             (request.numCount * request.tokenFeePerNum);
 
         if (request.validators.length > 0) {
