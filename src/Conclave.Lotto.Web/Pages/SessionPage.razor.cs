@@ -13,9 +13,6 @@ public partial class SessionPage : ComponentBase
     public IDialogService? DialogService { get; set; } = default;
 
     [Inject]
-    private DataService DataService { get; set; } = new();
-
-    [Inject]
     private LottoService LottoService { get; set; } = default!;
 
     [Inject]
@@ -29,7 +26,7 @@ public partial class SessionPage : ComponentBase
 
     private bool mandatory { get; set; } = true;
 
-    private Status SessionStatus { get; set; } = Status.OnGoing;
+    private Status SessionStatus { get; set; } = Status.Ongoing;
 
     protected override async Task OnInitializedAsync()
     {
@@ -90,14 +87,14 @@ public partial class SessionPage : ComponentBase
         if (args?.Value?.ToString() == "OnGoing")
         {
             Console.WriteLine("Ongoing");
-            FilteredSessions = Sessions.FindAll(s => s.CurrentStatus == Status.OnGoing);
+            FilteredSessions = Sessions.FindAll(s => s.CurrentStatus == Status.Ongoing);
             // PaginatedSessions = FilteredSessions.GetRange(0, 2);
         }
         else if (args?.Value?.ToString() == "UpComing")
         {
             Console.WriteLine("upcoming");
 
-            FilteredSessions = Sessions.FindAll(s => s.CurrentStatus == Status.UpComing);
+            FilteredSessions = Sessions.FindAll(s => s.CurrentStatus == Status.Upcoming);
             // PaginatedSessions = FilteredSessions.GetRange(0, 3);
         }
     }

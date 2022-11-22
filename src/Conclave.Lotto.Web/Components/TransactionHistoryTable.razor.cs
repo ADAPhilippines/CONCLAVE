@@ -7,12 +7,12 @@ namespace Conclave.Lotto.Web.Components;
 public partial class TransactionHistoryTable : ComponentBase
 {
     [Inject]
-    private DataService DataService { get; set; } = default!;
+    private LottoService LottoService { get; set; } = default!;
 
     private IEnumerable<Transaction> Elements { get; set; } = default!;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        Elements = DataService.Transactions;
+        Elements = await LottoService.GetTransactionsAsync();
     }
 }

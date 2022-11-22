@@ -21,10 +21,28 @@ public class LottoService
         return Sessions;
     }
 
+    public async Task<Session> GetSessionById(int SessionId)
+    {
+        List<Session> SessionList = await _httpClient.GetFromJsonAsync<List<Session>>("lotto-data/sessions.json") ?? new();
+        Session Session = SessionList.Find(s => s.Id == SessionId) ?? new();
+        return Session;
+    }
+
     public async Task<List<LottoWinner>> GetLottoWinnersAsync()
     {
-        List<LottoWinner> winners = await _httpClient.GetFromJsonAsync<List<LottoWinner>>("lotto-data/winners.json") ?? new();
+        List<LottoWinner> LottoWinners = await _httpClient.GetFromJsonAsync<List<LottoWinner>>("lotto-data/winners.json") ?? new();
+        return LottoWinners;
+    }
 
-        return winners;
+    public async Task<IEnumerable<Transaction>> GetTransactionsAsync()
+    {
+        IEnumerable<Transaction> Transactions = await _httpClient.GetFromJsonAsync<IEnumerable<Transaction>>("lotto-data/transactions.json") ?? default!;
+        return Transactions;
+    }
+
+    public async Task<IEnumerable<Ticket>> GetTicketEntriesAsync()
+    {
+        IEnumerable<Ticket> LottoTicket = await _httpClient.GetFromJsonAsync<IEnumerable<Ticket>>("lotto-data/tickets.json") ?? default!;
+        return LottoTicket;
     }
 }
