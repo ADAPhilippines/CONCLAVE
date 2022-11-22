@@ -22,12 +22,13 @@ public class OracleContractService : ContractServiceBase
         ) : base(
                 options.Value.ContractAddress,
                 options.Value.EthereumRPC,
-                options.Value.ContractABI,
                 configuration)
     {
         _options = options;
         _logger = logger;
         _ethAccountServices = ethAccountServices;
+        string jsonString = File.ReadAllText("Contracts/Abi/ConclaveOracle.json");
+        ABI = jsonString;
     }
 
     public async Task<bool> IsNodeRegisteredAsync()
@@ -52,7 +53,7 @@ public class OracleContractService : ContractServiceBase
 
     public async Task<GetJobDetailsOutputDTO> GetJobDetailsAsync(BigInteger jobId)
     {
-        return await _ethAccountServices.CallContractReadFunctionAsync<GetJobDetailsOutputDTO>(ContractAddress, _ethAccountServices.Address!, ABI, 0, "getJobDetails", jobId);
+        return await _ethAccountServices.CallContractReadFunctionAsync<GetJobDetailsOutputDTO>(ContractAddress, ABI, "getJobDetails", jobId);
     }
 
     public async Task<bool> IsJobReadyAsync(BigInteger jobId)
@@ -94,7 +95,6 @@ public class OracleContractService : ContractServiceBase
                 _ = Task.Run(async () =>
                 {
                     GetJobDetailsOutputDTO jobDetails = await GetJobDetailsAsync(log.Event.JobId);
-
                     await processRequest(jobDetails, "RECEIVED");
                 });
             }
@@ -111,10 +111,7 @@ public class OracleContractService : ContractServiceBase
                 _ = Task.Run(async () =>
                 {
                     if (log.Event.NodeAddress == _ethAccountServices.Address)
-                    {
-                        _logger.LogInformation("Account is registered.");
                         await startTasks();
-                    }
                 });
             }
             return true;

@@ -7,6 +7,7 @@ using Nethereum.Hex.HexTypes;
 using Nethereum.Contracts;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Util;
+using System.Numerics;
 
 namespace Conclave.Oracle.Node.Services;
 

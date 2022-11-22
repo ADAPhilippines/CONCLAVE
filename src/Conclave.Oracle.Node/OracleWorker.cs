@@ -3,6 +3,7 @@ using Conclave.Oracle.Node.Models;
 using System.Numerics;
 using Microsoft.Extensions.Options;
 using Conclave.Oracle.Node.Contracts.Definition.FunctionOutputs;
+using Conclave.Oracle.Node.Contracts.Definition.EventOutputs;
 
 namespace Conclave.Oracle;
 
@@ -46,7 +47,7 @@ public partial class OracleWorker : BackgroundService
         _environment = environment;
 
         if (_environment.IsDevelopment())
-            _logger.LogInformation("Starting node in Account {0}.", _configuration.GetValue<string>("PrivateKey"));
+            _logger.LogInformation("Starting node in account {0}.", _configuration.GetValue<string>("PrivateKey"));
         else
             _logger.LogInformation("Starting node.", _configuration.GetValue<string>("PrivateKey"));
     }
@@ -63,6 +64,7 @@ public partial class OracleWorker : BackgroundService
 
     public async Task StartTasksAsync()
     {
+        _logger.LogInformation("Node is registered. Proceeding with tasks.");
         await DelegationCheckerAsync();
 
         _ = Task.Run(async () => await ProcessPendingJobRequestsAsync());
@@ -101,6 +103,7 @@ public partial class OracleWorker : BackgroundService
     public async void PendingRequestsHandlerAsync(List<BigInteger> jobIdsList)
     {
         List<GetJobDetailsOutputDTO> jobDetailsList = await GetJobDetailsPerIdAsync(jobIdsList);
+        _logger.LogInformation(jobDetailsList[0].ToString());
 
         //filter pendingRequests
         //sort pendingRequests
@@ -109,7 +112,7 @@ public partial class OracleWorker : BackgroundService
 
     public async Task ProcessJobRequestAsync(GetJobDetailsOutputDTO jobDetails, string requestType)
     {
-        using (_logger.BeginScope("{0}: Job Id# {0}", requestType, jobDetails.JobId))
+        using (_logger.BeginScope("{0}: Job Id# {1}", requestType, jobDetails.JobId))
             _logger.LogInformation("TimeStamp: {0}\nNumbers: {1}", jobDetails.Timestamp, jobDetails.NumCount);
 
         await _oracleContractService.AcceptJobAsync(jobDetails.JobId);

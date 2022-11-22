@@ -2,6 +2,7 @@ using Conclave.Oracle.Node.Utils;
 using System.Numerics;
 using Conclave.Oracle.Node.Helpers;
 using Conclave.Oracle.Node.Contracts.Definition.FunctionOutputs;
+using Conclave.Oracle.Node.Contracts.Definition.EventOutputs;
 
 namespace Conclave.Oracle;
 
@@ -9,9 +10,7 @@ public partial class OracleWorker : BackgroundService
 {
     public async Task<bool> VerifyRegistrationAsync()
     {
-        #region logs
         _logger.LogInformation("Checking if current account {0} is registered", _ethAccountServices.Address);
-        #endregion
 
         return await _oracleContractService.IsNodeRegisteredAsync();
     }
@@ -19,10 +18,11 @@ public partial class OracleWorker : BackgroundService
     public async Task<bool> CheckIsJobReadyAfterAcceptanceExpirationAsync(GetJobDetailsOutputDTO jobDetails)
     {
         using (_logger.BeginScope("ACCEPTED: Job Id#: {0}", jobDetails.JobId))
-            _logger.LogInformation("TimeStamp: {0}, Numbers: {1}\nAwaiting for job to be ready.", jobDetails.Timestamp, jobDetails.NumCount);
+            _logger.LogInformation("Awaiting for job to be ready");
 
         //verify is it duration or fixed time
-        await Task.Delay((int)jobDetails.JobAcceptanceExpiration);
+        // await Task.Delay((int)jobDetails.JobAcceptanceExpiration);
+        await Task.Delay(5000);
 
         return await _oracleContractService.IsJobReadyAsync(jobDetails.JobId);
     }
@@ -69,7 +69,7 @@ public partial class OracleWorker : BackgroundService
 
     public async Task AwaitRegistrationAsync()
     {
-        _logger.LogWarning("Account is not registered. Please delegate to address {0}\nDelegation may take a few seconds to confirm...", _ethAccountServices.Address);
+        _logger.LogWarning("Account is not registered. Please delegate to address {0}\nDelegation may take a few seconds to confirm.", _ethAccountServices.Address);
 
         await _oracleContractService.ListenToNodeRegisteredEventWithCallbackAsync(StartTasksAsync);
     }
