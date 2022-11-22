@@ -270,6 +270,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
             s_minbaseTokenStakingRewards &&
             s_totalPendingStakingRewards.token >= s_minTokenStakingRewards
         ) {
+            console.log("SHAJKSHJKAHSJKHAJKHS2");
             if (_isDistributorNode(msg.sender)) {
                 s_latestDistributorNode = msg.sender;
 
@@ -328,9 +329,10 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
                 s_dataIdVotes[jobId][request.finalResultDataId]
             );
 
-            uint256 totalSharePercentage = (
-                request.aggregator != address(0) ? 80 : 90
-            ) * 100;
+            uint256 totalSharePercentage = 90 * 100;
+            if (request.aggregator != address(0)) {
+                totalSharePercentage = 80 * 100;
+            }
 
             uint256 totalBaseToken = _calculateShare(
                 totalSharePercentage,
@@ -539,6 +541,9 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
             s_stakes[s_nodeToOwner[node]].token,
             s_totalStakes.token
         );
+
+        console.log("randomNumberWeight", randomNumberWeight);
+        console.log("weight", weight);
 
         return randomNumberWeight <= weight;
     }

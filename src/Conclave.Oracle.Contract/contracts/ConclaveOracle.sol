@@ -130,9 +130,9 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
 
         JobRequest storage jobRequest = s_jobRequests[jobId];
         jobRequest.jobId = jobId;
-        jobRequest.baseBaseTokenFee = fee;
-        jobRequest.baseTokenFeePerNum = feePerNum;
-        jobRequest.baseTokenFee = tokenFee;
+        jobRequest.baseTokenFee = baseTokenFee;
+        jobRequest.baseTokenFeePerNum = baseTokenFeePerNum;
+        jobRequest.tokenFee = tokenFee;
         jobRequest.tokenFeePerNum = tokenFeePerNum;
         jobRequest.timestamp = block.timestamp;
         jobRequest.seed = block.timestamp;
@@ -226,7 +226,7 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
             );
             s_totalPendingStakingRewards.token += _calculateShare(
                 10 * 100,
-                (jobRequest.baseTokenFee +
+                (jobRequest.tokenFee +
                     (jobRequest.tokenFeePerNum * jobRequest.numCount))
             );
 
@@ -318,7 +318,7 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         uint256 baseTokenRefund = request.baseBaseTokenFee +
             (request.numCount * request.baseTokenFeePerNum);
 
-        uint256 tokenRefund = request.baseTokenFee +
+        uint256 tokenRefund = request.tokenFee +
             (request.numCount * request.tokenFeePerNum);
 
         if (request.validators.length > 0) {
@@ -412,7 +412,7 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         }
 
         _token.transfer(request.requester, tokenRefund);
-        payable(request.requester).transfer(baseTokenRefund);
+        _transferBaseToken(request.requester, baseTokenRefund);
     }
 
     function _getJobId(
