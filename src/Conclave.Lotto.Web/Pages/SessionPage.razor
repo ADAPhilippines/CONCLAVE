@@ -22,23 +22,17 @@
             </div>
             <div class="flex-1">
                 <p>Filter by:</p>
-                <select class="border-2 p-2 w-full" name="status" @onchange="OnSelectValuesChanged">
-                     <option value="" disabled selected>Select Status</option>
-                    @foreach (Status item in Enum.GetValues(typeof(Status)))
-                    {
-                        <option value="@item">@item</option>
-                    }
-                </select>
+                <MudSelect T="int" Label="Status" AnchorOrigin="Origin.BottomCenter" ValueChanged="(t) => OnSelectValuesChanged(t)">
+                    <MudSelectItem Value="0">On going</MudSelectItem>
+                    <MudSelectItem Value="1">Upcoming</MudSelectItem>
+                </MudSelect>
             </div>
         </div>
         <SessionList>
             @foreach (var item in PaginatedSessions)
             {
-                <SessionCard 
-                    SessionDetails="item"
-                    OnSessionCardClicked="() => OnSessionCardClicked(item)" 
-                    OnBtnBuyTicketClicked="() => OnBtnBuyTicketClicked(item)" 
-                />
+                <SessionCard SessionDetails="item" OnSessionCardClicked="() => OnSessionCardClicked(item)"
+                OnBtnBuyTicketClicked="() => OnBtnBuyTicketClicked(item)" />
             }
         </SessionList>
         <div class="flex px-5 mb-2 justify-center">

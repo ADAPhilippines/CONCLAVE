@@ -12,7 +12,7 @@ public record Session
 
     public string Name { get; set; } = string.Empty;
 
-    public Status CurrentStatus { get; set; } = Status.Upcoming;
+    public Status CurrentStatus { get; set; }
 
     public string? OwnerAddress { get; set; } = string.Empty;
 
