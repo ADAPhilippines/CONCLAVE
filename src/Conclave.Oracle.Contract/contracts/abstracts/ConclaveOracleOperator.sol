@@ -346,7 +346,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
                 request.baseTokenFee +
                     (request.tokenFeePerNum * request.numCount)
             );
-            baseToken = _calculateShare(weight, totalbaseToken);
+            baseToken = _calculateShare(weight, totalBaseToken);
             token = _calculateShare(weight, totalToken);
 
             if (
