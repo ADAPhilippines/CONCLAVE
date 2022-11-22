@@ -67,21 +67,24 @@ async function main() {
                             };
 
                             // Accept the most recent job as fast as possible
-                            const jobId = jobIds[jobIds.length - 1];
-                            const acceptJobTxReceipt = await oracle.connect(acc).acceptJob(jobId);
-                            acceptJobTxReceipt.wait();
+                            jobIds.forEach(async (jobId) => {
+                                try {
+                                    const acceptJobTxReceipt = await oracle.connect(acc).acceptJob(jobId);
+                                    acceptJobTxReceipt.wait();
 
-                            // Wait Job to be ready, once ready submit results
-                            while (!await oracle.isJobReady(jobId)) { }
-                            const jobDetails = await oracle.getJobDetails(jobId);
-                            const seed = jobDetails.seed;
-                            const submitJobTxReceipt = await oracle.connect(acc).submitResponse(jobId, getJobResult(jobDetails.numCount, seed));
-                            await submitJobTxReceipt.wait();
+                                    // Wait Job to be ready, once ready submit results
+                                    while (!await oracle.isJobReady(jobId)) { }
+                                    const jobDetails = await oracle.getJobDetails(jobId);
+                                    const seed = jobDetails.seed;
+                                    const submitJobTxReceipt = await oracle.connect(acc).submitResponse(jobId, getJobResult(jobDetails.numCount, seed));
+                                    await submitJobTxReceipt.wait();
 
-                            // @TODO: don't finalize yet, keep checking for job status
-                            const finalizeResultTxReceipt = await consumer.finalizeResult(jobId);
-                            await finalizeResultTxReceipt.wait();
-                            await oracle.connect(acc).claimPendingRewards();
+                                    // @TODO: don't finalize yet, keep checking for job status
+                                    const finalizeResultTxReceipt = await consumer.finalizeResult(jobId);
+                                    await finalizeResultTxReceipt.wait();
+                                    await oracle.connect(acc).claimPendingRewards();
+                                } catch { }
+                            });
                             await delay(random(100, 1000 * 1));
                         } catch {
                             await delay(100);
