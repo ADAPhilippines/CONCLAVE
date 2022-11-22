@@ -363,7 +363,7 @@ describe('ConclaveOperator Contract', function () {
     });
 
     describe('GetPendingRewards function', async function () {
-        it.only('Should display all pending reward from accepted jobs', async function () {
+        it('Should display all pending reward from accepted jobs', async function () {
             const {
                 oracle,
                 nodes: [node1, node2, node3, node4, node5],
@@ -386,6 +386,7 @@ describe('ConclaveOperator Contract', function () {
                         tokenFeePerNum,
                         numCount,
                     } = await oracle.getJobDetails(requestIds[i]);
+
                     const reward = await oracle.connect(node).getPendingRewardsByJobId(jobId);
                     const opeartorAddr = await oracle.getOwner(node.address);
                     const nodeDataId = await oracle.connect(node).s_nodeDataId(jobId, opeartorAddr);

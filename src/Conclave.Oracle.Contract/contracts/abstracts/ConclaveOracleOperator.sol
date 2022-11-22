@@ -338,7 +338,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
 
             uint256 totalBaseToken = _calculateShare(
                 totalSharePercentage,
-                request.baseTokenFee +
+                request.baseBaseTokenFee +
                     (request.baseTokenFeePerNum * request.numCount)
             );
             uint256 totalToken = _calculateShare(
@@ -543,9 +543,6 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
             s_stakes[s_nodeToOwner[node]].token,
             s_totalStakes.token
         );
-
-        console.log("randomNumberWeight", randomNumberWeight);
-        console.log("weight", weight);
 
         return randomNumberWeight <= weight;
     }
