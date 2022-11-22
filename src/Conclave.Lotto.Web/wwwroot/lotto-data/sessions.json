@@ -14,7 +14,7 @@
     },
     {
         "Id": 1,
-        "Name": "From JSON file dos",
+        "Name": "From JSON",
         "Status": 1,
         "PrizePool": 545426,
         "TicketPrice": 20,
