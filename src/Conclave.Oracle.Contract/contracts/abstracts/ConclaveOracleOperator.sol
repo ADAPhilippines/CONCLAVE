@@ -272,7 +272,6 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
             s_minbaseTokenStakingRewards &&
             s_totalPendingStakingRewards.token >= s_minTokenStakingRewards
         ) {
-            console.log("SHAJKSHJKAHSJKHAJKHS2");
             if (_isDistributorNode(msg.sender)) {
                 s_latestDistributorNode = msg.sender;
 
