@@ -7,9 +7,6 @@ namespace Conclave.Lotto.Web.Pages;
 public partial class SessionDetailsPage
 {
     [Inject]
-    private DataService DataService { get; set; } = new();
-
-    [Inject]
     private LottoService LottoService { get; set; } = default!;
 
     [Parameter]
