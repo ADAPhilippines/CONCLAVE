@@ -1,0 +1,80 @@
+<MudDialog Class="pb-5 w-[500px]">
+    <DialogContent>
+        <div class="mb-4">
+            <h3 class="text-center font-bold text-[25px]">Withdraw funds</h3>
+            <p class="w-[65%] text-center m-auto text-[12px]">
+                Select the currency you want to withdraw from your balance on the platform
+            </p>
+        </div>
+
+        <MudSelect
+            FullWidth="true"
+            T="string"
+            Variant="Variant.Outlined"
+            AnchorOrigin="Origin.BottomCenter"
+            @bind-Value="selectedValue">
+                <MudSelectItem Value="@("MADA")"/>
+                <MudSelectItem Value="@("CNCLV")"/>
+        </MudSelect>
+
+        <div class="mt-5">
+            <div class="flex justify-between items-center">
+                <span>Available: 10 $MADA</span>
+                <MudButton
+                    Class="p-0 w-fit"
+                    Color="Color.Default"
+                    Variant="Variant.Outlined"
+                >   
+                    Max
+                </MudButton>
+            </div>
+
+            <MudTextField
+                @bind-Value="TextValue"
+                Variant="Variant.Outlined"
+                Placeholder="0.00"
+            />
+            <MudSlider
+                @bind-Value="value1"
+                Min="0"
+                Max="10"
+                Color="Color.Primary"
+                Class="mt-7"
+            />
+        </div>
+    </DialogContent>
+
+    <DialogActions>
+        <div class="flex gap-2 w-full px-4">
+            <MudButton
+                Class="basis-1/2"
+                OnClick="Cancel"
+                Variant="Variant.Filled"
+                Color="Color.Dark"
+            >
+                Cancel
+            </MudButton>
+            <MudButton
+                Class="basis-1/2"
+                Variant="Variant.Filled"
+                Color="Color.Primary"
+            >
+                Withdraw
+            </MudButton>
+        </div>
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+
+    private string selectedValue { get; set; } = "MADA";
+
+    private int value1 = 0;
+
+    private string TextValue { get; set; } = string.Empty;
+
+    void Submit() => MudDialog.Close(DialogResult.Ok(true));
+    void Cancel() => MudDialog.Cancel();
+}
