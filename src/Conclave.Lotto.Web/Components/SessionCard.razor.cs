@@ -17,7 +17,7 @@ public partial class SessionCard
 
     private string SessionStatusClass()
     {
-        if (SessionDetails.CurrentStatus == Status.OnGoing)
+        if (SessionDetails.CurrentStatus == Status.Ongoing)
             return "border-2 border-rose-600";
         return "border-2";
     }

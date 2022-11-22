@@ -13,7 +13,7 @@ public partial class Header
 
     private bool IsOpen { get; set; }
 
-    private async Task OpenConnectWalletsDialog()
+    private void OpenConnectWalletsDialog()
     {
          DialogOptions closeOnEscapeKey = new DialogOptions() { CloseOnEscapeKey = true };
          DialogService?.Show<ConnectWalletsDialog>("Connect Wallets", closeOnEscapeKey);

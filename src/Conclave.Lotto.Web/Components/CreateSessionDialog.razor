@@ -10,8 +10,8 @@
             <MudSlider @bind-Value="@sessionDetails.Margin" Min="1" Max="100" Color="Color.Info">Margin:
                 @sessionDetails.Margin.ToString()%</MudSlider>
             <MudTextField T="int" @bind-Value="@sessionDetails.MaxValue" Label="Maximum Value"></MudTextField>
-            <MudDatePicker Label="Only Calendar" @bind-Date="@sessionDetails.StartDate" DisableToolbar="true"
-                MinDate="@date" />
+            <MudDatePicker Label="Only Calendar" DisableToolbar="true"
+                MinDate="@date" DateChanged="OnDateChanged"/>
         </DialogContent>
         <DialogActions>
             <MudButton OnClick="OnBtnCancelClicked">Cancel</MudButton>
