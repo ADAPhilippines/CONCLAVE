@@ -13,7 +13,6 @@ export default async function fixture() {
         accountsWithoutTokens,
         minAdaStake,
         minTokenStake,
-        consumer,
         testAdaStake,
         testTokenStake,
         stake,
@@ -33,7 +32,6 @@ export default async function fixture() {
         accountsWithoutTokens,
         minAdaStake,
         minTokenStake,
-        consumer,
         testAdaStake,
         testTokenStake,
         stake,
@@ -226,23 +224,7 @@ export async function operatorFixture() {
         minTokenStakingRewards,
     } = await delegateNodeFixture();
 
-    // deploy consumer
-    const Consumer = await ethers.getContractFactory('OracleConsumer');
-    const consumer = await Consumer.deploy(oracle.address, token.address);
-
-    // transfer assets to consumer
-    const ethAmount = ethers.utils.parseEther('100');
-    const cnclvAmount = ethers.utils.parseUnits('10000000', decimal);
-
-    await accounts[0].sendTransaction({
-        to: consumer.address,
-        value: ethAmount,
-    });
-
-    token.transfer(consumer.address, cnclvAmount);
-
     // approvals
-    await consumer.approve();
     for (const account of accountsWithTokens) {
         await token.connect(account).approve(oracle.address, ethers.constants.MaxUint256);
     }
@@ -271,19 +253,21 @@ export async function operatorFixture() {
         index++;
     }
 
-    const submitRequest = async (request: Request) => {
-        const tx = await consumer.requestRandomNumbers(
-            request.numCount,
-            request.adaFee,
-            request.adaFeePerNum,
-            request.tokenFee,
-            request.tokenFeePerNum,
-            request.minValidator,
-            request.maxValidator,
-            {
-                value: request.adaFee.add(request.adaFeePerNum.mul(request.numCount)),
-            }
-        );
+    const submitRequest = async (request: Request, consumer: SignerWithAddress) => {
+        const tx = await oracle
+            .connect(consumer)
+            .requestRandomNumbers(
+                request.numCount,
+                request.adaFee,
+                request.adaFeePerNum,
+                request.tokenFee,
+                request.tokenFeePerNum,
+                request.minValidator,
+                request.maxValidator,
+                {
+                    value: request.adaFee.add(request.adaFeePerNum.mul(request.numCount)),
+                }
+            );
         const receipt = await ethers.provider.getTransactionReceipt(tx.hash);
         const data = receipt.logs[1].data;
         const topics = receipt.logs[1].topics;
@@ -316,24 +300,31 @@ export async function operatorFixture() {
         ]);
     };
 
-    const submitResponseAndFinalize = async (requestId: BigNumber, participatingNodes: SignerWithAddress[]) => {
+    const submitResponseAndFinalize = async (
+        requestId: BigNumber,
+        participatingNodes: SignerWithAddress[],
+        consumer: SignerWithAddress
+    ) => {
         await submitResponses(requestId, participatingNodes);
-        await consumer.finalizeResult(requestId);
+        await oracle.connect(consumer).aggregateResult(requestId);
 
         const jobDetails = await oracle.getJobDetails(requestId);
 
         return jobDetails;
     };
 
-    const sampleRequestId = await submitRequest({
-        numCount,
-        adaFee,
-        adaFeePerNum,
-        tokenFee,
-        tokenFeePerNum,
-        minValidator,
-        maxValidator,
-    });
+    const sampleRequestId = await submitRequest(
+        {
+            numCount,
+            adaFee,
+            adaFeePerNum,
+            tokenFee,
+            tokenFeePerNum,
+            minValidator,
+            maxValidator,
+        },
+        accountsWithTokens[0]
+    );
 
     const getResponse = (count: number) => {
         const res = [];
@@ -353,17 +344,20 @@ export async function operatorFixture() {
 
         for (let i = 0; i < requestCount; i++) {
             let numCount = Math.floor(Math.random() * 5) + 1;
-            const requestId = await submitRequest({
-                numCount,
-                adaFee,
-                adaFeePerNum,
-                tokenFee,
-                tokenFeePerNum,
-                minValidator: ethers.BigNumber.from(minValidator),
-                maxValidator: ethers.BigNumber.from(maxValidator),
-            });
+            const requestId = await submitRequest(
+                {
+                    numCount,
+                    adaFee,
+                    adaFeePerNum,
+                    tokenFee,
+                    tokenFeePerNum,
+                    minValidator: ethers.BigNumber.from(minValidator),
+                    maxValidator: ethers.BigNumber.from(maxValidator),
+                },
+                accounts[0]
+            );
 
-            await submitResponseAndFinalize(requestId, participatingNodes);
+            await submitResponseAndFinalize(requestId, participatingNodes, accounts[0]);
 
             requestIds.push(requestId);
         }
@@ -381,15 +375,18 @@ export async function operatorFixture() {
 
         for (let i = 0; i < requestCount; i++) {
             let numCount = Math.floor(Math.random() * 5) + 1;
-            const requestId = await submitRequest({
-                numCount,
-                adaFee,
-                adaFeePerNum,
-                tokenFee,
-                tokenFeePerNum,
-                minValidator: ethers.BigNumber.from(minValidator),
-                maxValidator: ethers.BigNumber.from(maxValidator),
-            });
+            const requestId = await submitRequest(
+                {
+                    numCount,
+                    adaFee,
+                    adaFeePerNum,
+                    tokenFee,
+                    tokenFeePerNum,
+                    minValidator: ethers.BigNumber.from(minValidator),
+                    maxValidator: ethers.BigNumber.from(maxValidator),
+                },
+                accounts[0]
+            );
 
             await submitResponses(requestId, participatingNodes);
 
@@ -408,7 +405,6 @@ export async function operatorFixture() {
         accountsWithoutTokens,
         minAdaStake,
         minTokenStake,
-        consumer,
         testAdaStake,
         testTokenStake,
         stake,
