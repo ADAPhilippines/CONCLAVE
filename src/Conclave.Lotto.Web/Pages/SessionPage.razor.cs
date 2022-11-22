@@ -21,7 +21,7 @@ public partial class SessionPage : ComponentBase
     [Inject]
     private NavigationManager NavigationManager { get; set; } = default!;
 
-    private IEnumerable<LottoWinner> LottoWinners { get; set; } = default!;
+    private List<LottoWinner> LottoWinners { get; set; } = new();
 
     private List<Session> Sessions { get; set; } = default!;
 
@@ -34,9 +34,10 @@ public partial class SessionPage : ComponentBase
     protected override async Task OnInitializedAsync()
     {
         Sessions = await LottoService.GetSessionListAsync();
+        LottoWinners = await LottoService.GetLottoWinnersAsync();
+
         if (Sessions is not null)
-            PaginatedSessions = Sessions.GetRange(0, 1);
-        LottoWinners = DataService.LottoWinners;
+            PaginatedSessions = Sessions.GetRange(0, 2);
     }
 
     private void OpenDialog()

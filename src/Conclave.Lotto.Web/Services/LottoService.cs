@@ -16,8 +16,15 @@ public class LottoService
 
     public async Task<List<Session>> GetSessionListAsync()
     {
-        var data = await _httpClient.GetFromJsonAsync<List<Session>>("lotto-data/sessions.json");
+        List<Session> Sessions = await _httpClient.GetFromJsonAsync<List<Session>>("lotto-data/sessions.json") ?? new();
 
-        return data ?? new();
+        return Sessions;
+    }
+
+    public async Task<List<LottoWinner>> GetLottoWinnersAsync()
+    {
+        List<LottoWinner> winners = await _httpClient.GetFromJsonAsync<List<LottoWinner>>("lotto-data/winners.json") ?? new();
+
+        return winners;
     }
 }
