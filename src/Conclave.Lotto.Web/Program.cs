@@ -20,6 +20,7 @@ builder.Services.AddMudServices();
 builder.Services.AddScoped<DataService>();
 builder.Services.AddScoped<NethereumService>();
 builder.Services.AddScoped<ClipboardService>();
+builder.Services.AddScoped<CurrencyConverterService>();
 
 
 await builder.Build().RunAsync();
