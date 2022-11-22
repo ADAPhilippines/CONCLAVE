@@ -1,0 +1,28 @@
+[
+    {
+        "Id": 0,
+        "Name": "From JSON file",
+        "Status": 0,
+        "PrizePool": 545426,
+        "TicketPrice": 20,
+        "Combinations": 5,
+        "MaxValue": 65,
+        "Margin": 5,
+        "StartDate": "2022-12-26T00:00:00",
+        "DateCreated": "2022-07-26T00:00:00",
+        "Interval": 10
+    },
+    {
+        "Id": 1,
+        "Name": "From JSON file dos",
+        "Status": 1,
+        "PrizePool": 545426,
+        "TicketPrice": 20,
+        "Combinations": 5,
+        "MaxValue": 65,
+        "Margin": 5,
+        "StartDate": "2022-11-26T00:00:00",
+        "DateCreated": "2022-10-26T00:00:00",
+        "Interval": 10
+    }
+]

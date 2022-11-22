@@ -18,7 +18,7 @@ public partial class ConnectWalletsDialog
 
     private string CardanoAddress { get; set; } = "addr_test1qrr86cuspxp7e3....5us6td4tas36a9xqoty";
 
-    private string MilkomedaValue { get; set; } = string.Empty;
+    public string MilkomedaValue { get; set; } = string.Empty;
 
     private string CardanoValue { get; set; } = string.Empty;
 
