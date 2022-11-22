@@ -14,9 +14,9 @@ public partial class AddFundsDialog
 
     private string Currency { get; set; } = "MilkADA";
 
-    private double MilkADABalance { get; set; } = 103321;
+    private double MilkADABalance { get; set; } = 235;
 
-    private double ConclaveBalance { get; set; } = 2058943;
+    private double ConclaveBalance { get; set; } = 598;
 
     private double DepositAmount { get; set; } = 0;
 
