@@ -63,7 +63,6 @@ public class DataService
             Combinations = 5,
             MaxValue = 65,
             Margin = 5,
-            Interval = 10,
             StartDate = new DateTime(2022, 12, 16, 7, 30, 00, DateTimeKind.Utc),
             DateCreated = new DateTime(2022, 10, 16, 6, 15, 00, DateTimeKind.Utc)
         },
@@ -76,7 +75,6 @@ public class DataService
             Combinations = 5,
             MaxValue = 65,
             Margin = 5,
-            Interval = 30,
             StartDate = new DateTime(2022, 11, 19, 7, 00, 00, DateTimeKind.Utc),
             DateCreated = new DateTime(2022, 11, 17, 6, 15, 00, DateTimeKind.Utc)
         },
@@ -89,7 +87,6 @@ public class DataService
             Combinations = 5,
             MaxValue = 65,
             Margin = 5,
-            Interval = 115,
             StartDate = new DateTime(2022, 12, 17, 7, 30, 00, DateTimeKind.Utc),
             DateCreated = new DateTime(2022, 03, 13, 6, 15, 00, DateTimeKind.Utc)
         },
@@ -102,7 +99,6 @@ public class DataService
             Combinations = 5,
             MaxValue = 65,
             Margin = 5,
-            Interval = 10,
             StartDate = new DateTime(2022, 12, 16, 7, 30, 00, DateTimeKind.Utc),
             DateCreated = new DateTime(2022, 11, 13, 6, 15, 00, DateTimeKind.Utc)
         },
@@ -115,7 +111,6 @@ public class DataService
             Combinations = 5,
             MaxValue = 65,
             Margin = 5,
-            Interval = 10,
             StartDate = new DateTime(2022, 12, 16, 7, 30, 00, DateTimeKind.Utc),
             DateCreated = new DateTime(2022, 02, 13, 6, 15, 00, DateTimeKind.Utc)
         },
@@ -128,7 +123,6 @@ public class DataService
             Combinations = 5,
             MaxValue = 65,
             Margin = 5,
-            Interval = 10,
             StartDate = new DateTime(2022, 12, 19, 7, 30, 00, DateTimeKind.Utc),
             DateCreated = new DateTime(2022, 11, 13, 6, 15, 00, DateTimeKind.Utc)
         },
@@ -141,7 +135,6 @@ public class DataService
             Combinations = 5,
             MaxValue = 65,
             Margin = 5,
-            Interval = 10,
             StartDate = new DateTime(2022, 12, 16, 7, 30, 00, DateTimeKind.Utc),
             DateCreated = new DateTime(2022, 11, 14, 6, 15, 00, DateTimeKind.Utc)
         },
@@ -154,7 +147,6 @@ public class DataService
             Combinations = 5,
             MaxValue = 65,
             Margin = 5,
-            Interval = 10,
             StartDate = new DateTime(2022, 12, 16, 7, 30, 00, DateTimeKind.Utc),
             DateCreated = new DateTime(2022, 10, 13, 6, 15, 00, DateTimeKind.Utc)
         },
@@ -167,7 +159,6 @@ public class DataService
             Combinations = 5,
             MaxValue = 65,
             Margin = 5,
-            Interval = 10,
             StartDate = new DateTime(2022, 12, 16, 7, 30, 00, DateTimeKind.Utc),
             DateCreated = new DateTime(2022, 9, 13, 6, 15, 00, DateTimeKind.Utc)
         }

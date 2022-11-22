@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Conclave.Lotto.Web.Models;
 
 public enum Status
@@ -9,7 +11,7 @@ public enum Status
 public record Session
 {
     public int Id { get; set; }
-
+    
     public string Name { get; set; } = string.Empty;
 
     public Status CurrentStatus { get; set; } = Status.UpComing;
@@ -20,8 +22,10 @@ public record Session
 
     public int TicketPrice { get; set; }
 
+    [Range(1, 10)]
     public int Combinations { get; set; }
-
+    
+    [Range(0, 99)]
     public int MaxValue { get; set; }
 
     public int Margin { get; set; }
@@ -29,6 +33,8 @@ public record Session
     public DateTime StartDate { get; set; }
 
     public DateTime DateCreated { get; set; }
-    
-    public int Interval { get; set; }
+
+    public TimeSpan StartTime { get; set; }
+
+    public TimeInterval TimeIntervals { get; set; } = new();
 }

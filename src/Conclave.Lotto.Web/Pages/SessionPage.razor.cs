@@ -85,14 +85,11 @@ public partial class SessionPage : ComponentBase
         List<Session> FilteredSessions = new();
         if (args?.Value?.ToString() == "OnGoing")
         {
-            Console.WriteLine("Ongoing");
             FilteredSessions = Sessions.FindAll(s => s.CurrentStatus == Status.OnGoing);
             PaginatedSessions = FilteredSessions.GetRange(0, 2);
         }
         else if (args?.Value?.ToString() == "UpComing")
         {
-            Console.WriteLine("upcoming");
-
             FilteredSessions = Sessions.FindAll(s => s.CurrentStatus == Status.UpComing);
             PaginatedSessions = FilteredSessions.GetRange(0, 3);
         }
