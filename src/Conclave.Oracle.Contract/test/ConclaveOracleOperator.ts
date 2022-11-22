@@ -126,7 +126,7 @@ describe('ConclaveOperator Contract', function () {
             } = await loadFixture(operatorFixture);
 
             const operatorBalance = await oracle.getStake(operator.address);
-            await oracle.connect(operator).unstake(operatorBalance.ada, operatorBalance.token);
+            await oracle.connect(operator).unstake(operatorBalance.baseToken, operatorBalance.token);
 
             await expect(oracle.connect(node).acceptJob(sampleRequestId)).to.be.revertedWithCustomError(
                 oracle,
@@ -313,52 +313,46 @@ describe('ConclaveOperator Contract', function () {
                 oracle,
                 nodes,
                 operators,
-                operators: [operator1, operator2],
-                getResponse,
+                operators: [operator1],
                 submitRequest,
                 submitResponseAndFinalize,
                 unstake,
-                simulateJobCycle,
                 decimal,
             } = await loadFixture(operatorFixture);
 
             const adaFee = ethers.utils.parseEther('150');
             const adaPerNum = ethers.utils.parseEther('10');
-            const tokenFee = ethers.utils.parseUnits('100000', decimal);
+            const _tokenFee = ethers.utils.parseUnits('10000', decimal);
             const tokenPerNum = ethers.utils.parseUnits('100', decimal);
 
             for (const operator of operators) {
                 if (operator.address === operator1.address) continue;
                 const balance = await oracle.getStake(operator.address);
-                await unstake(operator, balance.ada, balance.token);
+                await unstake(operator, balance.baseToken, balance.token);
             }
 
             const request: Request = {
                 numCount: 2,
                 adaFee,
                 adaFeePerNum: adaPerNum,
-                tokenFee,
+                tokenFee: _tokenFee,
                 tokenFeePerNum: tokenPerNum,
                 minValidator: BigNumber.from(1),
-                maxValidator: BigNumber.from(2),
+                maxValidator: BigNumber.from(1),
             };
 
             const requestId = await submitRequest(request);
-            const { baseAdaFee, adaFeePerNum, baseTokenFee, tokenFeePerNum, numCount } = await oracle.getJobDetails(
-                requestId
-            );
 
             await ethers.provider.send('evm_increaseTime', [60]);
             await submitResponseAndFinalize(requestId, [nodes[0]]);
 
             const newRequestId = await submitRequest(request);
-            await ethers.provider.send('evm_increaseTime', [60]);
             await submitResponseAndFinalize(newRequestId, [nodes[0]]);
 
             const stakingRewards = await oracle.s_totalStakingRewards(operator1.address);
             const operatorStakingRewards = await oracle.s_totalStakingRewards(operator1.address);
 
-            expect(stakingRewards.ada).to.be.equal(operatorStakingRewards.ada);
+            expect(stakingRewards.baseToken).to.be.equal(operatorStakingRewards.baseToken);
             expect(stakingRewards.token).to.be.equal(operatorStakingRewards.token);
             expect(await oracle.s_latestDistributorNode()).to.equal(nodes[0].address);
         });
@@ -382,9 +376,9 @@ describe('ConclaveOperator Contract', function () {
                     const {
                         jobId,
                         finalResultDataId,
-                        baseAdaFee,
-                        adaFeePerNum,
                         baseTokenFee,
+                        baseTokenFeePerNum,
+                        tokenFee,
                         tokenFeePerNum,
                         numCount,
                     } = await oracle.getJobDetails(requestIds[i]);
@@ -398,7 +392,7 @@ describe('ConclaveOperator Contract', function () {
 
                         const totalAdaRewards = calculateShare(
                             BigNumber.from(90).mul(100),
-                            baseAdaFee.add(adaFeePerNum.mul(numCount))
+                            baseTokenFee.add(baseTokenFeePerNum.mul(numCount))
                         );
                         const totalTokenRewards = calculateShare(
                             BigNumber.from(90).mul(100),
@@ -407,10 +401,10 @@ describe('ConclaveOperator Contract', function () {
                         const adaShare = calculateShare(weight, totalAdaRewards);
                         const tokenShare = calculateShare(weight, totalTokenRewards);
 
-                        expect(reward.ada).to.be.equal(adaShare);
+                        expect(reward.baseToken).to.be.equal(adaShare);
                         expect(reward.token).to.be.equal(tokenShare);
                     } else {
-                        expect(reward.ada).to.be.equal(0);
+                        expect(reward.baseToken).to.be.equal(0);
                         expect(reward.token).to.be.equal(0);
                     }
                 }
@@ -431,7 +425,9 @@ describe('ConclaveOperator Contract', function () {
                 const newBalance = await oracle.getStake(await oracle.getOwner(node.address));
                 const totalDeductions = await oracle.s_totalDeductedStakes(await oracle.getOwner(node.address));
 
-                expect(newBalance.ada).to.be.equal(balance.ada.add(pendingRewards.adaReward).sub(totalDeductions.ada));
+                expect(newBalance.baseToken).to.be.equal(
+                    balance.baseToken.add(pendingRewards.baseTokenReward).sub(totalDeductions.baseToken)
+                );
                 expect(newBalance.token).to.be.equal(
                     balance.token.add(pendingRewards.tokenReward).sub(totalDeductions.token)
                 );
@@ -464,13 +460,16 @@ describe('ConclaveOperator Contract', function () {
             const receipt = await tx.wait();
             const allowancePercentage = await oracle.s_nodeAllowances(operators[0].address);
 
-            const allowance = calculateShare(BigNumber.from(allowancePercentage).mul(100), pendingRewards.adaReward);
+            const allowance = calculateShare(
+                BigNumber.from(allowancePercentage).mul(100),
+                pendingRewards.baseTokenReward
+            );
             const nodeBalanceAfter = await nodes[0].getBalance();
             const operatorBalanceAfter = await operators[0].getBalance();
             const contractBalanceAfter = await oracle.balance();
             const gasUsed = receipt.cumulativeGasUsed.mul(receipt.effectiveGasPrice);
 
-            expect(contractBalanceAfter.ada).to.equal(contractBalanceBefore.ada.sub(allowance));
+            expect(contractBalanceAfter.baseToken).to.equal(contractBalanceBefore.baseToken.sub(allowance));
             expect(nodeBalanceAfter).to.be.equal(nodeBalanceBefore.add(allowance).sub(gasUsed));
             expect(operatorBalanceAfter).to.equal(opeartorBalance);
         });

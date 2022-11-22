@@ -168,7 +168,7 @@ describe('ConclaveOracle contract', function () {
             const balanceBefore = await oracle.balance();
             await submitRequest(request);
             const balanceAfter = await oracle.balance();
-            expect(balanceAfter.ada).to.equal(balanceBefore.ada.add(totalAdaFee));
+            expect(balanceAfter.baseToken).to.equal(balanceBefore.baseToken.add(totalAdaFee));
             expect(balanceAfter.token).to.equal(balanceBefore.token.add(totalTokenFee));
         });
 
@@ -229,7 +229,7 @@ describe('ConclaveOracle contract', function () {
 
             const requestInfo = await oracle.getJobDetails(requestId);
 
-            expect(balanceBefore.ada).to.equal(balanceAfter.ada);
+            expect(balanceBefore.baseToken).to.equal(balanceAfter.baseToken);
             expect(balanceBefore.token).to.equal(balanceAfter.token);
             expect(requestInfo.status).to.equal(1);
         });
@@ -330,9 +330,9 @@ describe('ConclaveOracle contract', function () {
 
             const fees = await oracle.getAverageOracleFees();
 
-            expect(fees.ada).to.equal(0);
+            expect(fees.baseToken).to.equal(0);
             expect(fees.token).to.equal(0);
-            expect(fees.adaFeePerNum).to.equal(0);
+            expect(fees.baseTokenFeePerNum).to.equal(0);
             expect(fees.tokenFeePerNum).to.equal(0);
         });
 
@@ -351,9 +351,9 @@ describe('ConclaveOracle contract', function () {
             for (const requestId of requestIds) {
                 const request = await oracle.getJobDetails(requestId);
 
-                totalAdaFeePerNum = totalAdaFeePerNum.add(request.adaFeePerNum);
+                totalAdaFeePerNum = totalAdaFeePerNum.add(request.baseTokenFeePerNum);
                 totalTokenFeePerNum = totalTokenFeePerNum.add(request.tokenFeePerNum);
-                totalAdaFee = totalAdaFee.add(request.baseAdaFee);
+                totalAdaFee = totalAdaFee.add(request.baseTokenFee);
                 totalTokenFee = totalTokenFee.add(request.baseTokenFee);
             }
 
@@ -364,9 +364,9 @@ describe('ConclaveOracle contract', function () {
             tokenFee = totalTokenFee.div(requestIds.length);
             tokenFeePerNum = totalTokenFeePerNum.div(requestIds.length);
 
-            expect(fees.ada).to.equal(adaFee);
+            expect(fees.baseToken).to.equal(adaFee);
             expect(fees.token).to.equal(tokenFee);
-            expect(fees.adaFeePerNum).to.equal(adaFeePerNum);
+            expect(fees.baseTokenFeePerNum).to.equal(adaFeePerNum);
             expect(fees.tokenFeePerNum).to.equal(tokenFeePerNum);
 
             const request: Request = {
@@ -386,9 +386,9 @@ describe('ConclaveOracle contract', function () {
 
             const newRequest = await oracle.getJobDetails(requestId);
 
-            totalAdaFee = totalAdaFee.add(newRequest.baseAdaFee);
+            totalAdaFee = totalAdaFee.add(newRequest.baseTokenFee);
             totalTokenFee = totalTokenFee.add(newRequest.baseTokenFee);
-            totalAdaFeePerNum = totalAdaFeePerNum.add(newRequest.adaFeePerNum);
+            totalAdaFeePerNum = totalAdaFeePerNum.add(newRequest.baseTokenFeePerNum);
             totalTokenFeePerNum = totalTokenFeePerNum.add(newRequest.tokenFeePerNum);
 
             const newFees = await oracle.getAverageOracleFees();
@@ -398,9 +398,9 @@ describe('ConclaveOracle contract', function () {
             const newTokenFee = totalTokenFee.div(requestIds.length + 1);
             const newTokenFeePerNum = totalTokenFeePerNum.div(requestIds.length + 1);
 
-            expect(newFees.ada).to.equal(newAdaFee);
+            expect(newFees.baseToken).to.equal(newAdaFee);
             expect(newFees.token).to.equal(newTokenFee);
-            expect(newFees.adaFeePerNum).to.equal(newAdaFeePerNum);
+            expect(newFees.baseTokenFeePerNum).to.equal(newAdaFeePerNum);
             expect(newFees.tokenFeePerNum).to.equal(newTokenFeePerNum);
         });
 
@@ -423,9 +423,9 @@ describe('ConclaveOracle contract', function () {
 
             const fees = await oracle.getAverageOracleFees();
 
-            expect(fees.ada).to.equal(0);
+            expect(fees.baseToken).to.equal(0);
             expect(fees.token).to.equal(0);
-            expect(fees.adaFeePerNum).to.equal(0);
+            expect(fees.baseTokenFeePerNum).to.equal(0);
             expect(fees.tokenFeePerNum).to.equal(0);
         });
     });

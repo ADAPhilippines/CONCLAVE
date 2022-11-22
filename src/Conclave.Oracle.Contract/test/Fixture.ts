@@ -70,8 +70,8 @@ export async function stakingFixture() {
     const minAdaStake = ethers.utils.parseEther('50');
     const jobAcceptanceLimitInSeconds = 60; // 1 minute
     const jobFulFillmentLimitInSeconds = 60; // 1 minute
-    const minAdaStakingRewards = ethers.utils.parseEther('10');
-    const minTokenStakingRewards = ethers.utils.parseUnits('10000', decimal);
+    const minAdaStakingRewards = ethers.utils.parseEther('11');
+    const minTokenStakingRewards = ethers.utils.parseUnits('100', decimal);
 
     const Oracle = await ethers.getContractFactory('ConclaveOracle');
     const oracle = await Oracle.deploy(

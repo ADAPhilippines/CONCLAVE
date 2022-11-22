@@ -21,7 +21,7 @@ describe('Staking Contract', function () {
 
             const stakes = await oracle.getStake(addr.address);
             expect(await token.balanceOf(addr.address)).to.equal(originalTokenBalance.sub(testTokenStake));
-            expect(stakes.ada).to.equal(testAdaStake);
+            expect(stakes.baseToken).to.equal(testAdaStake);
             expect(stakes.token).to.equal(testTokenStake);
         });
 
@@ -96,7 +96,7 @@ describe('Staking Contract', function () {
 
             const totalStakes = await oracle.s_totalStakes();
 
-            expect(totalStakes.ada).to.equal(testAdaStake.mul(accountsWithTokens.length));
+            expect(totalStakes.baseToken).to.equal(testAdaStake.mul(accountsWithTokens.length));
             expect(totalStakes.token).to.equal(testTokenStake.mul(accountsWithTokens.length));
         });
     });
@@ -120,7 +120,7 @@ describe('Staking Contract', function () {
             const stakes = await oracle.getStake(addr.address);
 
             expect(await token.balanceOf(addr.address)).to.equal(originalTokenBalance);
-            expect(stakes.ada).to.equal(0);
+            expect(stakes.baseToken).to.equal(0);
             expect(stakes.token).to.equal(0);
         });
 
@@ -172,7 +172,7 @@ describe('Staking Contract', function () {
             await stake(addr1, testAdaStake, testTokenStake.add(1000));
             const addr1Stake = await oracle.getStake(addr1.address);
             const stakes = await oracle.s_totalStakes();
-            expect(stakes.ada).to.equal(addr1Stake.ada);
+            expect(stakes.baseToken).to.equal(addr1Stake.baseToken);
             expect(stakes.token).to.equal(addr1Stake.token);
         });
     });
@@ -189,7 +189,7 @@ describe('Staking Contract', function () {
 
             await approveAndStake(addr, testAdaStake, testTokenStake);
             const stakes = await oracle.getStake(addr.address);
-            expect(stakes.ada).to.equal(testAdaStake);
+            expect(stakes.baseToken).to.equal(testAdaStake);
             expect(stakes.token).to.equal(testTokenStake);
         });
     });
