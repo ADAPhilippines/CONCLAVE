@@ -5,10 +5,10 @@ namespace Conclave.Lotto.Web.Components;
 public partial class CountdownTimer
 {
     [Parameter]
-    public DateTime? StartDateTime { get; set; }
+    public DateTime StartDateTime { get; set; }
 
     [Parameter]
-    public DateTime? DateCreated { get; set; }
+    public DateTime DateCreated { get; set; }
 
     [Parameter]
     public string ContainerType { get; set; } = "Card";
@@ -31,18 +31,18 @@ public partial class CountdownTimer
     {
         if (firstRender)
         {
-            MinValue = DateCreated.Value.ToOADate();
-            MaxValue = StartDateTime.Value.ToOADate();
+            MinValue = DateCreated.ToOADate();
+            MaxValue = StartDateTime.ToOADate();
 
             Console.WriteLine($"MinValue: {MinValue}, MaxValue: {MaxValue}, CurrentValue: {CurrentValue}");
             _ = Task.Run(async () =>
             {
-                IntervalInSeconds = Convert.ToInt32(StartDateTime.Value.Subtract(DateTime.UtcNow).TotalSeconds);
+                IntervalInSeconds = Convert.ToInt32(StartDateTime.Subtract(DateTime.UtcNow).TotalSeconds);
                 while (IntervalInSeconds >= 0)
                 {
                     await Task.Delay(1000);
                     CurrentValue = DateTime.UtcNow.ToOADate();
-                    TimeInterval = StartDateTime.Value.Subtract(DateTime.UtcNow).Duration();
+                    TimeInterval = StartDateTime.Subtract(DateTime.UtcNow).Duration();
                     await InvokeAsync(StateHasChanged);
                 }
             });

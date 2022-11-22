@@ -11,27 +11,30 @@ describe('Staking Contract', function () {
                 oracle,
                 token,
                 accountsWithTokens: [addr],
-                testStakeAmount,
+                testAdaStake,
+                testTokenStake,
                 approveAndStake,
             } = await loadFixture(stakingFixture);
 
             const originalTokenBalance = await token.balanceOf(addr.address);
-            await approveAndStake(addr, testStakeAmount);
+            await approveAndStake(addr, testAdaStake, testTokenStake);
 
-            expect(await token.balanceOf(addr.address)).to.equal(originalTokenBalance.sub(testStakeAmount));
-            expect(await oracle.getStake(addr.address)).to.equal(testStakeAmount);
-            expect(await oracle.s_totalStakes()).to.equal(testStakeAmount);
+            const stakes = await oracle.getStake(addr.address);
+            expect(await token.balanceOf(addr.address)).to.equal(originalTokenBalance.sub(testTokenStake));
+            expect(stakes.ada).to.equal(testAdaStake);
+            expect(stakes.token).to.equal(testTokenStake);
         });
 
         it('Should add staker to list of stakers', async function () {
             const {
                 oracle,
                 accountsWithTokens: [addr],
-                testStakeAmount,
+                testTokenStake,
+                testAdaStake,
                 approveAndStake,
             } = await loadFixture(stakingFixture);
 
-            await approveAndStake(addr, testStakeAmount);
+            await approveAndStake(addr, testAdaStake, testTokenStake);
             expect(await oracle.s_isStakers(addr.address)).to.equal(true);
         });
 
@@ -47,42 +50,54 @@ describe('Staking Contract', function () {
         it('Should not stake if insufficient allowance', async function () {
             const {
                 accountsWithoutTokens: [addr],
-                testStakeAmount,
+                testAdaStake,
+                testTokenStake,
                 stake,
             } = await loadFixture(stakingFixture);
 
-            await expect(stake(addr, testStakeAmount)).to.be.revertedWith('ERC20: insufficient allowance');
+            await expect(stake(addr, testAdaStake, testTokenStake)).to.be.revertedWith('ERC20: insufficient allowance');
         });
 
         it('Should not stake if amount exceeds balance', async function () {
             const {
                 oracle,
                 accountsWithoutTokens: [addr],
-                testStakeAmount,
+                testAdaStake,
+                testTokenStake,
                 approve,
             } = await loadFixture(stakingFixture);
 
             await approve(addr);
-            await expect(oracle.connect(addr).stake(testStakeAmount)).to.be.revertedWith('ERC20: transfer amount exceeds balance');
+            await expect(
+                oracle.connect(addr).stake(testAdaStake, testTokenStake, { value: testAdaStake })
+            ).to.be.revertedWith('ERC20: transfer amount exceeds balance');
         });
 
         it('Should not stake invalid amount', async function () {
             const {
+                oracle,
                 accountsWithTokens: [addr],
                 approveAndStake,
             } = await loadFixture(stakingFixture);
 
-            await expect(approveAndStake(addr, ethers.BigNumber.from('0'))).to.be.revertedWith('Staking: Amount must be greater than 0');
+            await expect(
+                approveAndStake(addr, ethers.BigNumber.from('0'), ethers.BigNumber.from('0'))
+            ).to.be.revertedWithCustomError(oracle, 'InvalidStakeAmount');
         });
 
         it('Should increment total stakes', async function () {
-            const { oracle, accountsWithTokens, testStakeAmount, approveAndStake } = await loadFixture(stakingFixture);
+            const { oracle, accountsWithTokens, testAdaStake, testTokenStake, approveAndStake } = await loadFixture(
+                stakingFixture
+            );
 
             for (const account of accountsWithTokens) {
-                await approveAndStake(account, testStakeAmount);
+                await approveAndStake(account, testAdaStake, testTokenStake);
             }
 
-            expect(await oracle.s_totalStakes()).to.equal(testStakeAmount.mul(accountsWithTokens.length));
+            const totalStakes = await oracle.s_totalStakes();
+
+            expect(totalStakes.ada).to.equal(testAdaStake.mul(accountsWithTokens.length));
+            expect(totalStakes.token).to.equal(testTokenStake.mul(accountsWithTokens.length));
         });
     });
 
@@ -92,56 +107,73 @@ describe('Staking Contract', function () {
                 oracle,
                 token,
                 accountsWithTokens: [addr],
-                testStakeAmount,
+                testAdaStake,
+                testTokenStake,
                 unstake,
                 approveAndStake,
             } = await loadFixture(stakingFixture);
 
             const originalTokenBalance = await token.balanceOf(addr.address);
-            await approveAndStake(addr, testStakeAmount);
-            await unstake(addr, testStakeAmount);
+            await approveAndStake(addr, testAdaStake, testTokenStake);
+            await unstake(addr, testAdaStake, testTokenStake);
+
+            const stakes = await oracle.getStake(addr.address);
 
             expect(await token.balanceOf(addr.address)).to.equal(originalTokenBalance);
-            expect(await oracle.getStake(addr.address)).to.equal(0);
+            expect(stakes.ada).to.equal(0);
+            expect(stakes.token).to.equal(0);
         });
 
-        it('Should not accept if amount exceeds balance', async function () {
+        it('Should not unstake if amount exceeds balance', async function () {
             const {
                 oracle,
                 accountsWithTokens: [addr],
-                testStakeAmount,
+                testAdaStake,
+                testTokenStake,
                 unstake,
                 approveAndStake,
             } = await loadFixture(stakingFixture);
 
-            await approveAndStake(addr, testStakeAmount);
-            await expect(unstake(addr, testStakeAmount.add(100))).to.be.revertedWithCustomError(oracle, 'InsufficientBalance');
+            await approveAndStake(addr, testAdaStake, testTokenStake);
+            await expect(unstake(addr, testAdaStake, testTokenStake.add(100))).to.be.revertedWithCustomError(
+                oracle,
+                'InsufficientBalance'
+            );
         });
 
         it('Should not unstake invalid amount', async function () {
             const {
+                oracle,
                 accountsWithTokens: [addr],
                 unstake,
             } = await loadFixture(stakingFixture);
 
-            await expect(unstake(addr, ethers.BigNumber.from('0'))).to.be.revertedWith('Staking: Amount must be greater than 0');
+            await expect(
+                unstake(addr, ethers.BigNumber.from('0'), ethers.BigNumber.from('0'))
+            ).to.be.revertedWithCustomError(oracle, 'InvalidStakeAmount');
         });
 
         it('Should decrement total stakes', async function () {
             const {
                 accountsWithTokens: [addr1, addr2, addr3],
                 oracle,
-                testStakeAmount,
+                testAdaStake,
+                testTokenStake,
                 approveAndStake,
                 unstake,
+                stake,
             } = await loadFixture(stakingFixture);
 
             for (const account of [addr1, addr2, addr3]) {
-                await approveAndStake(account, testStakeAmount);
+                await approveAndStake(account, testAdaStake, testTokenStake);
             }
-
-            await unstake(addr1, testStakeAmount);
-            expect(await oracle.s_totalStakes()).to.equal(testStakeAmount.mul(2));
+            await unstake(addr2, testAdaStake, testTokenStake);
+            await unstake(addr3, testAdaStake, testTokenStake);
+            await stake(addr1, testAdaStake, testTokenStake.add(1000));
+            const addr1Stake = await oracle.getStake(addr1.address);
+            const stakes = await oracle.s_totalStakes();
+            expect(stakes.ada).to.equal(addr1Stake.ada);
+            expect(stakes.token).to.equal(addr1Stake.token);
         });
     });
 
@@ -150,12 +182,15 @@ describe('Staking Contract', function () {
             const {
                 oracle,
                 accountsWithTokens: [addr],
-                testStakeAmount,
+                testAdaStake,
+                testTokenStake,
                 approveAndStake,
             } = await loadFixture(stakingFixture);
 
-            await approveAndStake(addr, testStakeAmount);
-            expect(await oracle.getStake(addr.address)).to.equal(testStakeAmount);
+            await approveAndStake(addr, testAdaStake, testTokenStake);
+            const stakes = await oracle.getStake(addr.address);
+            expect(stakes.ada).to.equal(testAdaStake);
+            expect(stakes.token).to.equal(testTokenStake);
         });
     });
 });

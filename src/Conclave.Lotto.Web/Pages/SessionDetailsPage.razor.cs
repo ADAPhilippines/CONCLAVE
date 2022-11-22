@@ -16,7 +16,7 @@ public partial class SessionDetailsPage
 
     protected override void OnInitialized()
     {
-        List<Session> SessionList = DataService.Sessions;
-        SessionDetails = SessionList.Find(s => s.Id.ToString() == SessionId);
+        List<Session> SessionList = DataService.Sessions ?? new();
+        SessionDetails = SessionList.Find(s => s.Id.ToString() == SessionId) ?? new();
     }
 }
