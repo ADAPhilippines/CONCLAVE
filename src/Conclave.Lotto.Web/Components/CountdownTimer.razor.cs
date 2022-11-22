@@ -34,7 +34,6 @@ public partial class CountdownTimer
             MinValue = DateCreated.ToOADate();
             MaxValue = StartDateTime.ToOADate();
 
-            Console.WriteLine($"MinValue: {MinValue}, MaxValue: {MaxValue}, CurrentValue: {CurrentValue}");
             _ = Task.Run(async () =>
             {
                 IntervalInSeconds = Convert.ToInt32(StartDateTime.Subtract(DateTime.UtcNow).TotalSeconds);

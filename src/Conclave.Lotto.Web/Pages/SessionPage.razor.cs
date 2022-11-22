@@ -13,37 +13,37 @@ public partial class SessionPage : ComponentBase
     public IDialogService? DialogService { get; set; } = default;
 
     [Inject]
-    private DataService DataService { get; set; } = new();
+    private LottoService LottoService { get; set; } = default!;
 
     [Inject]
     private NavigationManager NavigationManager { get; set; } = default!;
 
-    private IEnumerable<LottoWinner> LottoWinners { get; set; } = default!;
+    private List<LottoWinner> LottoWinners { get; set; } = new();
 
     private List<Session> Sessions { get; set; } = default!;
 
-    private List<Session> PaginatedSessions { get; set; } = default!;
+    private List<Session> PaginatedSessions { get; set; } = new();
 
     private bool mandatory { get; set; } = true;
 
-    private Status SessionStatus { get; set; } = Status.OnGoing;
+    private Status SessionStatus { get; set; } = Status.Ongoing;
 
-    protected override void OnInitialized()
+    private Session SessionDetails { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
     {
-        LottoWinners = DataService.LottoWinners;
-        Sessions = DataService.Sessions;
-        PaginatedSessions = Sessions.GetRange(0, 3);
+        Sessions = await LottoService.GetSessionListAsync();
+        LottoWinners = await LottoService.GetLottoWinnersAsync();
+
+        if (Sessions is not null)
+            PaginatedSessions = Sessions.GetRange(0, 2);
     }
 
-    private void OpenDialog()
+    private void OnBtnCreateSessionClicked()
     {
         DialogOptions closeOnEscapeKey = new() { CloseOnEscapeKey = true };
-        DialogService?.Show<CreateSessionDialog>("Create Session", closeOnEscapeKey);
-    }
-
-    private void OnSessionCardClicked(Session session)
-    {
-        NavigationManager.NavigateTo($"session/{session.Id}");
+        DialogParameters dialogParams = new DialogParameters { ["SessionDetails"] = SessionDetails };
+        DialogService?.Show<CreateSessionDialog>("Create Session", dialogParams, closeOnEscapeKey);
     }
 
     private void OnBtnBuyTicketClicked(Session session)
@@ -53,13 +53,16 @@ public partial class SessionPage : ComponentBase
         DialogService?.Show<BuyTicketDialog>("Buy Ticket", dialogParams, closeOnEscapeKey);
     }
 
-
+    private void OnSessionCardClicked(Session session)
+    {
+        NavigationManager.NavigateTo($"session/{session.Id}");
+    }
+    
     private void OnPageChanged(int page)
     {
         int index = page;
         int maxItems = 3;
         index = page * maxItems - maxItems;
-        PaginatedSessions = Sessions.GetRange(index, maxItems);
     }
 
     private void OnSelectedChipChanged(MudChip chip)
@@ -76,8 +79,6 @@ public partial class SessionPage : ComponentBase
             });
         else
             Sessions.Sort((a, b) => { return a.Id.CompareTo(b.Id); });
-
-        PaginatedSessions = Sessions.GetRange(0, 3);
     }
 
     private void OnSelectValuesChanged(ChangeEventArgs args)
@@ -85,16 +86,11 @@ public partial class SessionPage : ComponentBase
         List<Session> FilteredSessions = new();
         if (args?.Value?.ToString() == "OnGoing")
         {
-            Console.WriteLine("Ongoing");
-            FilteredSessions = Sessions.FindAll(s => s.CurrentStatus == Status.OnGoing);
-            PaginatedSessions = FilteredSessions.GetRange(0, 2);
+            FilteredSessions = Sessions.FindAll(s => s.CurrentStatus == Status.Ongoing);
         }
         else if (args?.Value?.ToString() == "UpComing")
         {
-            Console.WriteLine("upcoming");
-
-            FilteredSessions = Sessions.FindAll(s => s.CurrentStatus == Status.UpComing);
-            PaginatedSessions = FilteredSessions.GetRange(0, 3);
+            FilteredSessions = Sessions.FindAll(s => s.CurrentStatus == Status.Upcoming);
         }
     }
 }

@@ -1,0 +1,16 @@
+[
+    {
+        "Date": "11-07-2022",
+        "SessionId": 123456,
+        "Combination": 6,
+        "Price": 10,
+        "Status": 0
+    },
+    {
+        "Date": "11-07-2022",
+        "SessionId": 656545,
+        "Combination": 6,
+        "Price": 10,
+        "Status": 1
+    }
+]

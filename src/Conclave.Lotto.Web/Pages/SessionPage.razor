@@ -34,8 +34,11 @@
         <SessionList>
             @foreach (var item in PaginatedSessions)
             {
-                <SessionCard OnSessionCardClicked="() => OnSessionCardClicked(item)" SessionDetails="item"
-                OnBtnBuyTicketClicked="() => OnBtnBuyTicketClicked(item)" />
+                <SessionCard 
+                    SessionDetails="item"
+                    OnSessionCardClicked="() => OnSessionCardClicked(item)" 
+                    OnBtnBuyTicketClicked="() => OnBtnBuyTicketClicked(item)" 
+                />
             }
         </SessionList>
         <div class="flex px-5 mb-2 justify-center">
@@ -44,7 +47,7 @@
     </div>
     <div>
         <div>
-            <MudButton OnClick="OpenDialog" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
+            <MudButton OnClick="OnBtnCreateSessionClicked" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
                 Create Session
             </MudButton>
         </div>

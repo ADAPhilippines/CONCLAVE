@@ -6,13 +6,14 @@ namespace Conclave.Lotto.Web.Components;
 
 public partial class TicketsTable : ComponentBase
 {
+
     [Inject]
-    private DataService DataService { get; set; } = default!;
+    private LottoService LottoService { get; set; } = default!;
 
     private IEnumerable<Ticket> Elements { get; set; } = default!;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        Elements = DataService.Tickets;
+        Elements = await LottoService.GetTicketEntriesAsync();
     }
 }
