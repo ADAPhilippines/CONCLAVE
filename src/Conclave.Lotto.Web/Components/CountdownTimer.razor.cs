@@ -19,29 +19,24 @@ public partial class CountdownTimer
 
     private TimeSpan TimeInterval { get; set; }
 
-    private int IntervalInSeconds { get; set; }
-
-    private double MinValue { get; set; }
+    private TimeSpan IntervalInSeconds { get; set; }
 
     private double CurrentValue { get; set; }
-
-    private double MaxValue { get; set; }
 
     protected async override Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            MinValue = DateCreated.ToOADate();
-            MaxValue = StartDateTime.ToOADate();
 
-            Console.WriteLine($"MinValue: {MinValue}, MaxValue: {MaxValue}, CurrentValue: {CurrentValue}");
             _ = Task.Run(async () =>
             {
-                IntervalInSeconds = Convert.ToInt32(StartDateTime.Subtract(DateTime.UtcNow).TotalSeconds);
-                while (IntervalInSeconds >= 0)
+                IntervalInSeconds = StartDateTime.Subtract(DateTime.UtcNow);
+                while (IntervalInSeconds.TotalSeconds >= 0)
                 {
                     await Task.Delay(1000);
-                    CurrentValue = DateTime.UtcNow.ToOADate();
+                    // CurrentValue = DateTime.UtcNow.ToOADate();
+                    CurrentValue = 12;
+                    // Console.WriteLine(IntervalInSeconds.TotalSeconds);
                     TimeInterval = StartDateTime.Subtract(DateTime.UtcNow).Duration();
                     await InvokeAsync(StateHasChanged);
                 }
