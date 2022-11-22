@@ -150,7 +150,7 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
     }
 
     function aggregateResult(uint256 jobId)
-        external
+        public
         payable
         override
         onlyExistingRequest(jobId)
@@ -172,7 +172,10 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
             revert JobSubmissionInProgress();
         }
 
-        if (msg.sender != jobRequest.requester) {
+        if (
+            msg.sender != jobRequest.requester &&
+            msg.sender != jobRequest.aggregator
+        ) {
             revert NotAuthorized();
         }
 
@@ -461,5 +464,24 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
                 counter++;
             }
         }
+    }
+
+    function _aggregateIdleJob(uint256 jobId, address aggregator)
+        internal
+        virtual
+        override
+    {
+        JobRequest storage request = s_jobRequests[jobId];
+
+        if (
+            request.status != RequestStatus.Pending &&
+            block.timestamp < request.jobExpiration
+        ) return;
+
+        if (request.responseCount < request.minValidator) return;
+
+        request.aggregator = aggregator;
+
+        aggregateResult(jobId);
     }
 }

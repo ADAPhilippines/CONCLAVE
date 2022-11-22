@@ -17,6 +17,7 @@ interface IConclaveOracleOperator {
         uint24 minValidator;
         uint24 maxValidator;
         address requester;
+        address aggregator;
         address[] validators;
         uint256[] dataIds;
         RequestStatus status;
