@@ -14,7 +14,7 @@ public record Session
 
     public Status CurrentStatus { get; set; } = Status.UpComing;
 
-    public string OwnerAddress { get; set; } = string.Empty;
+    public string? OwnerAddress { get; set; } = string.Empty;
 
     public int PrizePool { get; set; }
 

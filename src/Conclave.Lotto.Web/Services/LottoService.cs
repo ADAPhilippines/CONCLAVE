@@ -18,8 +18,6 @@ public class LottoService
     {
         var data = await _httpClient.GetFromJsonAsync<List<Session>>("lotto-data/sessions.json");
 
-        Console.WriteLine(data);
-
-        return data;
+        return data ?? new();
     }
 }

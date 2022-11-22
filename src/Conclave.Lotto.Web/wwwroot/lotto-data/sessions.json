@@ -1,41 +1,28 @@
 [
     {
-        "Id": "0",
-        "Name":"Test 1st Session",
-        "Status": "Status.OnGoing",
-        "PrizePool": "545426",
-        "TicketPrice": "20",
-        "Combinations": "5",
+        "Id": 0,
+        "Name": "From JSON file",
+        "Status": 0,
+        "PrizePool": 545426,
+        "TicketPrice": 20,
+        "Combinations": 5,
         "MaxValue": 65,
         "Margin": 5,
-        "Interval": 10,
-        "StartDate": "2022-12-10T13:49:51.141Z",
-        "DateCreated": "2022-10-10T13:49:51.141Z"
+        "StartDate": "2019-07-26T00:00:00",
+        "DateCreated": "2019-07-26T00:00:00",
+        "Interval": 10
     },
     {
-        "Id": "1",
-        "Name":"Test 2nd Session",
-        "Status": "Status.OnGoing",
-        "PrizePool": "545426",
-        "TicketPrice": "20",
-        "Combinations": "5",
+        "Id": 1,
+        "Name": "From JSON file dos",
+        "Status": 1,
+        "PrizePool": 545426,
+        "TicketPrice": 20,
+        "Combinations": 5,
         "MaxValue": 65,
         "Margin": 5,
-        "Interval": 10,
-        "StartDate": "2022-12-10T13:49:51.141Z",
-        "DateCreated": "2022-10-10T13:49:51.141Z"
-    },
-    {
-        "Id": "2",
-        "Name":"Test 3rd Session",
-        "Status": "Status.OnGoing",
-        "PrizePool": "545426",
-        "TicketPrice": "20",
-        "Combinations": "5",
-        "MaxValue": 65,
-        "Margin": 5,
-        "Interval": 10,
-        "StartDate": "2022-12-10T13:49:51.141Z",
-        "DateCreated": "2022-10-10T13:49:51.141Z"
+        "StartDate": "2019-07-26T00:00:00",
+        "DateCreated": "2019-07-26T00:00:00",
+        "Interval": 10
     }
 ]
