@@ -2,9 +2,15 @@
 <MudDialog>
     <DialogContent>
         <div class="flex flex-col justify-between">
-            <div class="flex justify-between mb-2">
-                <MudText Typo="Typo.body2">Session ID: @SessionDetails.Id</MudText>
-                <MudText Typo="Typo.body2">Ticket Price: ₳ @SessionDetails.TicketPrice</MudText>
+            <div class="flex justify-between mb-4">
+                <div>
+                    <MudText Typo="Typo.body2">Session ID: @SessionDetails.Id</MudText>
+                    <MudText Typo="Typo.body2">Session Name: @SessionDetails.Name</MudText>
+                </div>
+                <div>
+                    <MudText Typo="Typo.body2">Current Prize: ₳ @SessionDetails.PrizePool</MudText>
+                    <MudText Typo="Typo.body2">Ticket Price: ₳ @SessionDetails.TicketPrice</MudText>
+                </div>
             </div>
             <MudText Typo="Typo.h5">Ticket Entry:</MudText>
             <ul class="flex justify-center border-2">
