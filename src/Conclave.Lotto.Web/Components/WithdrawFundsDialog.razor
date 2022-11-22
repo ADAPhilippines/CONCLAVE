@@ -12,34 +12,42 @@
             T="string"
             Variant="Variant.Outlined"
             AnchorOrigin="Origin.BottomCenter"
-            @bind-Value="selectedValue">
-                <MudSelectItem Value="@("MADA")"/>
+            @bind-Value="Currency">
+                <MudSelectItem Value="@("MilkADA")"/>
                 <MudSelectItem Value="@("CNCLV")"/>
         </MudSelect>
 
         <div class="mt-5">
             <div class="flex justify-between items-center">
-                <span>Available: 10 $MADA</span>
-                <MudButton
-                    Class="p-0 w-fit"
-                    Color="Color.Default"
-                    Variant="Variant.Outlined"
-                >   
-                    Max
-                </MudButton>
+                <div>Available: 
+                    <span class="font-bold">
+                        @GetBalanceOfSelectedCurrency() $@Currency
+                    </span>
+                </div>
+                <div class="flex items-center justify-center gap-1">
+                    <p>~@(DepositAmount == 0 ? "0.00" : ToUSD(DepositAmount)) USD</p>
+                    <MudChip Label="true" OnClick="OnBtnMaxClicked">Max</MudChip>
+                </div>
             </div>
 
             <MudTextField
-                @bind-Value="TextValue"
+                @bind-Value="DepositAmount"
                 Variant="Variant.Outlined"
                 Placeholder="0.00"
+                Adornment="Adornment.End"
+                AdornmentText="@Currency"
+                AdornmentColor="Color.Primary"
+                InputType="InputType.Number"
+                Immediate="true"
             />
+
             <MudSlider
-                @bind-Value="value1"
+                @bind-Value="DepositAmount"
                 Min="0"
-                Max="10"
+                Max="@GetBalanceOfSelectedCurrency()"
                 Color="Color.Primary"
                 Class="mt-7"
+                T="double"
             />
         </div>
     </DialogContent>
@@ -64,17 +72,3 @@
         </div>
     </DialogActions>
 </MudDialog>
-
-
-@code {
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
-
-    private string selectedValue { get; set; } = "MADA";
-
-    private int value1 = 0;
-
-    private string TextValue { get; set; } = string.Empty;
-
-    void Submit() => MudDialog.Close(DialogResult.Ok(true));
-    void Cancel() => MudDialog.Cancel();
-}
