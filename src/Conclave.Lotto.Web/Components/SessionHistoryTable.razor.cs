@@ -7,12 +7,12 @@ namespace Conclave.Lotto.Web.Components;
 public partial class SessionHistoryTable : ComponentBase
 {
     [Inject]
-    public DataService DataService { get; set; } = default!;
+    private LottoService LottoService { get; set; } = default!;
 
     public IEnumerable<Session> Elements { get; set; } = default!;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        Elements = DataService.Sessions;   
+        Elements = await LottoService.GetSessionListAsync();   
     }
 }
