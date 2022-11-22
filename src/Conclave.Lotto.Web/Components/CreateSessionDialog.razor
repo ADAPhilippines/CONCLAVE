@@ -1,57 +1,57 @@
 <div class="w-[550px]">
     <MudDialog>
         <DialogContent>
-            <EditForm Model="@sessionDetails" OnValidSubmit="OnValidSubmit">
+            <EditForm Model="@SessionDetails">
                 <DataAnnotationsValidator />
                 <MudTextField 
                     T="string" 
-                    @bind-Value="@sessionDetails.Name" 
+                    @bind-Value="@SessionDetails.Name" 
                     Label="Session Name" 
-                    For="@(() => sessionDetails.Name)"
+                    For="@(() => SessionDetails.Name)"
                 />
                 <MudTextField 
                     T="int"  
-                    @bind-Value="@sessionDetails.PrizePool" 
+                    @bind-Value="@SessionDetails.PrizePool" 
                     Label="Initial Prize Pool"
-                    For="@(() => sessionDetails.PrizePool)" 
+                    For="@(() => SessionDetails.PrizePool)" 
                 />
                 <MudTextField 
                     T="int" 
-                    @bind-Value="@sessionDetails.TicketPrice" 
+                    @bind-Value="@SessionDetails.TicketPrice" 
                     Label="Ticket Price"
-                    For="@(() => sessionDetails.TicketPrice)"
+                    For="@(() => SessionDetails.TicketPrice)"
                 />
                 <MudTextField 
                     T="int" 
-                    @bind-Value="@sessionDetails.Combinations" 
+                    @bind-Value="@SessionDetails.Combinations" 
                     Label="Number of Combinations"
-                    For="@(() => sessionDetails.Combinations)"
+                    For="@(() => SessionDetails.Combinations)"
                 />
                 <MudSlider 
-                    @bind-Value="@sessionDetails.Combinations" 
+                    @bind-Value="@SessionDetails.Combinations" 
                     Min="1" 
                     Max="10" 
                     Color="Color.Info"
                 />
                 <MudTextField 
                     T="int" 
-                    @bind-Value="@sessionDetails.MaxValue" 
+                    @bind-Value="@SessionDetails.MaxValue" 
                     Label="Maximum Value" 
-                    For="@(() => sessionDetails.MaxValue)"
+                    For="@(() => SessionDetails.MaxValue)"
                 />
                 <MudSlider 
-                    @bind-Value="@sessionDetails.MaxValue"
+                    @bind-Value="@SessionDetails.MaxValue"
                     Min="0" 
                     Max="99" 
                     Color="Color.Info"
                 />
                 <MudSlider 
-                    @bind-Value="@sessionDetails.Margin" 
+                    @bind-Value="@SessionDetails.Margin" 
                     Min="1" 
                     Max="100" 
                     Color="Color.Info"
                 >
-                    Margin: @sessionDetails.Margin.ToString()%
+                    Margin: @SessionDetails.Margin.ToString()%
                 </MudSlider>
                 <MudText Typo="Typo.caption">Start</MudText>
                 <div class="flex">
@@ -74,8 +74,8 @@
                     T="int" 
                     Label="Days" 
                     AnchorOrigin="Origin.BottomCenter" 
-                    @bind-Value="@sessionDetails.TimeIntervals.Days"
-                    For="@(() => sessionDetails.TimeIntervals.Days)"
+                    @bind-Value="@SessionDetails.TimeIntervals.Days"
+                    For="@(() => SessionDetails.TimeIntervals.Days)"
                     >
                         @for (int day = 0; day <= 30; day++)
                         {
@@ -86,8 +86,8 @@
                     T="int" 
                     Label="Hours" 
                     AnchorOrigin="Origin.BottomCenter" 
-                    @bind-Value="@sessionDetails.TimeIntervals.Hours"
-                    For="@(() => sessionDetails.TimeIntervals.Hours)"
+                    @bind-Value="@SessionDetails.TimeIntervals.Hours"
+                    For="@(() => SessionDetails.TimeIntervals.Hours)"
                     >
                         @for (int hour = 0; hour <= 30; hour++)
                         {
@@ -98,8 +98,8 @@
                     T="int" 
                     Label="Minutes" 
                     AnchorOrigin="Origin.BottomCenter" 
-                    @bind-Value="@sessionDetails.TimeIntervals.Minutes"
-                    For="@(() => sessionDetails.TimeIntervals.Minutes)"
+                    @bind-Value="@SessionDetails.TimeIntervals.Minutes"
+                    For="@(() => SessionDetails.TimeIntervals.Minutes)"
                     >
                         @for (int minute = 0; minute <= 30; minute++)
                         {
@@ -110,8 +110,8 @@
                     T="int" 
                     Label="Seconds" 
                     AnchorOrigin="Origin.BottomCenter" 
-                    @bind-Value="@sessionDetails.TimeIntervals.Seconds"
-                    For="@(() => sessionDetails.TimeIntervals.Seconds)"
+                    @bind-Value="@SessionDetails.TimeIntervals.Seconds"
+                    For="@(() => SessionDetails.TimeIntervals.Seconds)"
                     >
                         @for (int second = 0; second <= 30; second++)
                         {

@@ -2,6 +2,7 @@ using MudBlazor;
 using Conclave.Lotto.Web.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Conclave.Lotto.Web.Services;
 
 namespace Conclave.Lotto.Web.Components;
 
@@ -10,13 +11,20 @@ public partial class CreateSessionDialog
     [CascadingParameter]
     MudDialogInstance? MudDialog { get; set; }
 
-    private Session sessionDetails { get; set; } = new();
+    [Parameter]
+    public Session SessionDetails { get; set; } = new();
+
+    [Inject]
+    public LottoService LottoService {get; set;} = default!;
 
     private bool success { get; set; }
 
-    private void OnBtnSubmitClicked()
+    private async Task OnBtnSubmitClicked()
     {
-        if (MudDialog is not null) MudDialog.Close(DialogResult.Ok(true));
+        SessionDetails.DateCreated = DateTime.UtcNow;
+
+        await LottoService.CreateSessionAsync(SessionDetails);
+        // if (MudDialog is not null ) MudDialog.Close(DialogResult.Ok(true));
     }
 
     private void OnBtnCancelClicked()
@@ -27,18 +35,18 @@ public partial class CreateSessionDialog
     private void OnSessionStartDateChanged(DateTime? dateSet)
     {
         if (dateSet.HasValue)
-            sessionDetails.StartDate = dateSet.Value;
+            SessionDetails.StartDate = dateSet.Value;
     }
 
     private void OnSessionStartTimeChanged(TimeSpan? intervalSet)
     {
         if (intervalSet.HasValue)
-            sessionDetails.StartTime = intervalSet.Value;
+            SessionDetails.StartTime = intervalSet.Value;
     }
 
-    private void OnValidSubmit(EditContext context)
+    private void OnValidSubmit()
     {
-        success = true;
+        Console.WriteLine(SessionDetails.Name);
     }
 
 }

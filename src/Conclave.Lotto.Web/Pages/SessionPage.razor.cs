@@ -28,6 +28,8 @@ public partial class SessionPage : ComponentBase
 
     private Status SessionStatus { get; set; } = Status.Ongoing;
 
+    private Session SessionDetails { get; set; } = new();
+
     protected override async Task OnInitializedAsync()
     {
         Sessions = await LottoService.GetSessionListAsync();
@@ -37,15 +39,11 @@ public partial class SessionPage : ComponentBase
             PaginatedSessions = Sessions.GetRange(0, 2);
     }
 
-    private void OpenDialog()
+    private void OnBtnCreateSessionClicked()
     {
         DialogOptions closeOnEscapeKey = new() { CloseOnEscapeKey = true };
-        DialogService?.Show<CreateSessionDialog>("Create Session", closeOnEscapeKey);
-    }
-
-    private void OnSessionCardClicked(Session session)
-    {
-        NavigationManager.NavigateTo($"session/{session.Id}");
+        DialogParameters dialogParams = new DialogParameters { ["SessionDetails"] = SessionDetails };
+        DialogService?.Show<CreateSessionDialog>("Create Session", dialogParams, closeOnEscapeKey);
     }
 
     private void OnBtnBuyTicketClicked(Session session)
@@ -55,12 +53,16 @@ public partial class SessionPage : ComponentBase
         DialogService?.Show<BuyTicketDialog>("Buy Ticket", dialogParams, closeOnEscapeKey);
     }
 
+    private void OnSessionCardClicked(Session session)
+    {
+        NavigationManager.NavigateTo($"session/{session.Id}");
+    }
+    
     private void OnPageChanged(int page)
     {
         int index = page;
         int maxItems = 3;
         index = page * maxItems - maxItems;
-        // PaginatedSessions = Sessions.GetRange(index, maxItems);
     }
 
     private void OnSelectedChipChanged(MudChip chip)
@@ -77,8 +79,6 @@ public partial class SessionPage : ComponentBase
             });
         else
             Sessions.Sort((a, b) => { return a.Id.CompareTo(b.Id); });
-
-        // PaginatedSessions = Sessions.GetRange(0, 3);
     }
 
     private void OnSelectValuesChanged(ChangeEventArgs args)
@@ -86,16 +86,11 @@ public partial class SessionPage : ComponentBase
         List<Session> FilteredSessions = new();
         if (args?.Value?.ToString() == "OnGoing")
         {
-            Console.WriteLine("Ongoing");
             FilteredSessions = Sessions.FindAll(s => s.CurrentStatus == Status.Ongoing);
-            // PaginatedSessions = FilteredSessions.GetRange(0, 2);
         }
         else if (args?.Value?.ToString() == "UpComing")
         {
-            Console.WriteLine("upcoming");
-
             FilteredSessions = Sessions.FindAll(s => s.CurrentStatus == Status.Upcoming);
-            // PaginatedSessions = FilteredSessions.GetRange(0, 3);
         }
     }
 }

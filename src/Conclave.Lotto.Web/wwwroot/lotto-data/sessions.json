@@ -2,27 +2,41 @@
     {
         "Id": 0,
         "Name": "From JSON file",
-        "Status": 0,
-        "PrizePool": 545426,
-        "TicketPrice": 20,
-        "Combinations": 5,
-        "MaxValue": 65,
-        "Margin": 5,
-        "StartDate": "2022-12-26T00:00:00",
-        "DateCreated": "2022-07-26T00:00:00",
-        "Interval": 10
+        "CurrentStatus": 1,
+        "OwnerAddress": "",
+        "PrizePool": 32,
+        "TicketPrice": 545,
+        "Combinations": 2,
+        "MaxValue": 25,
+        "Margin": 17,
+        "StartDate": "2022-11-23T00:00:00",
+        "DateCreated": "0001-01-01T00:00:00",
+        "StartTime": "06:26:00",
+        "TimeIntervals": {
+            "Days": 1,
+            "Hours": 3,
+            "Minutes": 5,
+            "Seconds": 9
+        }
     },
     {
         "Id": 1,
-        "Name": "From JSON file dos",
-        "Status": 1,
-        "PrizePool": 545426,
-        "TicketPrice": 20,
-        "Combinations": 5,
-        "MaxValue": 65,
-        "Margin": 5,
-        "StartDate": "2022-11-26T00:00:00",
-        "DateCreated": "2022-10-26T00:00:00",
-        "Interval": 10
+        "Name": "Test Only",
+        "CurrentStatus": 0,
+        "OwnerAddress": "",
+        "PrizePool": 31258,
+        "TicketPrice": 545,
+        "Combinations": 2,
+        "MaxValue": 25,
+        "Margin": 17,
+        "StartDate": "2022-11-23T00:00:00",
+        "DateCreated": "2022-11-01T00:00:00",
+        "StartTime": "06:26:00",
+        "TimeIntervals": {
+            "Days": 1,
+            "Hours": 3,
+            "Minutes": 5,
+            "Seconds": 9
+        }
     }
 ]
