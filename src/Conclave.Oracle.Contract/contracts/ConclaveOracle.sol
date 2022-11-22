@@ -3,7 +3,6 @@ pragma solidity ^0.8.17;
 
 import "./abstracts/ConclaveOracleOperator.sol";
 import "./interfaces/IConclaveOracle.sol";
-import "hardhat/console.sol";
 
 contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
     error ValueMismatch(uint256 stated, uint256 actual);
