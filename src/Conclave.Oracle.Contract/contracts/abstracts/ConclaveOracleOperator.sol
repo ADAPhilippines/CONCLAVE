@@ -329,18 +329,31 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
                 1,
                 s_dataIdVotes[jobId][request.finalResultDataId]
             );
+
+            uint256 totalSharePercentage = (
+                request.aggregator != address(0) ? 80 : 90
+            ) * 100;
+
             uint256 totalBaseToken = _calculateShare(
-                90 * 100,
+                totalSharePercentage,
                 request.baseTokenFee +
                     (request.baseTokenFeePerNum * request.numCount)
             );
             uint256 totalToken = _calculateShare(
-                90 * 100,
+                totalSharePercentage,
                 request.baseTokenFee +
                     (request.tokenFeePerNum * request.numCount)
             );
             baseToken = _calculateShare(weight, totalBaseToken);
             token = _calculateShare(weight, totalToken);
+
+            if (
+                request.aggregator != address(0) &&
+                msg.sender == request.aggregator
+            ) {
+                baseToken += _calculateShare(10 * 100, totalBaseToken);
+                token += _calculateShare(10 * 100, totalToken);
+            }
         }
     }
 
@@ -601,6 +614,10 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         view
         virtual
         returns (JobRequest storage);
+
+    function _aggregateIdleJob(uint256 jobId, address aggregator)
+        internal
+        virtual;
 
     function _calculateShare(uint256 share, uint256 total)
         internal
