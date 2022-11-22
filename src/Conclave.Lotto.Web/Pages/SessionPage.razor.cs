@@ -30,25 +30,35 @@ public partial class SessionPage : ComponentBase
 
     private Session SessionDetails { get; set; } = new();
 
-    protected override async Task OnInitializedAsync()
+    protected async override Task OnAfterRenderAsync(bool firstRender)
     {
-        Sessions = await LottoService.GetSessionListAsync();
-        LottoWinners = await LottoService.GetLottoWinnersAsync();
-
-        if (Sessions is not null)
-            PaginatedSessions = Sessions.GetRange(0, 2);
+        if (firstRender)
+        {
+            Sessions = await LottoService.GetSessionListAsync();
+            LottoWinners = await LottoService.GetLottoWinnersAsync();
+            if (Sessions is not null)
+                PaginatedSessions = Sessions;
+            await InvokeAsync(StateHasChanged);
+        }
+        await base.OnAfterRenderAsync(firstRender);
     }
-
     private void OnBtnCreateSessionClicked()
     {
         DialogOptions closeOnEscapeKey = new() { CloseOnEscapeKey = true };
-        DialogParameters dialogParams = new DialogParameters { ["SessionDetails"] = SessionDetails };
+        DialogParameters dialogParams = new DialogParameters
+        {
+            ["SessionDetails"] = SessionDetails,
+            ["SessionList"] = Sessions
+        };
         DialogService?.Show<CreateSessionDialog>("Create Session", dialogParams, closeOnEscapeKey);
     }
 
     private void OnBtnBuyTicketClicked(Session session)
     {
-        DialogParameters dialogParams = new DialogParameters { ["SessionDetails"] = session };
+        DialogParameters dialogParams = new DialogParameters
+        {
+            ["SessionDetails"] = session,
+        };
         DialogOptions closeOnEscapeKey = new() { CloseOnEscapeKey = true };
         DialogService?.Show<BuyTicketDialog>("Buy Ticket", dialogParams, closeOnEscapeKey);
     }
@@ -57,7 +67,7 @@ public partial class SessionPage : ComponentBase
     {
         NavigationManager.NavigateTo($"session/{session.Id}");
     }
-    
+
     private void OnPageChanged(int page)
     {
         int index = page;

@@ -16,14 +16,7 @@ public class LottoService
     public async Task<List<Session>> GetSessionListAsync()
     {
         List<Session> Sessions = await _httpClient.GetFromJsonAsync<List<Session>>("lotto-data/sessions.json") ?? new();
-
         return Sessions;
-    }
-
-    public async Task CreateSessionAsync(Session session)
-    {
-        Console.WriteLine(JsonSerializer.Serialize(session));
-        await _httpClient.PostAsJsonAsync("lotto-data/sessions.json", JsonSerializer.Serialize(session));
     }
 
     public async Task<Session> GetSessionById(int SessionId)

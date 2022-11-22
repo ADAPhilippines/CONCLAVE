@@ -14,17 +14,25 @@ public partial class CreateSessionDialog
     [Parameter]
     public Session SessionDetails { get; set; } = new();
 
+    [Parameter]
+    public List<Session> SessionList { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<List<Session>> SessionListChanged { get; set; }
+
     [Inject]
-    public LottoService LottoService {get; set;} = default!;
+    public LottoService LottoService { get; set; } = default!;
 
     private bool success { get; set; }
 
     private async Task OnBtnSubmitClicked()
     {
         SessionDetails.DateCreated = DateTime.UtcNow;
-
-        await LottoService.CreateSessionAsync(SessionDetails);
-        // if (MudDialog is not null ) MudDialog.Close(DialogResult.Ok(true));
+        SessionList.Add(SessionDetails);
+        await SessionListChanged.InvokeAsync(SessionList);
+        await InvokeAsync(StateHasChanged);
+        Console.WriteLine(SessionList.Count());
+        if (MudDialog is not null) MudDialog.Close(DialogResult.Ok(true));
     }
 
     private void OnBtnCancelClicked()
