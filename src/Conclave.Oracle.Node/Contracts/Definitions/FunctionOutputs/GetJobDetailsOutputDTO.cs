@@ -24,22 +24,28 @@ public class GetJobDetailsOutputDTO : IFunctionOutputDTO
     [Parameter("uint256", "timestamp", 6)]
     public BigInteger TokenFeePerNum { get; set; }
 
-    [Parameter("uint256", "jobAcceptanceExpiration", 7)]
+    [Parameter("uint256", "seed", 7)]
     public BigInteger Timestamp { get; set; }
 
-    [Parameter("uint256", "jobFulfillmentExpiration", 8)]
+    [Parameter("uint256", "jobAcceptanceExpiration", 8)]
+    public BigInteger Seed { get; set; }
+
+    [Parameter("uint256", "jobFulfillmentExpiration", 9)]
     public BigInteger JobAcceptanceExpiration { get; set; }
 
-    [Parameter("uint256", "finalResultDataId", 9)]
+    [Parameter("uint256", "jobExpiration", 10)]
     public BigInteger JobFulfillmentExpiration { get; set; }
 
-    [Parameter("uint256", "responseCount", 10)]
+    [Parameter("uint256", "finalResultDataId", 11)]
+    public BigInteger JobExpiration { get; set; }
+
+    [Parameter("uint24", "responseCount", 12)]
     public BigInteger FinalResultDataId { get; set; }
 
-    [Parameter("uint24", "numCount", 11)]
+    [Parameter("uint24", "numCount", 13)]
     public UInt32 ResponseCount { get; set; }
 
-    [Parameter("uint24", "minValidator", 12)]
+    [Parameter("uint24", "minValidator", 14)]
     public UInt32 NumCount { get; set; }
 
     // [Parameter("uint24", "maxValidator", 13)]

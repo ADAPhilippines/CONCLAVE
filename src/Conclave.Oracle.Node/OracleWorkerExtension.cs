@@ -18,18 +18,34 @@ public partial class OracleWorker : BackgroundService
     public async Task<bool> CheckIsJobReadyAfterAcceptanceExpirationAsync(GetJobDetailsOutputDTO jobDetails)
     {
         using (_logger.BeginScope("ACCEPTED: Job Id#: {0}", jobDetails.JobId))
-            _logger.LogInformation("Awaiting for job to be ready");
+            _logger.LogInformation("Awaiting job to be ready.");
 
         DateTime foo = DateTime.Now;
         int currentUnixTime = (int)((DateTimeOffset)foo).ToUnixTimeSeconds();
 
-        await Task.Delay(((int)jobDetails.JobAcceptanceExpiration - currentUnixTime)*1000);
+        // await Task.Delay(((int)jobDetails.JobAcceptanceExpiration - currentUnixTime)*1000);
+        await Task.Delay(10000);
 
         return await _oracleContractService.IsJobReadyAsync(jobDetails.JobId);
     }
 
     public async Task SubmitDecimalsAsync(BigInteger requestId, List<BigInteger> decimalsList)
     {
+        string decimalLogs = string.Empty;
+        decimalsList.ForEach((b) =>
+        {
+            //convert to function
+            int i = decimalsList.IndexOf(b);
+            if (b == decimalsList.Last())
+                decimalLogs += string.Format("[{0}] {1}", i, b);
+            else
+                decimalLogs += string.Format("[{0}] {1}\n", i, b);
+        });
+
+        using (_logger.BeginScope("Submitting job Id# : {0}", requestId))
+            using (_logger.BeginScope("Decimals", requestId))
+                _logger.LogInformation(decimalLogs);
+
         await DelegationCheckerAsync();
         //log decimals
         await _oracleContractService.SubmitResponseAsync(requestId, decimalsList);

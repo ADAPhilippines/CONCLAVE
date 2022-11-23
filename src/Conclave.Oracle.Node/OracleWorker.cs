@@ -125,12 +125,13 @@ public partial class OracleWorker : BackgroundService
                 await GenerateAndSubmitDecimalsAsync(jobDetails);
             else
                 using (_logger.BeginScope("ACCEPTED: Job Id#: {0}", jobDetails.JobId))
-                    _logger.LogInformation("Job cancelled.");
+                    _logger.LogCritical("Job reverted.");
+
         }
         catch (RpcResponseException e)
         {
-            using (_logger.BeginScope("{0}: Job Id# {1}", requestType, jobDetails.JobId))
-                _logger.LogError("Error Processing Request: {0}", e.Message);
+            using (_logger.BeginScope("ACCEPTED: Job Id#: {0}", jobDetails.JobId))
+                _logger.LogError("Error Processing task. {0}", e.Message);
         }
     }
 }

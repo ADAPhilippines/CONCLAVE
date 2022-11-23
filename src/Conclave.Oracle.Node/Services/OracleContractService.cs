@@ -43,12 +43,12 @@ public class OracleContractService : ContractServiceBase
 
     public async Task SubmitResponseAsync(BigInteger requestId, List<BigInteger> decimals)
     {
-        await _ethAccountServices.CallContractWriteFunctionAsync(ContractAddress, _ethAccountServices.Address!, ABI, 0, "submitResponse", requestId, decimals);
+        await _ethAccountServices.CallContractWriteFunctionAsync(ContractAddress, ABI, 0, "submitResponse", requestId, decimals);
     }
 
     public async Task AcceptJobAsync(BigInteger jobId)
     {
-        await _ethAccountServices.CallContractWriteFunctionAsync(ContractAddress, _ethAccountServices.Address!, ABI, 0, "acceptJob", jobId);
+        await _ethAccountServices.CallContractWriteFunctionAsync(ContractAddress, ABI, 0, "acceptJob", jobId);
     }
 
     public async Task<GetJobDetailsOutputDTO> GetJobDetailsAsync(BigInteger jobId)
@@ -73,7 +73,7 @@ public class OracleContractService : ContractServiceBase
 
     public async Task ClaimPendingRewardsAsync()
     {
-        await _ethAccountServices.CallContractWriteFunctionNoParamsAsync(ContractAddress, _ethAccountServices.Address!, ABI, 0, "claimPendingRewards");
+        await _ethAccountServices.CallContractWriteFunctionNoParamsAsync(ContractAddress, ABI, 0, "claimPendingRewards");
     }
 
     public async Task<GetPendingRewardJobIdsOutputDTO> GetPendingRewardJobIds(string address)
@@ -137,6 +137,23 @@ public class OracleContractService : ContractServiceBase
                             totalRewards.CNCLVReward >= BigInteger.Parse(_options.Value.CNCLVRewardThreshold))
                             await ClaimPendingRewardsAsync();
                     }
+                });
+            }
+            return true;
+        });
+    }
+
+    public async Task ListenToJobAcceptedEventAsync()
+    {
+        await _ethAccountServices.ListenContractEventAsync<JobAcceptedEventDTO>(ContractAddress, ABI, "JobAccepted", (logs) =>
+        {
+            foreach (EventLog<JobAcceptedEventDTO> log in logs)
+            {
+                _ = Task.Run(() =>
+                {
+                    Console.WriteLine("Accepted");
+                    Console.WriteLine(log.Event.JobId);
+                    Console.WriteLine(log.Event.NodeAddress);
                 });
             }
             return true;

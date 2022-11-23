@@ -703,12 +703,22 @@
           },
           {
             "internalType": "uint256",
+            "name": "seed",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
             "name": "jobAcceptanceExpiration",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
             "name": "jobFulfillmentExpiration",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "jobExpiration",
             "type": "uint256"
           },
           {
@@ -742,6 +752,11 @@
             "type": "address"
           },
           {
+            "internalType": "address",
+            "name": "aggregator",
+            "type": "address"
+          },
+          {
             "internalType": "address[]",
             "name": "validators",
             "type": "address[]"
@@ -749,6 +764,11 @@
           {
             "internalType": "uint256[]",
             "name": "dataIds",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "results",
             "type": "uint256[]"
           },
           {
@@ -797,6 +817,19 @@
       {
         "internalType": "uint256",
         "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getNodeCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "counter",
         "type": "uint256"
       }
     ],

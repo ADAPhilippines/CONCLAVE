@@ -7,7 +7,7 @@ public class CardanoServices
 {
     #region constant variables
     private const int RETRIAL_DURATION = 3000;
-    private const int BLOCK_DURATION = 20000;
+    private const int BLOCK_DURATION = 12000;
     #endregion
     #region private variables
     private readonly IBlockService _blockService;
@@ -55,12 +55,11 @@ public class CardanoServices
 
         blockresponse = await GetNextBlocksFromHashAsync(blockHash, nextBlocks);
 
-        while (blockresponse?.Count < nextBlocks - 1)
-            blockresponse = await AwaitRemainingBlocksAsync(nextBlocks, blockresponse!.Count, blockHash);
+        while (blockresponse?.Count < nextBlocks)
+            blockresponse = await AwaitRemainingBlocksAsync(nextBlocks, blockresponse!.Count, blockHash, requestId);
 
         blockHashesRes.AddRange(blockresponse!.Select(r => r.Hash));
 
-        #region logs
         string blockHashesLogs = string.Empty;
         blockHashesRes.ForEach((b) =>
         {
@@ -75,14 +74,14 @@ public class CardanoServices
         using (_logger.BeginScope("Processing job Id# : {0}", requestId))
             using (_logger.BeginScope("Block hashes", requestId))
                 _logger.LogInformation(blockHashesLogs);
-        #endregion
         return blockHashesRes;
     }
 
-    private async Task<List<BlockContentResponse>?> AwaitRemainingBlocksAsync(int nextBlocks, int currentCount, string blockHash)
+    private async Task<List<BlockContentResponse>?> AwaitRemainingBlocksAsync(int nextBlocks, int currentCount, string blockHash, BigInteger requestId)
     {
         await Task.Delay(BLOCK_DURATION * (nextBlocks - currentCount));
-        _logger.LogInformation("Awaiting {0} remaining blocks", nextBlocks - currentCount);
+        using (_logger.BeginScope("Processing job Id# : {0}", requestId))
+            _logger.LogInformation("Awaiting {0} remaining blocks", nextBlocks - currentCount);
 
         return await GetNextBlocksFromHashAsync(blockHash, nextBlocks);
     }

@@ -18,9 +18,11 @@ public class EthAccountServices : WalletServiceBase
     private readonly AccountOfflineTransactionSigner TransactionSigner = new AccountOfflineTransactionSigner();
     public EthAccountServices(IOptions<SettingsParameters> settings, IConfiguration configuration) : base(settings.Value.EthereumRPC, configuration)
     {
-        Account = new Account(configuration.GetValue<string>("PrivateKey"));
+        string privateKey = configuration.GetValue<string>("PrivateKey")!;
+        Account = new Account(privateKey);
         Web3 = new Web3(Account, settings.Value.EthereumRPC);
         Address = Account.Address;
+        Web3.TransactionManager.UseLegacyAsDefault = true;
     }
 
     public async Task<HexBigInteger> GetBalanceAsync() => await Web3.Eth.GetBalance.SendRequestAsync(Address);
@@ -55,7 +57,6 @@ public class EthAccountServices : WalletServiceBase
 
     public async Task<TransactionReceipt> CallContractWriteFunctionNoParamsAsync(
         string contractAddress,
-        string from,
         string abi,
         decimal value,
         string functionName)
@@ -69,16 +70,15 @@ public class EthAccountServices : WalletServiceBase
         return await Web3.Eth.TransactionManager.SendTransactionAndWaitForReceiptAsync(new TransactionInput(
             data,
             contractAddress,
-            from,
+            Address,
             gas,
             gasPrice,
             new HexBigInteger(UnitConversion.Convert.ToWei(0)))
         );
     }
 
-    public async Task<TransactionReceipt> CallContractWriteFunctionAsync(
+    public async Task CallContractWriteFunctionAsync(
         string contractAddress,
-        string from,
         string abi,
         decimal value,
         string functionName,
@@ -90,10 +90,10 @@ public class EthAccountServices : WalletServiceBase
         HexBigInteger gasPrice = await Web3.Eth.GasPrice.SendRequestAsync();
         string data = writeFunction.GetData(inputs);
 
-        return await Web3.Eth.TransactionManager.SendTransactionAndWaitForReceiptAsync(new TransactionInput(
+        TransactionReceipt receipt =  await Web3.Eth.TransactionManager.SendTransactionAndWaitForReceiptAsync(new TransactionInput(
             data,
             contractAddress,
-            from,
+            Address,
             gas,
             gasPrice,
             new HexBigInteger(UnitConversion.Convert.ToWei(0)))
