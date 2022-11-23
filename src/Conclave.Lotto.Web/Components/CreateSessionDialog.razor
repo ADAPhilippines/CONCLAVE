@@ -89,7 +89,7 @@
                     @bind-Value="@SessionDetails.TimeIntervals.Hours"
                     For="@(() => SessionDetails.TimeIntervals.Hours)"
                     >
-                        @for (int hour = 0; hour <= 30; hour++)
+                        @for (int hour = 0; hour <= 23; hour++)
                         {
                             <MudSelectItem Value="@(hour)" />
                         }
@@ -101,7 +101,7 @@
                     @bind-Value="@SessionDetails.TimeIntervals.Minutes"
                     For="@(() => SessionDetails.TimeIntervals.Minutes)"
                     >
-                        @for (int minute = 0; minute <= 30; minute++)
+                        @for (int minute = 0; minute <= 59; minute++)
                         {
                             <MudSelectItem Value="@(minute)" />
                         }
@@ -113,7 +113,7 @@
                     @bind-Value="@SessionDetails.TimeIntervals.Seconds"
                     For="@(() => SessionDetails.TimeIntervals.Seconds)"
                     >
-                        @for (int second = 0; second <= 30; second++)
+                        @for (int second = 0; second <= 59; second++)
                         {
                             <MudSelectItem Value="@(second)" />
                         }

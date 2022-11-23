@@ -30,8 +30,9 @@ public partial class CreateSessionDialog
         SessionDetails.DateCreated = DateTime.UtcNow;
         SessionList.Add(SessionDetails);
         await SessionListChanged.InvokeAsync(SessionList);
-        await InvokeAsync(StateHasChanged);
+      
         Console.WriteLine(SessionList.Count());
+        SessionDetails = new();
         if (MudDialog is not null) MudDialog.Close(DialogResult.Ok(true));
     }
 
