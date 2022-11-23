@@ -12,14 +12,17 @@ public record Session
 {
     public int Id { get; set; }
     
-    public string Name { get; set; } = string.Empty;
+    [Required]
+    public string Name { get; set; }
 
     public Status CurrentStatus { get; set; } = Status.Upcoming;
 
     public string? OwnerAddress { get; set; } = string.Empty;
-
+    
+    [Required]
     public int PrizePool { get; set; }
 
+    [Required]
     public int TicketPrice { get; set; }
 
     [Range(1, 10)]

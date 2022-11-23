@@ -1,129 +1,76 @@
 <div class="w-[550px]">
     <MudDialog>
         <DialogContent>
-            <EditForm Model="@SessionDetails">
+            <EditForm Model="@SessionDetails" OnValidSubmit="OnValidSubmit">
                 <DataAnnotationsValidator />
-                <MudTextField 
-                    T="string" 
-                    @bind-Value="@SessionDetails.Name" 
-                    Label="Session Name" 
-                    For="@(() => SessionDetails.Name)"
-                />
-                <MudTextField 
-                    T="int"  
-                    @bind-Value="@SessionDetails.PrizePool" 
-                    Label="Initial Prize Pool"
-                    For="@(() => SessionDetails.PrizePool)" 
-                />
-                <MudTextField 
-                    T="int" 
-                    @bind-Value="@SessionDetails.TicketPrice" 
-                    Label="Ticket Price"
-                    For="@(() => SessionDetails.TicketPrice)"
-                />
-                <MudTextField 
-                    T="int" 
-                    @bind-Value="@SessionDetails.Combinations" 
-                    Label="Number of Combinations"
-                    For="@(() => SessionDetails.Combinations)"
-                />
-                <MudSlider 
-                    @bind-Value="@SessionDetails.Combinations" 
-                    Min="1" 
-                    Max="10" 
-                    Color="Color.Info"
-                />
-                <MudTextField 
-                    T="int" 
-                    @bind-Value="@SessionDetails.MaxValue" 
-                    Label="Maximum Value" 
-                    For="@(() => SessionDetails.MaxValue)"
-                />
-                <MudSlider 
-                    @bind-Value="@SessionDetails.MaxValue"
-                    Min="0" 
-                    Max="99" 
-                    Color="Color.Info"
-                />
-                <MudSlider 
-                    @bind-Value="@SessionDetails.Margin" 
-                    Min="1" 
-                    Max="100" 
-                    Color="Color.Info"
-                >
+                <ValidationSummary />
+
+                <MudTextField T="string" @bind-Value="@SessionDetails.Name" Label="Session Name"
+                    For="@(() => SessionDetails.Name)" />
+                <MudTextField T="int" @bind-Value="@SessionDetails.PrizePool" Label="Initial Prize Pool"
+                    For="@(() => SessionDetails.PrizePool)" />
+                <MudTextField T="int" @bind-Value="@SessionDetails.TicketPrice" Label="Ticket Price"
+                    For="@(() => SessionDetails.TicketPrice)" />
+                <MudTextField T="int" @bind-Value="@SessionDetails.Combinations" Label="Number of Combinations"
+                    For="@(() => SessionDetails.Combinations)" />
+                <MudSlider @bind-Value="@SessionDetails.Combinations" Min="1" Max="10" Color="Color.Info" />
+                <MudTextField T="int" @bind-Value="@SessionDetails.MaxValue" Label="Maximum Value"
+                    For="@(() => SessionDetails.MaxValue)" />
+                <MudSlider @bind-Value="@SessionDetails.MaxValue" Min="0" Max="99" Color="Color.Info" />
+                <MudSlider @bind-Value="@SessionDetails.Margin" Min="1" Max="100" Color="Color.Info">
                     Margin: @SessionDetails.Margin.ToString()%
                 </MudSlider>
                 <MudText Typo="Typo.caption">Start</MudText>
                 <div class="flex">
-                    <MudDatePicker 
-                        Class="mr-2" 
-                        Label="Date"
-                        DisableToolbar="true"
-                        MinDate="@DateTime.Today"
-                        DateChanged="OnSessionStartDateChanged" 
-                    />
-                    <MudTimePicker 
-                        Label="Time" 
-                        AmPm="true" 
-                        TimeChanged="OnSessionStartTimeChanged" 
-                    />
+                    <MudDatePicker Class="mr-2" Label="Date" DisableToolbar="true" MinDate="@DateTime.Today"
+                        DateChanged="OnSessionStartDateChanged" />
+                    <MudTimePicker Label="Time" AmPm="true" TimeChanged="OnSessionStartTimeChanged" />
                 </div>
                 <MudText Typo="Typo.caption">Interval</MudText>
                 <div class="flex">
-                    <MudSelect 
-                    T="int" 
-                    Label="Days" 
-                    AnchorOrigin="Origin.BottomCenter" 
-                    @bind-Value="@SessionDetails.TimeIntervals.Days"
-                    For="@(() => SessionDetails.TimeIntervals.Days)"
-                    >
+                    <MudSelect T="int" Label="Days" AnchorOrigin="Origin.BottomCenter"
+                        @bind-Value="@SessionDetails.TimeIntervals.Days"
+                        For="@(() => SessionDetails.TimeIntervals.Days)">
                         @for (int day = 0; day <= 30; day++)
                         {
                             <MudSelectItem Value="@(day)" />
                         }
                     </MudSelect>
-                    <MudSelect 
-                    T="int" 
-                    Label="Hours" 
-                    AnchorOrigin="Origin.BottomCenter" 
-                    @bind-Value="@SessionDetails.TimeIntervals.Hours"
-                    For="@(() => SessionDetails.TimeIntervals.Hours)"
-                    >
+                    <MudSelect T="int" Label="Hours" AnchorOrigin="Origin.BottomCenter"
+                        @bind-Value="@SessionDetails.TimeIntervals.Hours"
+                        For="@(() => SessionDetails.TimeIntervals.Hours)">
                         @for (int hour = 0; hour <= 23; hour++)
                         {
                             <MudSelectItem Value="@(hour)" />
                         }
                     </MudSelect>
-                    <MudSelect 
-                    T="int" 
-                    Label="Minutes" 
-                    AnchorOrigin="Origin.BottomCenter" 
-                    @bind-Value="@SessionDetails.TimeIntervals.Minutes"
-                    For="@(() => SessionDetails.TimeIntervals.Minutes)"
-                    >
+                    <MudSelect T="int" Label="Minutes" AnchorOrigin="Origin.BottomCenter"
+                        @bind-Value="@SessionDetails.TimeIntervals.Minutes"
+                        For="@(() => SessionDetails.TimeIntervals.Minutes)">
                         @for (int minute = 0; minute <= 59; minute++)
                         {
                             <MudSelectItem Value="@(minute)" />
                         }
                     </MudSelect>
-                    <MudSelect 
-                    T="int" 
-                    Label="Seconds" 
-                    AnchorOrigin="Origin.BottomCenter" 
-                    @bind-Value="@SessionDetails.TimeIntervals.Seconds"
-                    For="@(() => SessionDetails.TimeIntervals.Seconds)"
-                    >
+                    <MudSelect T="int" Label="Seconds" AnchorOrigin="Origin.BottomCenter"
+                        @bind-Value="@SessionDetails.TimeIntervals.Seconds"
+                        For="@(() => SessionDetails.TimeIntervals.Seconds)">
                         @for (int second = 0; second <= 59; second++)
                         {
                             <MudSelectItem Value="@(second)" />
                         }
                     </MudSelect>
                 </div>
+                <div class="float-right my-5">
+                    <MudButton OnClick="OnBtnCancelClicked" Variant="Variant.Filled">Cancel</MudButton>
+                    <MudButton 
+                        OnClick="OnBtnSubmitClicked" 
+                        Variant="Variant.Filled" 
+                        Color="Color.Primary">
+                        Ok
+                    </MudButton>
+                </div>
             </EditForm>
         </DialogContent>
-        <DialogActions>
-            <MudButton OnClick="OnBtnCancelClicked">Cancel</MudButton>
-            <MudButton Color="Color.Primary" OnClick="OnBtnSubmitClicked">Ok</MudButton>
-        </DialogActions>
     </MudDialog>
 </div>

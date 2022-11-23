@@ -19,7 +19,6 @@ public partial class CreateSessionDialog
     private async Task OnBtnSubmitClicked()
     {
         await OnSessionSaved.InvokeAsync(SessionDetails);
-      
         if (MudDialog is not null) MudDialog.Close(DialogResult.Ok(true));
     }
 
@@ -41,8 +40,6 @@ public partial class CreateSessionDialog
     }
 
     private void OnValidSubmit()
-    {
-        Console.WriteLine(SessionDetails.Name);
-    }
+    {    }
 
 }

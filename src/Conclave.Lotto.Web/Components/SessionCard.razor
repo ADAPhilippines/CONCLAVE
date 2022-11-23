@@ -8,8 +8,11 @@
             <MudText Typo="Typo.body2">Status: @SessionDetails.CurrentStatus</MudText>
             <MudText Typo="Typo.body2">Current Prize</MudText>
             <MudText Typo="Typo.h5">@string.Format("{0:n0}", SessionDetails.PrizePool)</MudText>
-            <CountdownTimer ContainerType="Card" StartDateTime="@SessionDetails.StartDate"
-                DateCreated="@SessionDetails.DateCreated" />
+            <CountdownTimer 
+                ContainerType="Card" 
+                StartDateTime="@SessionDetails.StartDate"
+                DateCreated="@SessionDetails.DateCreated"
+            />
             <MudText Typo="Typo.caption">Last Winning Combination Result:</MudText>
             <CombinationResult />
             <MudText Typo="Typo.subtitle1">Ticket Price: @string.Format("{0:n0}", SessionDetails.TicketPrice)</MudText>
