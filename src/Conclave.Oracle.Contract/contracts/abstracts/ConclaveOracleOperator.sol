@@ -133,7 +133,8 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         onlyWithinBalance(baseToken, token)
     {
         if (s_pendingRewardJobIds[msg.sender].length > 0) {
-            uint256 remainingbaseToken = s_stakes[msg.sender].baseToken - baseToken;
+            uint256 remainingbaseToken = s_stakes[msg.sender].baseToken -
+                baseToken;
             uint256 remainingToken = s_stakes[msg.sender].token - token;
 
             if (
@@ -267,7 +268,8 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
 
         // Check if it's time to distribute staking rewards and if msg.sender is the distributor and then distribute rewards
         if (
-            s_totalPendingStakingRewards.baseToken >= s_minbaseTokenStakingRewards &&
+            s_totalPendingStakingRewards.baseToken >=
+            s_minbaseTokenStakingRewards &&
             s_totalPendingStakingRewards.token >= s_minTokenStakingRewards
         ) {
             if (_isDistributorNode(msg.sender)) {
@@ -303,7 +305,13 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
             s_nodeToOwner[msg.sender]
         ];
         for (uint256 i = 0; i < jobIds.length; i++) {
+<<<<<<< HEAD
             (uint256 baseToken, uint256 token) = getPendingRewardsByJobId(jobIds[i]);
+=======
+            (uint256 baseToken, uint256 token) = getPendingRewardsByJobId(
+                jobIds[i]
+            );
+>>>>>>> 2655d87e0458e6afd2ae8fd3db3a636a2fbab066
             baseTokenReward += baseToken;
             tokenReward += token;
         }
@@ -325,17 +333,32 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
                 1,
                 s_dataIdVotes[jobId][request.finalResultDataId]
             );
-            uint256 totalbaseToken = _calculateShare(
-                90 * 100,
-                request.baseBaseTokenFee + (request.baseTokenFeePerNum * request.numCount)
+
+            uint256 totalSharePercentage = 90 * 100;
+            if (request.aggregator != address(0)) {
+                totalSharePercentage = 80 * 100;
+            }
+
+            uint256 totalBaseToken = _calculateShare(
+                totalSharePercentage,
+                request.baseBaseTokenFee +
+                    (request.baseTokenFeePerNum * request.numCount)
             );
             uint256 totalToken = _calculateShare(
-                90 * 100,
+                totalSharePercentage,
                 request.baseTokenFee +
                     (request.tokenFeePerNum * request.numCount)
             );
-            baseToken = _calculateShare(weight, totalbaseToken);
+            baseToken = _calculateShare(weight, totalBaseToken);
             token = _calculateShare(weight, totalToken);
+
+            if (
+                request.aggregator != address(0) &&
+                msg.sender == request.aggregator
+            ) {
+                baseToken += _calculateShare(10 * 100, totalBaseToken);
+                token += _calculateShare(10 * 100, totalToken);
+            }
         }
     }
 
@@ -371,22 +394,27 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
                 (uint256 baseToken, uint256 token) = getPendingRewardsByJobId(
                     request.jobId
                 );
-                s_totalNodeRewards[s_nodeToOwner[msg.sender]].baseToken += baseToken;
+                s_totalNodeRewards[s_nodeToOwner[msg.sender]]
+                    .baseToken += baseToken;
                 s_totalNodeRewards[s_nodeToOwner[msg.sender]].token += token;
                 baseTokenReward += baseToken;
 
                 _addStake(s_nodeToOwner[msg.sender], baseToken, token);
             } else {
                 // Deduct fees from stake balances
-                if (baseTokenFee > s_stakes[s_nodeToOwner[msg.sender]].baseToken) {
-                    baseTokenFee = s_stakes[s_nodeToOwner[msg.sender]].baseToken;
+                if (
+                    baseTokenFee > s_stakes[s_nodeToOwner[msg.sender]].baseToken
+                ) {
+                    baseTokenFee = s_stakes[s_nodeToOwner[msg.sender]]
+                        .baseToken;
                 }
 
                 if (tokenFee > s_stakes[s_nodeToOwner[msg.sender]].token) {
                     tokenFee = s_stakes[s_nodeToOwner[msg.sender]].token;
                 }
 
-                s_totalDeductedStakes[s_nodeToOwner[msg.sender]].baseToken += baseTokenFee;
+                s_totalDeductedStakes[s_nodeToOwner[msg.sender]]
+                    .baseToken += baseTokenFee;
                 s_totalDeductedStakes[s_nodeToOwner[msg.sender]]
                     .token += tokenFee;
                 s_totalPendingStakingRewards.baseToken += baseTokenFee;
@@ -396,7 +424,10 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
             }
         }
 
-        if (s_nodeAllowances[s_nodeToOwner[msg.sender]] > 0 && baseTokenReward > 0) {
+        if (
+            s_nodeAllowances[s_nodeToOwner[msg.sender]] > 0 &&
+            baseTokenReward > 0
+        ) {
             uint256 nodeShare = _calculateShare(
                 s_nodeAllowances[s_nodeToOwner[msg.sender]] * 100,
                 baseTokenReward
@@ -552,7 +583,10 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
                 s_stakes[s_stakers[i]].token,
                 s_totalStakes.token
             );
-            uint256 baseTokenShare = _calculateShare(weight, stakerbaseTokenShare);
+            uint256 baseTokenShare = _calculateShare(
+                weight,
+                stakerbaseTokenShare
+            );
             uint256 tokenShare = _calculateShare(weight, stakerTokenShare);
             s_totalStakingRewards[s_stakers[i]].baseToken += baseTokenShare;
             s_totalStakingRewards[s_stakers[i]].token += tokenShare;
@@ -586,11 +620,16 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         virtual
         returns (JobRequest storage);
 
+    function _aggregateIdleJob(uint256 jobId, address aggregator)
+        internal
+        virtual;
+
     function _calculateShare(uint256 share, uint256 total)
         internal
         pure
         returns (uint256)
     {
+        if (total <= 0) return 0;
         return (total * share) / 10_000;
     }
 
@@ -599,6 +638,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         pure
         returns (uint256)
     {
+        if (total <= 0) return 0;
         return (amount * 10_000) / total;
     }
 }

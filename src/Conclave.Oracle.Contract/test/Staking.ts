@@ -55,7 +55,9 @@ describe('Staking Contract', function () {
                 stake,
             } = await loadFixture(stakingFixture);
 
-            await expect(stake(addr, testBaseTokenStake, testTokenStake)).to.be.revertedWith('ERC20: insufficient allowance');
+            await expect(stake(addr, testBaseTokenStake, testTokenStake)).to.be.revertedWith(
+                'ERC20: insufficient allowance'
+            );
         });
 
         it('Should not stake if amount exceeds balance', async function () {
@@ -86,9 +88,8 @@ describe('Staking Contract', function () {
         });
 
         it('Should increment total stakes', async function () {
-            const { oracle, accountsWithTokens, testBaseTokenStake, testTokenStake, approveAndStake } = await loadFixture(
-                stakingFixture
-            );
+            const { oracle, accountsWithTokens, testBaseTokenStake, testTokenStake, approveAndStake } =
+                await loadFixture(stakingFixture);
 
             for (const account of accountsWithTokens) {
                 await approveAndStake(account, testBaseTokenStake, testTokenStake);

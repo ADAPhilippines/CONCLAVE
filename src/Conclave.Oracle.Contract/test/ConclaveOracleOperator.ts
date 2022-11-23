@@ -245,7 +245,6 @@ describe('ConclaveOperator Contract', function () {
         it('Should not be able to submit response if minimum validator not reached', async function () {
             const {
                 oracle,
-                consumer,
                 nodes: [node],
                 baseTokenFee,
                 baseTokenFeePerNum,
@@ -253,21 +252,25 @@ describe('ConclaveOperator Contract', function () {
                 tokenFeePerNum,
                 minValidator,
                 maxValidator,
+                accountsWithTokens: [consumer],
                 getResponse,
                 submitRequest,
                 jobAcceptanceLimitInSeconds,
             } = await loadFixture(operatorFixture);
 
             const numCount = 2;
-            const requestId = await submitRequest({
-                numCount,
-                baseTokenFee,
-                baseTokenFeePerNum,
-                tokenFee,
-                tokenFeePerNum,
-                minValidators: minValidator.add(2),
-                maxValidators: maxValidator.add(3),
-            });
+            const requestId = await submitRequest(
+                {
+                    numCount,
+                    baseTokenFee,
+                    baseTokenFeePerNum,
+                    tokenFee,
+                    tokenFeePerNum,
+                    minValidators: minValidator.add(2),
+                    maxValidators: maxValidator.add(3),
+                },
+                consumer
+            );
             const request = await oracle.getJobDetails(requestId);
             await oracle.connect(node).acceptJob(request.jobId);
             await ethers.provider.send('evm_increaseTime', [jobAcceptanceLimitInSeconds + 1]);
@@ -313,12 +316,11 @@ describe('ConclaveOperator Contract', function () {
                 oracle,
                 nodes,
                 operators,
-                operators: [operator1, operator2],
-                getResponse,
+                operators: [operator1],
+                accountsWithTokens: [consumer],
                 submitRequest,
                 submitResponseAndFinalize,
                 unstake,
-                simulateJobCycle,
                 decimal,
             } = await loadFixture(operatorFixture);
 
@@ -343,17 +345,13 @@ describe('ConclaveOperator Contract', function () {
                 maxValidators: BigNumber.from(2),
             };
 
-            const requestId = await submitRequest(request);
-            await oracle.getJobDetails(
-                requestId
-            );
+            const requestId = await submitRequest(request, consumer);
 
             await ethers.provider.send('evm_increaseTime', [60]);
-            await submitResponseAndFinalize(requestId, [nodes[0]]);
+            await submitResponseAndFinalize(requestId, [nodes[0]], consumer);
 
-            const newRequestId = await submitRequest(request);
-            await ethers.provider.send('evm_increaseTime', [60]);
-            await submitResponseAndFinalize(newRequestId, [nodes[0]]);
+            const newRequestId = await submitRequest(request, consumer);
+            await submitResponseAndFinalize(newRequestId, [nodes[0]], consumer);
 
             const stakingRewards = await oracle.s_totalStakingRewards(operator1.address);
             const operatorStakingRewards = await oracle.s_totalStakingRewards(operator1.address);
@@ -388,6 +386,7 @@ describe('ConclaveOperator Contract', function () {
                         tokenFeePerNum,
                         numCount,
                     } = await oracle.getJobDetails(requestIds[i]);
+
                     const reward = await oracle.connect(node).getPendingRewardsByJobId(jobId);
                     const opeartorAddr = await oracle.getOwner(node.address);
                     const nodeDataId = await oracle.connect(node).s_nodeDataId(jobId, opeartorAddr);
@@ -431,7 +430,9 @@ describe('ConclaveOperator Contract', function () {
                 const newBalance = await oracle.getStake(await oracle.getOwner(node.address));
                 const totalDeductions = await oracle.s_totalDeductedStakes(await oracle.getOwner(node.address));
 
-                expect(newBalance.baseToken).to.be.equal(balance.baseToken.add(pendingRewards.baseTokenReward).sub(totalDeductions.baseToken));
+                expect(newBalance.baseToken).to.be.equal(
+                    balance.baseToken.add(pendingRewards.baseTokenReward).sub(totalDeductions.baseToken)
+                );
                 expect(newBalance.token).to.be.equal(
                     balance.token.add(pendingRewards.tokenReward).sub(totalDeductions.token)
                 );
@@ -464,7 +465,10 @@ describe('ConclaveOperator Contract', function () {
             const receipt = await tx.wait();
             const allowancePercentage = await oracle.s_nodeAllowances(operators[0].address);
 
-            const allowance = calculateShare(BigNumber.from(allowancePercentage).mul(100), pendingRewards.baseTokenReward);
+            const allowance = calculateShare(
+                BigNumber.from(allowancePercentage).mul(100),
+                pendingRewards.baseTokenReward
+            );
             const nodeBalanceAfter = await nodes[0].getBalance();
             const operatorBalanceAfter = await operators[0].getBalance();
             const contractBalanceAfter = await oracle.balance();

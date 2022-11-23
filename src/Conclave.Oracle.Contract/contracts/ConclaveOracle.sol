@@ -45,8 +45,11 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
     uint256 s_jobFulfillmentLimitPerNumberInSeconds;
     uint256 s_baseTokenFeeAverage;
     uint256 s_baseTokenFeePerNumAverage;
+<<<<<<< HEAD
     uint256 s_adaFeeAverage;
     uint256 s_adaFeePerNumAverage;
+=======
+>>>>>>> 2655d87e0458e6afd2ae8fd3db3a636a2fbab066
     uint256 s_tokenFeeAverage;
     uint256 s_tokenFeePerNumAverage;
     uint256 s_requestCount;
@@ -121,7 +124,7 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
             msg.sender,
             numCount,
             block.timestamp,
-            s_requestCount + 1,
+            s_requestCount,
             block.number
         );
 
@@ -138,10 +141,12 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         jobRequest.baseTokenFee = tokenFee;
         jobRequest.tokenFeePerNum = tokenFeePerNum;
         jobRequest.timestamp = block.timestamp;
+        jobRequest.seed = block.timestamp;
         jobRequest.maxValidator = maxValidator;
         jobRequest.minValidator = minValidator;
         jobRequest.jobAcceptanceExpiration = jobAcceptanceTimeLimit;
         jobRequest.jobFulfillmentExpiration = jobFulfillmentLimit;
+        jobRequest.jobExpiration = jobFulfillmentLimit + 1 hours;
         jobRequest.requester = msg.sender;
         jobRequest.numCount = numCount;
 
@@ -152,7 +157,7 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
     }
 
     function aggregateResult(uint256 jobId)
-        external
+        public
         payable
         override
         onlyExistingRequest(jobId)
@@ -160,18 +165,24 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
     {
         JobRequest storage jobRequest = s_jobRequests[jobId];
 
-        if (block.timestamp < jobRequest.jobAcceptanceExpiration) {
+        if (
+            block.timestamp < jobRequest.jobAcceptanceExpiration &&
+            jobRequest.validators.length < jobRequest.maxValidator
+        ) {
             revert JobAcceptanceInProgress();
         }
 
         if (
-            jobRequest.validators.length < jobRequest.responseCount &&
+            jobRequest.responseCount < jobRequest.validators.length &&
             block.timestamp < jobRequest.jobFulfillmentExpiration
         ) {
             revert JobSubmissionInProgress();
         }
 
-        if (msg.sender != jobRequest.requester) {
+        if (
+            msg.sender != jobRequest.requester &&
+            msg.sender != jobRequest.aggregator
+        ) {
             revert NotAuthorized();
         }
 
@@ -182,6 +193,11 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         if (jobRequest.minValidator > jobRequest.responseCount) {
             _refundFees(jobId);
             randomNumbers = new uint256[](jobRequest.numCount);
+
+            for (uint256 i = 0; i < randomNumbers.length; i++) {
+                jobRequest.results.push(randomNumbers[i]);
+            }
+
             status = uint(RequestStatus.Refunded);
             jobRequest.status = RequestStatus.Refunded;
 
@@ -207,6 +223,11 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
             jobRequest.finalResultDataId = finalDataId;
             jobRequest.status = RequestStatus.Fulfilled;
             randomNumbers = _getRandomNumbers(finalDataId);
+
+            for (uint256 i = 0; i < randomNumbers.length; i++) {
+                jobRequest.results.push(randomNumbers[i]);
+            }
+
             status = uint(RequestStatus.Fulfilled);
             s_totalFulfilled++;
 
@@ -422,7 +443,7 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         }
 
         _token.transfer(request.requester, tokenRefund);
-        payable(request.requester).transfer(baseTokenRefund);
+        _transferBaseToken(request.requester, baseTokenRefund);
     }
 
     function _getJobId(
@@ -463,5 +484,35 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         returns (uint256[] memory)
     {
         return s_pendingJobRequestIds;
+    }
+
+    function getNodeCount() external view override returns (uint256 counter) {
+        for (uint256 i = 0; i < s_stakers.length; i++) {
+            if (
+                s_stakes[s_stakers[i]].baseToken > s_minStake.baseToken &&
+                s_stakes[s_stakers[i]].token > s_minStake.token
+            ) {
+                counter++;
+            }
+        }
+    }
+
+    function _aggregateIdleJob(uint256 jobId, address aggregator)
+        internal
+        virtual
+        override
+    {
+        JobRequest storage request = s_jobRequests[jobId];
+
+        if (
+            request.status != RequestStatus.Pending &&
+            block.timestamp < request.jobExpiration
+        ) return;
+
+        if (request.responseCount < request.minValidator) return;
+
+        request.aggregator = aggregator;
+
+        aggregateResult(jobId);
     }
 }

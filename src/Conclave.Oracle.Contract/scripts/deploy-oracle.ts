@@ -14,7 +14,7 @@ async function main() {
         const jobAcceptanceLimitInSeconds = 60; // 1 minute
         const jobFulFillmentLimitInSeconds = 60; // 1 minute per Number
         const minbaseTokenStakingRewards = ethers.utils.parseEther('10');
-        const minTokenStakingRewards = ethers.utils.parseUnits('10000', decimal);
+        const minTokenStakingRewards = ethers.utils.parseUnits('1000', decimal);
 
         console.log(
             chalk.yellow(`Deploying oracle contract: \nToken: ${chalk.blue(
