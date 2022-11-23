@@ -14,7 +14,7 @@
     },
     {
         "Id": 1,
-        "Name": "TWO DAYS",
+        "Name": "From JSON file dos",
         "Status": 1,
         "PrizePool": 545426,
         "TicketPrice": 20,
