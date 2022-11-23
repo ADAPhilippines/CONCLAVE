@@ -1,7 +1,7 @@
 @using Models
 <MudDialog>
     <DialogContent>
-        <div class="flex flex-col justify-between">
+        <div class="relative flex flex-col justify-between">
             <div class="flex justify-between mb-4">
                 <div>
                     <MudText Typo="Typo.body2">Session ID: @SessionDetails.Id</MudText>
@@ -13,11 +13,11 @@
                 </div>
             </div>
             <MudText Typo="Typo.h5">Ticket Entry:</MudText>
-            <ul class="flex justify-center border-2">
+            <ul class="grid grid-cols-3 gap-4">
                 @foreach (Inputs entry in TicketEntries)
                 {
                     <li>
-                        <input class="mr-2 border-2 p-2" @ref="entry.ElementRef" @bind-value="entry.Value"
+                        <input class="mr-2 border-2 py-2" @ref="entry.ElementRef" @bind-value="entry.Value"
                         @onkeyup="() => OnKeyPressed(entry)" @bind-value:event="oninput" />
                     </li>
                 }

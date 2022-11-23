@@ -13,11 +13,14 @@ public partial class BuyTicketDialog
     [Parameter]
     public Session SessionDetails { get; set; } = new();
 
-    private List<Inputs> TicketEntries = new List<Inputs>(){
-        new() {},
-        new() {},
-        new() {}
-    };
+    private List<Inputs> TicketEntries = new List<Inputs>();
+
+    protected override void OnInitialized()
+    {
+        for(int i = 1; i <= SessionDetails.Combinations; i++) {
+            TicketEntries.Add(new Inputs());
+        }
+    }
 
     private void OnBtnDepositClicked()
     {
