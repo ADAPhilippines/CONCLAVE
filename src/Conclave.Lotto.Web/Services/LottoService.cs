@@ -26,11 +26,8 @@ public class LottoService
         int index = page * 3 - 1;
         int max = page * 3 - 3;
         List<Session> _sessionList = await _httpClient.GetFromJsonAsync<List<Session>>("lotto-data/sessions.json") ?? new();
-        List<Session> Sessions;
-        if (_sessionList is not null)
-            Sessions = _sessionList.FindAll(x => x.Id >= max && x.Id <= index);
-        else
-            Sessions = _sessionList ?? new();
+        List<Session> Sessions = _sessionList.FindAll(x => x.Id >= max && x.Id <= index);
+
         return Sessions ?? new();
     }
 
