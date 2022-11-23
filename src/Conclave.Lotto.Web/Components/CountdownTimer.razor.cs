@@ -23,20 +23,24 @@ public partial class CountdownTimer
 
     private double CurrentValue { get; set; }
 
+    private double MinValue { get; set; }
+
+    private double MaxValue { get; set; }
+
     protected async override Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
+            MinValue = DateTime.UtcNow.AddDays(-2).ToOADate();
+            MaxValue = StartDateTime.ToUniversalTime().ToOADate();
 
             _ = Task.Run(async () =>
             {
-                IntervalInSeconds = StartDateTime.Subtract(DateTime.UtcNow);
+                IntervalInSeconds = StartDateTime.ToUniversalTime() - DateTime.UtcNow;
                 while (IntervalInSeconds.TotalSeconds >= 0)
                 {
                     await Task.Delay(1000);
-                    // CurrentValue = DateTime.UtcNow.ToOADate();
-                    CurrentValue = 12;
-                    // Console.WriteLine(IntervalInSeconds.TotalSeconds);
+                    CurrentValue = DateTime.UtcNow.ToOADate();
                     TimeInterval = StartDateTime.Subtract(DateTime.UtcNow).Duration();
                     await InvokeAsync(StateHasChanged);
                 }
@@ -45,8 +49,9 @@ public partial class CountdownTimer
         await base.OnAfterRenderAsync(firstRender);
     }
 
-    private string HideSectionsInCard(){
-        if(ContainerType == "Card")
+    private string HideSectionsInCard()
+    {
+        if (ContainerType == "Card")
             return "hidden";
         return "block";
     }
