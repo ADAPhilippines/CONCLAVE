@@ -1,8 +1,10 @@
-<div class="max-w-[250px] border-1 border-black border-solid @SessionStatusClass()" onclick="@OnSessionCardClicked">
+<div class="max-w-[250px] border-1 border-black border-solid @SessionStatusClass()" >
     <MudCard Class="m-0">
         <MudCardContent>
-            <MudText>Session Id: @SessionDetails.Id</MudText>
-            <MudText Typo="Typo.body2">Session Name: @SessionDetails.Name</MudText>
+            <div class="cursor-pointer" @onclick="@OnSessionCardClicked">
+                <MudText>Session Id: @SessionDetails.Id</MudText>
+                <MudText Typo="Typo.body2">Session Name: @SessionDetails.Name</MudText>
+            </div>
             <MudText Typo="Typo.body2">Status: @SessionDetails.CurrentStatus</MudText>
             <MudText Typo="Typo.body2">Current Prize</MudText>
             <MudText Typo="Typo.h5">@string.Format("{0:n0}", SessionDetails.PrizePool)</MudText>
@@ -10,7 +12,6 @@
                 DateCreated="@SessionDetails.DateCreated" />
             <MudText Typo="Typo.caption">Last Winning Combination Result:</MudText>
             <CombinationResult />
-            @* NOTE: Create a buy ticket Modal *@
             <MudText Typo="Typo.subtitle1">Ticket Price: @string.Format("{0:n0}", SessionDetails.TicketPrice)</MudText>
             <MudButton Color="Color.Primary" OnClick="OnBtnBuyTicketClicked">Buy Ticket Now</MudButton>
         </MudCardContent>
