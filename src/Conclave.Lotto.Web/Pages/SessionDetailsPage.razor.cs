@@ -7,16 +7,15 @@ namespace Conclave.Lotto.Web.Pages;
 public partial class SessionDetailsPage
 {
     [Inject]
-    private DataService DataService { get; set; } = new();
+    private LottoService LottoService { get; set; } = default!;
 
     [Parameter]
     public string SessionId { get; set; } = string.Empty;
 
     private Session SessionDetails { get; set; } = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        List<Session> SessionList = DataService.Sessions ?? new();
-        SessionDetails = SessionList.Find(s => s.Id.ToString() == SessionId) ?? new();
+        SessionDetails = await LottoService.GetSessionById(Int32.Parse(SessionId));
     }
 }
