@@ -11,28 +11,15 @@ public partial class CreateSessionDialog
     [CascadingParameter]
     MudDialogInstance? MudDialog { get; set; }
 
-    [Parameter]
-    public Session SessionDetails { get; set; } = new();
+    private Session SessionDetails { get; set; } = new();
 
     [Parameter]
-    public List<Session> SessionList { get; set; } = new();
-
-    [Parameter]
-    public EventCallback<List<Session>> SessionListChanged { get; set; }
-
-    [Inject]
-    public LottoService LottoService { get; set; } = default!;
-
-    private bool success { get; set; }
+    public EventCallback<Session> OnSessionSaved { get; set; }
 
     private async Task OnBtnSubmitClicked()
     {
-        SessionDetails.DateCreated = DateTime.UtcNow;
-        SessionList.Add(SessionDetails);
-        await SessionListChanged.InvokeAsync(SessionList);
+        await OnSessionSaved.InvokeAsync(SessionDetails);
       
-        Console.WriteLine(SessionList.Count());
-        SessionDetails = new();
         if (MudDialog is not null) MudDialog.Close(DialogResult.Ok(true));
     }
 

@@ -47,10 +47,18 @@ public partial class SessionPage : ComponentBase
         DialogOptions closeOnEscapeKey = new() { CloseOnEscapeKey = true };
         DialogParameters dialogParams = new DialogParameters
         {
-            ["SessionDetails"] = SessionDetails,
-            ["SessionList"] = Sessions
+            ["OnSessionSaved"] = new EventCallbackFactory()
+                .Create<Session>(this, OnCreateSessionDialogSessionSaved),
         };
         DialogService?.Show<CreateSessionDialog>("Create Session", dialogParams, closeOnEscapeKey);
+    }
+
+    private async Task OnCreateSessionDialogSessionSaved(Session session)
+    {
+        session.DateCreated = DateTime.UtcNow;
+        session.Id = Sessions.Max(s => s.Id) + 1;
+        Sessions.Add(session);
+        await InvokeAsync(StateHasChanged);
     }
 
     private void OnBtnBuyTicketClicked(Session session)
