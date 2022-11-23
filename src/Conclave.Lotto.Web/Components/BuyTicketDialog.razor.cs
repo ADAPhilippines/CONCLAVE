@@ -15,11 +15,16 @@ public partial class BuyTicketDialog
 
     private List<Inputs> TicketEntries = new List<Inputs>();
 
+    private int MaxInputLength { get; set; }
+
     protected override void OnInitialized()
     {
-        for(int i = 1; i <= SessionDetails.Combinations; i++) {
+        for (int i = 1; i <= SessionDetails.Combinations; i++)
+        {
             TicketEntries.Add(new Inputs());
         }
+
+        MaxInputLength = SessionDetails.MaxValue.ToString().Length;
     }
 
     private void OnBtnDepositClicked()
@@ -35,7 +40,7 @@ public partial class BuyTicketDialog
 
     private async Task OnKeyPressed(Inputs entry)
     {
-        if (entry.Value.Length >= 3)
+        if (entry.Value.Length >= MaxInputLength)
         {
             int nextIndex = TicketEntries.IndexOf(entry) + 1;
             if (nextIndex < TicketEntries.Count)
