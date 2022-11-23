@@ -26,7 +26,7 @@ public partial class SessionPage : ComponentBase
 
     private int PageCount { get; set; }
 
-    private bool mandatory { get; set; } = true;
+    private bool Mandatory { get; set; } = true;
 
     protected override async Task OnInitializedAsync()
     {
