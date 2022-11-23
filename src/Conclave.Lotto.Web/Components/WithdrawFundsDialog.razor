@@ -21,11 +21,11 @@
             <div class="flex justify-between items-center">
                 <div>Available: 
                     <span class="font-bold">
-                        @GetBalanceOfSelectedCurrency() $@Currency
+                        @String.Format("{0:0,0.##}", GetBalanceOfSelectedCurrency()) $@Currency
                     </span>
                 </div>
                 <div class="flex items-center justify-center gap-1">
-                    <p>~@(DepositAmount == 0 ? "0.00" : ToUSD(DepositAmount)) USD</p>
+                    <p>~@(DepositAmount == 0 ? "0.00" : String.Format("{0:0,0.##}", ToUSD(DepositAmount))) USD</p>
                     <MudChip Label="true" OnClick="OnBtnMaxClicked">Max</MudChip>
                 </div>
             </div>
