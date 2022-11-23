@@ -13,12 +13,19 @@ public partial class BuyTicketDialog
     [Parameter]
     public Session SessionDetails { get; set; } = new();
 
-    static int test  = 5;
-    
-    private List<int> Entries = new List<int>(new int[test]);
-    private EventCallback<List<int>> EntriesChanged {get; set;}
+    private List<Inputs> TicketEntries = new List<Inputs>();
 
-    private Dictionary<int, MudTextField<int>> InputTextRef = new();
+    private int MaxInputLength { get; set; }
+
+    protected override void OnInitialized()
+    {
+        for (int i = 1; i <= SessionDetails.Combinations; i++)
+        {
+            TicketEntries.Add(new Inputs());
+        }
+
+        MaxInputLength = SessionDetails.MaxValue.ToString().Length;
+    }
 
     private void OnBtnDepositClicked()
     {
@@ -30,10 +37,14 @@ public partial class BuyTicketDialog
     {
         if (MudDialog is not null) MudDialog.Cancel();
     }
-    
-    private void OnKeyPressed(KeyboardEventArgs args, int index)
+
+    private async Task OnKeyPressed(Inputs entry)
     {
-        if(args.Code == "Enter")
-            InputTextRef[index+1].FocusAsync();
+        if (entry.Value.Length >= MaxInputLength)
+        {
+            int nextIndex = TicketEntries.IndexOf(entry) + 1;
+            if (nextIndex < TicketEntries.Count)
+                await TicketEntries[nextIndex].ElementRef.FocusAsync();
+        }
     }
 }
