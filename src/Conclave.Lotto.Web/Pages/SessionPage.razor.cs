@@ -77,25 +77,10 @@ public partial class SessionPage : ComponentBase
             });
         else
             Sessions.Sort((a, b) => { return a.Id.CompareTo(b.Id); });
-
-        // PaginatedSessions = Sessions.GetRange(0, 3);
     }
 
-    private void OnSelectValuesChanged(ChangeEventArgs args)
+    private void OnSelectValuesChanged(int args)
     {
-        List<Session> FilteredSessions = new();
-        if (args?.Value?.ToString() == "OnGoing")
-        {
-            Console.WriteLine("Ongoing");
-            FilteredSessions = Sessions.FindAll(s => s.CurrentStatus == Status.Ongoing);
-            // PaginatedSessions = FilteredSessions.GetRange(0, 2);
-        }
-        else if (args?.Value?.ToString() == "UpComing")
-        {
-            Console.WriteLine("upcoming");
-
-            FilteredSessions = Sessions.FindAll(s => s.CurrentStatus == Status.Upcoming);
-            // PaginatedSessions = FilteredSessions.GetRange(0, 3);
-        }
+        PaginatedSessions = Sessions.FindAll(s => s.CurrentStatus == (Status)args);
     }
 }
