@@ -23,18 +23,18 @@ public class CardanoServices
     public async Task<string> GetNearestBlockHashFromTimeSAsync(int unixTime, BigInteger requestId)
     {
         #region logs
-        _logger.BeginScope("Processing job Id# : {0}", requestId);
         #endregion
 
         BlockContentResponse currentBlock = await GetLatestBlockAsync();
 
         if (unixTime < currentBlock.Time)
-            currentBlock = await GetNearestBlockBeforeLatestAsync(currentBlock, unixTime);
+            currentBlock = await GetNearestBlockBeforeLatestAsync(currentBlock, unixTime, requestId);
         else if (unixTime > currentBlock.Time)
             currentBlock = await GetNearestBlockAfterLatestAsync(currentBlock, unixTime, requestId);
 
         #region logs
-        _logger.LogInformation("Nearest block acquired : {0}", currentBlock.Hash);
+        using(_logger.BeginScope("Processing job Id# : {0}", requestId))
+            _logger.LogInformation("Nearest block acquired : {0}", currentBlock.Hash);
         #endregion
         return currentBlock.Hash;
     }
@@ -42,9 +42,9 @@ public class CardanoServices
     public async Task<List<string>> GetNextBlocksFromCurrentHashAsync(string blockHash, int nextBlocks, BigInteger requestId)
     {
         #region logs
-        _logger.BeginScope("Processing job Id# : {0}", requestId);
         if (nextBlocks is not 0)
-            _logger.LogInformation("Getting succeeding blocks after {0}.", blockHash);
+            using (_logger.BeginScope("Processing job Id# : {0}", requestId))
+                _logger.LogInformation("Getting succeeding blocks after {0}.", blockHash);
         #endregion
 
         List<string> blockHashesRes = new() { blockHash };
@@ -72,8 +72,9 @@ public class CardanoServices
                 blockHashesLogs += string.Format("[{0}] {1}\n", i, b);
         });
 
-        using (_logger.BeginScope("Block hashes", requestId))
-            _logger.LogInformation(blockHashesLogs);
+        using (_logger.BeginScope("Processing job Id# : {0}", requestId))
+            using (_logger.BeginScope("Block hashes", requestId))
+                _logger.LogInformation(blockHashesLogs);
         #endregion
         return blockHashesRes;
     }
@@ -88,13 +89,10 @@ public class CardanoServices
 
     private async Task<BlockContentResponse> WaitForNextBlockAsync(BlockContentResponse currentBlock, BigInteger requestId)
     {
-        #region logs
         if (currentBlock.NextBlock is null)
-        {
-            _logger.BeginScope("Processing job Id# : {0}", requestId);
-            _logger.LogInformation("Awaiting next block after tip {0}.", currentBlock.Hash);
-        }
-        #endregion
+            using (_logger.BeginScope("Processing job Id# : {0}", requestId))
+                _logger.LogInformation("Awaiting next block after tip {0}.", currentBlock.Hash);
+        
 
         while (currentBlock.NextBlock is null)
             currentBlock = await RefetchBlockAsync(currentBlock.Hash);
@@ -108,9 +106,10 @@ public class CardanoServices
         return await GetBlockFromHashAsync(blockHash);
     }
 
-    private async Task<BlockContentResponse> GetNearestBlockBeforeLatestAsync(BlockContentResponse currentBlock, int unixTime)
+    private async Task<BlockContentResponse> GetNearestBlockBeforeLatestAsync(BlockContentResponse currentBlock, int unixTime, BigInteger requestId)
     {
-        _logger.LogInformation("Getting nearest block from timestamp {0}.", unixTime);
+        using (_logger.BeginScope("Processing job Id# : {0}", requestId))
+            _logger.LogInformation("Getting nearest block from timestamp {0}.", unixTime);
 
         while (unixTime < currentBlock.Time)
             currentBlock = await GetBlockFromHashAsync(currentBlock.PreviousBlock);
@@ -123,7 +122,8 @@ public class CardanoServices
 
     private async Task<BlockContentResponse> GetNearestBlockAfterLatestAsync(BlockContentResponse currentBlock, int unixTime, BigInteger requestId)
     {
-        _logger.LogInformation("Awaiting nearest block from timestamp {0}.", unixTime);
+        using (_logger.BeginScope("Processing job Id# : {0}", requestId))
+            _logger.LogInformation("Awaiting nearest block from timestamp {0}.", unixTime);
 
         await Task.Delay(unixTime - currentBlock.Time + BLOCK_DURATION);
 

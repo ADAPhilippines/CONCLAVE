@@ -20,9 +20,10 @@ public partial class OracleWorker : BackgroundService
         using (_logger.BeginScope("ACCEPTED: Job Id#: {0}", jobDetails.JobId))
             _logger.LogInformation("Awaiting for job to be ready");
 
-        //verify is it duration or fixed time
-        // await Task.Delay((int)jobDetails.JobAcceptanceExpiration);
-        await Task.Delay(5000);
+        DateTime foo = DateTime.Now;
+        int currentUnixTime = (int)((DateTimeOffset)foo).ToUnixTimeSeconds();
+
+        await Task.Delay(((int)jobDetails.JobAcceptanceExpiration - currentUnixTime)*1000);
 
         return await _oracleContractService.IsJobReadyAsync(jobDetails.JobId);
     }
@@ -60,11 +61,17 @@ public partial class OracleWorker : BackgroundService
         return await _cardanoService.GetNextBlocksFromCurrentHashAsync(firstBlockHash, (int)(numberOfdecimals - 1), requestId);
     }
 
-    public async Task<List<GetJobDetailsOutputDTO>> GetJobDetailsPerIdAsync(List<BigInteger> jobIdsList)
+    public List<GetJobDetailsOutputDTO> GetJobDetailsPerIdAsync(List<BigInteger> jobIdsList)
     {
-        List<Task<GetJobDetailsOutputDTO>> jobDetailsTasks = jobIdsList.Select(async (jobId) => await _oracleContractService.GetJobDetailsAsync(jobId)).ToList();
+        // List<Task<GetJobDetailsOutputDTO>> jobDetailsTasks = jobIdsList.Select(async (jobId) => await _oracleContractService.GetJobDetailsAsync(jobId)).ToList();
+        List<GetJobDetailsOutputDTO> jobDetailsList = new();
 
-        return (await Task.WhenAll(jobDetailsTasks)).ToList();
+        jobIdsList.ForEach(async jobId => {
+            GetJobDetailsOutputDTO jobDetails = await _oracleContractService.GetJobDetailsAsync(jobId);
+            jobDetailsList.Add(jobDetails);
+        });
+
+        return jobDetailsList;
     }
 
     public async Task AwaitRegistrationAsync()

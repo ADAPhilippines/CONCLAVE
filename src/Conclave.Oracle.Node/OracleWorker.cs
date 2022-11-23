@@ -4,6 +4,7 @@ using System.Numerics;
 using Microsoft.Extensions.Options;
 using Conclave.Oracle.Node.Contracts.Definition.FunctionOutputs;
 using Conclave.Oracle.Node.Contracts.Definition.EventOutputs;
+using Nethereum.JsonRpc.Client;
 
 namespace Conclave.Oracle;
 
@@ -81,7 +82,7 @@ public partial class OracleWorker : BackgroundService
         GetPendingJobIdsOutputDTO pendingRequests = await _oracleContractService.GetPendingJobIdsAsync();
 
         if (pendingRequests.JobIds.Count is not 0)
-            PendingRequestsHandlerAsync(pendingRequests.JobIds);
+            PendingRequestsHandler(pendingRequests.JobIds);
         else
             _logger.LogInformation("No pending job requests found.");
     }
@@ -99,11 +100,10 @@ public partial class OracleWorker : BackgroundService
 
         await _oracleContractService.ListenToJobRequestFulfilledEventAsync();
     }
-    
-    public async void PendingRequestsHandlerAsync(List<BigInteger> jobIdsList)
+
+    public void PendingRequestsHandler(List<BigInteger> jobIdsList)
     {
-        List<GetJobDetailsOutputDTO> jobDetailsList = await GetJobDetailsPerIdAsync(jobIdsList);
-        _logger.LogInformation(jobDetailsList[0].ToString());
+        List<GetJobDetailsOutputDTO> jobDetailsList = GetJobDetailsPerIdAsync(jobIdsList);
 
         //filter pendingRequests
         //sort pendingRequests
@@ -113,16 +113,24 @@ public partial class OracleWorker : BackgroundService
     public async Task ProcessJobRequestAsync(GetJobDetailsOutputDTO jobDetails, string requestType)
     {
         using (_logger.BeginScope("{0}: Job Id# {1}", requestType, jobDetails.JobId))
-            _logger.LogInformation("TimeStamp: {0}\nNumbers: {1}", jobDetails.Timestamp, jobDetails.NumCount);
+            _logger.LogInformation("TimeStamp: {0}\nNumbers: {1}", jobDetails.Timestamp.ToString(), jobDetails.NumCount.ToString());
 
-        await _oracleContractService.AcceptJobAsync(jobDetails.JobId);
+        try
+        {
+            await _oracleContractService.AcceptJobAsync(jobDetails.JobId);
 
-        bool isJobReady = await CheckIsJobReadyAfterAcceptanceExpirationAsync(jobDetails);
+            bool isJobReady = await CheckIsJobReadyAfterAcceptanceExpirationAsync(jobDetails);
 
-        if (isJobReady)
-            await GenerateAndSubmitDecimalsAsync(jobDetails);
-        else
-            using (_logger.BeginScope("ACCEPTED: Job Id#: {0}", jobDetails.JobId))
-                _logger.LogInformation("Job cancelled.");
+            if (isJobReady)
+                await GenerateAndSubmitDecimalsAsync(jobDetails);
+            else
+                using (_logger.BeginScope("ACCEPTED: Job Id#: {0}", jobDetails.JobId))
+                    _logger.LogInformation("Job cancelled.");
+        }
+        catch (RpcResponseException e)
+        {
+            using (_logger.BeginScope("{0}: Job Id# {1}", requestType, jobDetails.JobId))
+                _logger.LogError("Error Processing Request: {0}", e.Message);
+        }
     }
 }
