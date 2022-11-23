@@ -45,11 +45,6 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
     uint256 s_jobFulfillmentLimitPerNumberInSeconds;
     uint256 s_baseTokenFeeAverage;
     uint256 s_baseTokenFeePerNumAverage;
-<<<<<<< HEAD
-    uint256 s_adaFeeAverage;
-    uint256 s_adaFeePerNumAverage;
-=======
->>>>>>> 2655d87e0458e6afd2ae8fd3db3a636a2fbab066
     uint256 s_tokenFeeAverage;
     uint256 s_tokenFeePerNumAverage;
     uint256 s_requestCount;

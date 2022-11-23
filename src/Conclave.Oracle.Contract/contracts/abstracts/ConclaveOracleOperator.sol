@@ -305,13 +305,9 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
             s_nodeToOwner[msg.sender]
         ];
         for (uint256 i = 0; i < jobIds.length; i++) {
-<<<<<<< HEAD
-            (uint256 baseToken, uint256 token) = getPendingRewardsByJobId(jobIds[i]);
-=======
             (uint256 baseToken, uint256 token) = getPendingRewardsByJobId(
                 jobIds[i]
             );
->>>>>>> 2655d87e0458e6afd2ae8fd3db3a636a2fbab066
             baseTokenReward += baseToken;
             tokenReward += token;
         }
