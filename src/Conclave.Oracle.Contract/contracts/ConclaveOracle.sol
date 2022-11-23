@@ -168,7 +168,7 @@ contract ConclaveOracle is IConclaveOracle, ConclaveOracleOperator {
         }
 
         if (
-            jobRequest.validators.length < jobRequest.responseCount &&
+            jobRequest.responseCount < jobRequest.validators.length &&
             block.timestamp < jobRequest.jobFulfillmentExpiration
         ) {
             revert JobSubmissionInProgress();
