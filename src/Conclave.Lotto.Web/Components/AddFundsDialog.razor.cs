@@ -12,7 +12,7 @@ public partial class AddFundsDialog
     [Inject]
     private CurrencyConverterService CurrencyConverterService { get; set; } = default!;
 
-    private string Currency { get; set; } = "MilkADA";
+    private string Currency { get; set; } = "mADA";
 
     private double MilkADABalance { get; set; } = 235;
 
@@ -22,18 +22,17 @@ public partial class AddFundsDialog
 
     private double ToUSD(double amount)
     {
-        if (Currency == "MilkADA")
+        if (Currency == "mADA")
             return CurrencyConverterService.ConvertAdaToUsd(amount);
         
         return CurrencyConverterService.ConvertCnclvToUsd(amount);
     } 
 
     private double GetBalanceOfSelectedCurrency() => 
-        Currency == "MilkADA" ? MilkADABalance : ConclaveBalance;
+        Currency == "mADA" ? MilkADABalance : ConclaveBalance;
 
     private void OnBtnMaxClicked() => 
         DepositAmount = GetBalanceOfSelectedCurrency();
 
-    void Submit() => MudDialog.Close(DialogResult.Ok(true));
     void Cancel() => MudDialog.Cancel();
 }
