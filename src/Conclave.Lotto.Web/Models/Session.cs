@@ -2,8 +2,8 @@ namespace Conclave.Lotto.Web.Models;
 
 public enum Status
 {
-    OnGoing,
-    UpComing,
+    Ongoing,
+    Upcoming,
 }
 
 public record Session
@@ -12,9 +12,9 @@ public record Session
 
     public string Name { get; set; } = string.Empty;
 
-    public Status CurrentStatus { get; set; } = Status.UpComing;
+    public Status CurrentStatus { get; set; } = Status.Upcoming;
 
-    public string OwnerAddress { get; set; } = string.Empty;
+    public string? OwnerAddress { get; set; } = string.Empty;
 
     public int PrizePool { get; set; }
 

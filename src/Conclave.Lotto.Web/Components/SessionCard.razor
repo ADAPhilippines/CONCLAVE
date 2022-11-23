@@ -1,8 +1,11 @@
-<div class="max-w-[250px] border-1 border-black border-solid @SessionStatusClass()" onclick="@OnSessionCardClicked">
+<div class="max-w-[250px] border-1 border-black border-solid @SessionStatusClass()" >
     <MudCard Class="m-0">
         <MudCardContent>
-            <MudText>Session Id: @SessionDetails.Id</MudText>
-            <MudText Typo="Typo.body2">Session Name: @SessionDetails.Name</MudText>
+            <div class="cursor-pointer" @onclick="@OnSessionCardClicked">
+                <MudText>Session Id: @SessionDetails.Id</MudText>
+                <MudText Typo="Typo.body2">Session Name: @SessionDetails.Name</MudText>
+            </div>
+            <MudText Typo="Typo.body2">Sstatus: @SessionDetails.CurrentStatus</MudText>
             <MudText Typo="Typo.body2">Current Prize</MudText>
             <MudText Typo="Typo.h5">@SessionDetails.PrizePool</MudText>
             <CountdownTimer ContainerType="Card" StartDateTime="@SessionDetails.StartDate"
