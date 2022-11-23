@@ -625,6 +625,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         pure
         returns (uint256)
     {
+        if (total <= 0) return 0;
         return (total * share) / 10_000;
     }
 
@@ -633,6 +634,7 @@ abstract contract ConclaveOracleOperator is IConclaveOracleOperator, Staking {
         pure
         returns (uint256)
     {
+        if (total <= 0) return 0;
         return (amount * 10_000) / total;
     }
 }

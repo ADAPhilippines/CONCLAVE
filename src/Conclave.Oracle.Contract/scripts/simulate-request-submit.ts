@@ -5,8 +5,7 @@ import config from '../config.json';
 
 async function main() {
     try {
-        //@TODO temporary implementation
-        const accounts = (await ethers.getSigners()).splice(10);
+        const accounts = (await ethers.getSigners()).splice(0, 10);
         const oracle = await ethers.getContractAt('ConclaveOracle', config.oracleAddress);
         const consumer = await ethers.getContractAt('OracleConsumer', config.consumerAddress);
         const token = await ethers.getContractAt('Token', config.tokenAddress);
@@ -22,13 +21,13 @@ async function main() {
                     const tokenFeePerNum = ethers.utils.parseUnits('5', decimal);
                     const numCount = random(1, 10);
                     const minValidators = random(1, 3);
-                    const maxValidators = random(3, 5);
+                    const maxValidators = random(3, 9);
                     const totalTokenFee = tokenFee.add(tokenFeePerNum.mul(numCount));
                     const totalBaseTokenFee = baseTokenFee.add(baseTokenFeePerNum.mul(numCount));
                     const approveTokenTxReceipt = await token.connect(accounts[0]).approve(consumer.address, totalTokenFee);
                     await approveTokenTxReceipt.wait();
 
-                    const consumerContractApproveTxReceipt = await consumer.connect(accounts[0]).approve();
+                    await consumer.connect(accounts[0]).approve();
 
                     const requestRandNumsTxReceipt = await consumer.connect(accounts[0]).requestRandomNumbers(
                         numCount,
@@ -57,8 +56,6 @@ async function main() {
                 accounts.forEach(async (acc, i) => {
                     while (true) {
                         try {
-                            // Ignore Account Zero
-                            if (i <= 0) return;
                             // Check for Available Jobs
                             const jobIds = await oracle.getPendingJobIds();
                             if (jobIds.length <= 0) {
@@ -66,26 +63,33 @@ async function main() {
                                 continue;
                             };
 
+                            const jobs: Promise<void>[] = [];
                             // Accept the most recent job as fast as possible
-                            jobIds.forEach(async (jobId) => {
-                                try {
-                                    const acceptJobTxReceipt = await oracle.connect(acc).acceptJob(jobId);
-                                    acceptJobTxReceipt.wait();
+                            jobIds.forEach((jobId) => {
+                                jobs.push(new Promise(async (resolve) => {
+                                    try {
+                                        const acceptJobTxReceipt = await oracle.connect(acc).acceptJob(jobId);
+                                        acceptJobTxReceipt.wait();
 
-                                    // Wait Job to be ready, once ready submit results
-                                    while (!await oracle.isJobReady(jobId)) { }
-                                    const jobDetails = await oracle.getJobDetails(jobId);
-                                    const seed = jobDetails.seed;
-                                    const submitJobTxReceipt = await oracle.connect(acc).submitResponse(jobId, getJobResult(jobDetails.numCount, seed));
-                                    await submitJobTxReceipt.wait();
+                                        // Wait Job to be ready, once ready submit results
+                                        while (!await oracle.isJobReady(jobId)) {
+                                            await delay(100);
+                                        }
 
-                                    // @TODO: don't finalize yet, keep checking for job status
-                                    const finalizeResultTxReceipt = await consumer.finalizeResult(jobId);
-                                    await finalizeResultTxReceipt.wait();
-                                    await oracle.connect(acc).claimPendingRewards();
-                                } catch { }
+                                        const jobDetails = await oracle.getJobDetails(jobId);
+                                        const seed = jobDetails.seed;
+                                        const submitJobTxReceipt = await oracle.connect(acc).submitResponse(jobId, getJobResult(jobDetails.numCount, seed));
+                                        await submitJobTxReceipt.wait();
+
+                                        // @TODO: don't finalize yet, keep checking for job status
+                                        const finalizeResultTxReceipt = await consumer.finalizeResult(jobId);
+                                        await finalizeResultTxReceipt.wait();
+                                        await oracle.connect(acc).claimPendingRewards();
+                                    } catch { try { await consumer.finalizeResult(jobId); } catch { } }
+                                    resolve();
+                                }));
                             });
-                            await delay(random(100, 1000 * 1));
+                            await Promise.all(jobs);
                         } catch {
                             await delay(100);
                             continue;
@@ -97,34 +101,44 @@ async function main() {
         };
         processRequests();
 
-        const logger = (async () => {
+        (async () => {
             while (true) {
                 const jobIds = await oracle.getPendingJobIds();
                 const oracleBalance = await oracle.balance();
+                const stakingRewards = await oracle.s_totalPendingStakingRewards();
                 console.clear();
                 console.log(chalk.cyan("== Conclave Oracle Node Job Request/Submit Simulator 🧨🚀🎊 ==\n"));
                 console.log(
                     chalk.green('Oracle Pending Jobs: '),
-                    chalk.blue(jobIds.length)
+                    chalk.blue(jobIds.length),
+                    // chalk.green('\nOracle Pending JobIds: '),
+                    // jobIds,
                 );
                 console.log(
                     chalk.green('Oracle Balance:'),
                     chalk.yellow('\n  [BaseToken]'),
                     chalk.blue(ethers.utils.formatEther(oracleBalance.baseToken)),
                     chalk.yellow('\n  [Token]'),
-                    chalk.blue(ethers.utils.formatUnits(oracleBalance.token, decimal))
+                    chalk.blue(ethers.utils.formatUnits(oracleBalance.token, decimal)),
+                    chalk.yellow('\n  [Pending Staking Base Token Rewards]'),
+                    chalk.blue(ethers.utils.formatEther(stakingRewards.baseToken)),
+                    chalk.yellow('\n  [Pending Staking Token Rewards]'),
+                    chalk.blue(ethers.utils.formatUnits(stakingRewards.token, decimal))
                 );
 
                 console.log(chalk.cyan("\n== Account Oracle Balances =="));
                 for (const i in accounts) {
                     const address = accounts[i].address;
                     const stake = await oracle.getStake(address);
+                    const baseTokenBalance = await accounts[i].getBalance();
                     console.log(
                         chalk.green(`Account Balance [${chalk.blue(address)}]:`),
                         chalk.yellow('\n  [BaseToken]'),
                         chalk.blue(ethers.utils.formatEther(stake.baseToken)),
                         chalk.yellow('\n  [Token]'),
-                        chalk.blue(ethers.utils.formatUnits(stake.token, decimal))
+                        chalk.blue(ethers.utils.formatUnits(stake.token, decimal)),
+                        chalk.yellow('\n  [Wallet Balance]'),
+                        chalk.blue(ethers.utils.formatEther(baseTokenBalance))
                     );
                 }
                 await delay(1000);

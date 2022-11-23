@@ -32,7 +32,7 @@ async function main() {
 
 			const randomBigNum = ethers.BigNumber.from(Math.floor((Math.random() * 1000000000000000)));
 			const tokenAmount = randomBigNum.mul(maxStake.token.sub(minStake.token)).add(minStake.token).div(1000000000000000);
-			const baseTokenAmount = ethers.utils.parseEther("50");
+			const baseTokenAmount = ethers.utils.parseEther("100");
 			const formattedAmount = ethers.utils.formatUnits(tokenAmount, decimal);
 
 			console.log(
