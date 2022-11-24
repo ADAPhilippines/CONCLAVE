@@ -8,11 +8,14 @@ using Nethereum.Contracts;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Util;
 using System.Numerics;
+using Nethereum.RPC.NonceServices;
 
 namespace Conclave.Oracle.Node.Services;
 
 public class EthAccountServices : WalletServiceBase
 {
+    private const int EVENT_LOG_DURATION = 100;
+    private const int NONCE_AWAITER_DURATION = 100;
     private readonly Web3 Web3;
     private readonly Account Account;
     private readonly AccountOfflineTransactionSigner TransactionSigner = new AccountOfflineTransactionSigner();
@@ -22,7 +25,7 @@ public class EthAccountServices : WalletServiceBase
         Account = new Account(privateKey);
         Web3 = new Web3(Account, settings.Value.EthereumRPC);
         Address = Account.Address;
-        Web3.TransactionManager.UseLegacyAsDefault = true;
+        Account.NonceService = new InMemoryNonceService(Account.Address, Web3.Client);
     }
 
     public async Task<HexBigInteger> GetBalanceAsync() => await Web3.Eth.GetBalance.SendRequestAsync(Address);
@@ -35,7 +38,7 @@ public class EthAccountServices : WalletServiceBase
     {
         Contract contract = Web3.Eth.GetContract(abi, contractAddress);
         Function readFunction = contract.GetFunction(functionName);
-        
+
         return await readFunction.CallAsync<T>(inputs);
     }
 
@@ -55,7 +58,7 @@ public class EthAccountServices : WalletServiceBase
         return await readFunction.CallAsync<dynamic>();
     }
 
-    public async Task<TransactionReceipt> CallContractWriteFunctionNoParamsAsync(
+    public async Task CallContractWriteFunctionNoParamsAsync(
         string contractAddress,
         string abi,
         decimal value,
@@ -67,14 +70,18 @@ public class EthAccountServices : WalletServiceBase
         HexBigInteger gasPrice = await Web3.Eth.GasPrice.SendRequestAsync();
         string data = writeFunction.GetData();
 
-        return await Web3.Eth.TransactionManager.SendTransactionAndWaitForReceiptAsync(new TransactionInput(
+        TransactionInput transactionInput = new TransactionInput(
             data,
             contractAddress,
             Address,
             gas,
             gasPrice,
-            new HexBigInteger(UnitConversion.Convert.ToWei(0)))
-        );
+            new HexBigInteger(UnitConversion.Convert.ToWei(0)));
+
+        HexBigInteger futureNonce = await WaitForNonce();
+        transactionInput.Nonce = futureNonce;
+
+        await Web3.Eth.TransactionManager.SendTransactionAndWaitForReceiptAsync(transactionInput);
     }
 
     public async Task CallContractWriteFunctionAsync(
@@ -90,14 +97,18 @@ public class EthAccountServices : WalletServiceBase
         HexBigInteger gasPrice = await Web3.Eth.GasPrice.SendRequestAsync();
         string data = writeFunction.GetData(inputs);
 
-        TransactionReceipt receipt =  await Web3.Eth.TransactionManager.SendTransactionAndWaitForReceiptAsync(new TransactionInput(
-            data,
-            contractAddress,
-            Address,
-            gas,
-            gasPrice,
-            new HexBigInteger(UnitConversion.Convert.ToWei(0)))
-        );
+        TransactionInput transactionInput = new TransactionInput(
+                   data,
+                   contractAddress,
+                   Address,
+                   gas,
+                   gasPrice,
+                   new HexBigInteger(UnitConversion.Convert.ToWei(0)));
+
+        HexBigInteger futureNonce = await WaitForNonce();
+        transactionInput.Nonce = futureNonce;
+
+        await Web3.Eth.TransactionManager.SendTransactionAndWaitForReceiptAsync(transactionInput);
     }
 
     public async Task ListenContractEventAsync<T>(string contractAddress, string abi, string functionName, Func<List<EventLog<T>>, bool> callback) where T : new()
@@ -126,8 +137,37 @@ public class EthAccountServices : WalletServiceBase
                         lastLogs = filteredLogs;
                     });
 
-                await Task.Delay(100);
+                await Task.Delay(EVENT_LOG_DURATION);
             }
         });
+    }
+
+    public async Task GetLatestBlock()
+    {
+        var block = await Web3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
+    }
+
+    private async Task<HexBigInteger> GetTransactionCount()
+    {
+        return await Web3.Eth.Transactions.GetTransactionCount.SendRequestAsync(Address);
+    }
+
+    private async Task<HexBigInteger> GetFutureNonce()
+    {
+        return await Account.NonceService.GetNextNonceAsync();
+    }
+
+    private async Task<HexBigInteger> WaitForNonce()
+    {
+        HexBigInteger currentTransaction = await GetTransactionCount();
+        HexBigInteger futureNonce = await GetFutureNonce();
+
+        while (BigInteger.Parse(currentTransaction.ToString()) < BigInteger.Parse(futureNonce.ToString()))
+        {
+            await Task.Delay(NONCE_AWAITER_DURATION);
+            currentTransaction = await GetTransactionCount();
+        }
+
+        return futureNonce;
     }
 }

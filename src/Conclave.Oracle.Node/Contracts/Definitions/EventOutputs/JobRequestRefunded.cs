@@ -4,8 +4,8 @@ using Nethereum.Contracts;
 
 namespace Conclave.Oracle.Node.Contracts.Definition.EventOutputs;
 
-[Event("JobRequestFulfilled")]
-public class JobRequestFulfilledEventDTO : IEventDTO
+[Event("JobRequestRefunded")]
+public class JobRequestRefundedEventDTO : IEventDTO
 {
     [Parameter("uint256", "jobId", 1, false)]
     public BigInteger JobId { get; set; }

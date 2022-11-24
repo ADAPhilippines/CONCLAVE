@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "Conclave.Oracle.Contract"
+		},
+		{
+			"path": "Conclave.Oracle.Node"
+		}
+	],
+    "settings": {
+        "typescript.tsdk": "node_modules/typescript/lib"
+    }
+}

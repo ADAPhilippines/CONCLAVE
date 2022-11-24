@@ -16,6 +16,7 @@ public partial class OracleWorker : BackgroundService
     #region constant variables
     private const int RETRY_DURATION = 4000;
     private const int CHECK_REWARDS_DURATION = 30000;
+    private const int STRING_LOG_MAX_LENGTH = 25;
     #endregion
     #region private variables
     private readonly ILogger<OracleWorker> _logger;
@@ -112,26 +113,32 @@ public partial class OracleWorker : BackgroundService
 
     public async Task ProcessJobRequestAsync(GetJobDetailsOutputDTO jobDetails, string requestType)
     {
-        using (_logger.BeginScope("{0}: Job Id# {1}", requestType, jobDetails.JobId))
-            _logger.LogInformation("TimeStamp: {0}\nNumbers: {1}", jobDetails.Timestamp.ToString(), jobDetails.NumCount.ToString());
+        using (_logger.BeginScope("{0}: Job Id# {1}...", requestType, jobDetails.JobId.ToString().Substring(0, STRING_LOG_MAX_LENGTH)))
+            _logger.LogInformation("Timestamp: {0}\nNumbers: {1}", jobDetails.Timestamp.ToString(), jobDetails.NumCount.ToString());
 
         try
         {
             await _oracleContractService.AcceptJobAsync(jobDetails.JobId);
 
+            long currentUnixTimeMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+
             bool isJobReady = await CheckIsJobReadyAfterAcceptanceExpirationAsync(jobDetails);
 
             if (isJobReady)
-                await GenerateAndSubmitDecimalsAsync(jobDetails);
+                await GenerateAndSubmitDecimalsAsync(jobDetails, currentUnixTimeMs);
             else
-                using (_logger.BeginScope("ACCEPTED: Job Id#: {0}", jobDetails.JobId))
+                using (_logger.BeginScope("REVERTED: Job Id# {0}...", jobDetails.JobId.ToString().Substring(0, STRING_LOG_MAX_LENGTH)))
                     _logger.LogCritical("Job reverted.");
-
         }
         catch (RpcResponseException e)
         {
-            using (_logger.BeginScope("ACCEPTED: Job Id#: {0}", jobDetails.JobId))
-                _logger.LogError("Error Processing task. {0}", e.Message);
+            DateTime timeAccepted = DateTime.Now;
+            long currentUnixTimeS = (int)(DateTimeOffset.Now.ToUnixTimeSeconds());
+
+            using (_logger.BeginScope("REVERTED: Job Id# {0}...", jobDetails.JobId.ToString().Substring(0, STRING_LOG_MAX_LENGTH)))
+                _logger.LogError(e, "Error Processing task. {0}", e.Message);
+            using (_logger.BeginScope("REVERTED: Job Id# {0}...", jobDetails.JobId.ToString().Substring(0, STRING_LOG_MAX_LENGTH)))
+                _logger.LogError(e, "Error Processing task. {0}", currentUnixTimeS);
         }
     }
 }

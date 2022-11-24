@@ -5,6 +5,7 @@ using System.Numerics;
 using Nethereum.Contracts;
 using Conclave.Oracle.Node.Contracts.Definition.EventOutputs;
 using Conclave.Oracle.Node.Contracts.Definition.FunctionOutputs;
+using Nethereum.Hex.HexTypes;
 
 namespace Conclave.Oracle.Node.Services;
 
@@ -85,16 +86,36 @@ public class OracleContractService : ContractServiceBase
     {
         await _ethAccountServices.ListenContractEventAsync<JobRequestCreatedEventDTO>(ContractAddress, ABI, "JobRequestCreated", (logs) =>
         {
-            //filter
-            // logs = logs.Where(log => log.Event.Reward >= _options.Value.JobRewardThreshold)
-            //sort
-            // logs = logs.OrderByDescending(log => log.Event.Reward);
+            // List<GetJobDetailsOutputDTO> jobDetailsList = new();
+
+            // logs.ForEach(async (log) => {
+            //     GetJobDetailsOutputDTO jobDetails = await GetJobDetailsAsync(log.Event.JobId);
+
+            //     jobDetailsList.Add(jobDetails);
+            // });
+
+            // jobDetailsList = jobDetailsList.FindAll(j => {
+            //     BigInteger reward = ((j.BaseBaseTokenFee + j.BaseTokenFeePerNum*j.NumCount)/j.MaxValidator) + ((j.BaseTokenFee + j.TokenFeePerNum*j.NumCount)/j.MaxValidator);
+            //     return ( reward >= BigInteger.Parse(_options.Value.MinimumJobReward));
+            // });
+
+            // jobDetailsList = jobDetailsList.OrderByDescending(j => {
+            //     BigInteger reward = ((j.BaseBaseTokenFee + j.BaseTokenFeePerNum*j.NumCount)/j.MaxValidator) + ((j.BaseTokenFee + j.TokenFeePerNum*j.NumCount)/j.MaxValidator);
+            //     return (BigInteger.Parse(_options.Value.MinimumJobReward));
+            // }).ToList();
+
+            // jobDetailsList.ForEach(j => {
+            //     BigInteger reward = ((j.BaseBaseTokenFee + j.BaseTokenFeePerNum*j.NumCount)/j.MaxValidator) + ((j.BaseTokenFee + j.TokenFeePerNum*j.NumCount)/j.MaxValidator);
+            //     Console.WriteLine(reward);
+            // });
+
             foreach (EventLog<JobRequestCreatedEventDTO> log in logs)
             {
                 //if request reward is greater than jobreward threshold
                 _ = Task.Run(async () =>
                 {
                     GetJobDetailsOutputDTO jobDetails = await GetJobDetailsAsync(log.Event.JobId);
+
                     await processRequest(jobDetails, "RECEIVED");
                 });
             }
@@ -128,14 +149,17 @@ public class OracleContractService : ContractServiceBase
                 {
                     GetPendingRewardJobIdsOutputDTO jobIdsWithPendingRewards = await GetPendingRewardJobIds(_ethAccountServices.Address);
 
-                    //might turn this to a separate function
                     if (jobIdsWithPendingRewards.JobIds.Contains(log.Event.JobId))
                     {
+                        _logger.LogInformation("Request fulfilled {0}", log.Event.JobId);
                         GetTotalRewardsOutputDTO totalRewards = await GetTotalRewardsAsync();
                         if (
                             totalRewards.ADAReward >= BigInteger.Parse(_options.Value.ADARewardThreshold) &&
                             totalRewards.CNCLVReward >= BigInteger.Parse(_options.Value.CNCLVRewardThreshold))
+                        {
+                            _logger.LogInformation("Threshold reached. Claiming reward");
                             await ClaimPendingRewardsAsync();
+                        }
                     }
                 });
             }
@@ -143,17 +167,20 @@ public class OracleContractService : ContractServiceBase
         });
     }
 
-    public async Task ListenToJobAcceptedEventAsync()
+    public async Task ListenToJobRequestRefundedEventAsync()
     {
-        await _ethAccountServices.ListenContractEventAsync<JobAcceptedEventDTO>(ContractAddress, ABI, "JobAccepted", (logs) =>
+        await _ethAccountServices.ListenContractEventAsync<JobRequestRefundedEventDTO>(ContractAddress, ABI, "JobRequestFulfilled", (logs) =>
         {
-            foreach (EventLog<JobAcceptedEventDTO> log in logs)
+            foreach (EventLog<JobRequestRefundedEventDTO> log in logs)
             {
-                _ = Task.Run(() =>
+                _ = Task.Run(async () =>
                 {
-                    Console.WriteLine("Accepted");
-                    Console.WriteLine(log.Event.JobId);
-                    Console.WriteLine(log.Event.NodeAddress);
+                    GetPendingRewardJobIdsOutputDTO jobIdsWithPendingRewards = await GetPendingRewardJobIds(_ethAccountServices.Address);
+
+                    if (jobIdsWithPendingRewards.JobIds.Contains(log.Event.JobId))
+                    {
+                        _logger.LogInformation("Request refunded {0}", log.Event.JobId);
+                    }
                 });
             }
             return true;

@@ -48,8 +48,11 @@ public class GetJobDetailsOutputDTO : IFunctionOutputDTO
     [Parameter("uint24", "minValidator", 14)]
     public UInt32 NumCount { get; set; }
 
-    // [Parameter("uint24", "maxValidator", 13)]
-    // public UInt32 MaxValidator { get; set; }
+    // [Parameter("uint24", "maxValidator", 15)]
+    // public UInt32 MinValidator { get; set; }
+
+    // [Parameter("uint24", "requester", 16)]
+    // public int MaxValidator { get; set; }
 
     // [Parameter("address", "requester", 14)]
     // public string Requester { get; set; } = string.Empty;
