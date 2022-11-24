@@ -1,4 +1,3 @@
-using Conclave.Lotto.Web.Services;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -9,7 +8,7 @@ public partial class Header
     [Parameter]
     public EventCallback OnBtnConnectWalletClicked { get; set; }
     
-    [Inject] IDialogService? DialogService { get; set; } = default;
+    [Inject] IDialogService? DialogService { get; set; }
 
     private bool IsOpen { get; set; }
 
@@ -19,17 +18,15 @@ public partial class Header
          DialogService?.Show<ConnectWalletsDialog>("Connect Wallets", closeOnEscapeKey);
     }
 
-    private void OnBtnAddFundsClicked()
+    private void OpenWithdrawFundsDialog()
     {
-        DialogOptions closeOnEscapeKey = new DialogOptions() { CloseOnEscapeKey = true };
-        DialogService?.Show<AddFundsDialog>("Add Funds", closeOnEscapeKey);
+		var options = new DialogOptions { CloseOnEscapeKey = true };
+        DialogService?.Show<WithdrawFundsDialog>("", options);
     }
 
-    public void OnBtnProfileClicked()
+    private void OpenAddFundsDialog()
     {
-        if (IsOpen)
-            IsOpen = false;
-        else
-            IsOpen = true;
+		var options = new DialogOptions { CloseOnEscapeKey = true };
+        DialogService?.Show<AddFundsDialog>("", options);
     }
 }
