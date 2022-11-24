@@ -24,17 +24,18 @@ public partial class SessionPage : ComponentBase
 
     private List<Session> PaginatedSessions { get; set; } = new();
 
-    private bool mandatory { get; set; } = true;
+    private int PageCount { get; set; }
 
-    private Status SessionStatus { get; set; } = Status.Ongoing;
+    private bool Mandatory { get; set; } = true;
 
     protected override async Task OnInitializedAsync()
     {
         Sessions = await LottoService.GetSessionListAsync();
         LottoWinners = await LottoService.GetLottoWinnersAsync();
+        PageCount = Sessions.Count() / 3;
 
         if (Sessions is not null)
-            PaginatedSessions = Sessions.GetRange(0, 2);
+            OnPageChanged(1);
     }
 
     private void OpenDialog()
@@ -57,10 +58,9 @@ public partial class SessionPage : ComponentBase
 
     private void OnPageChanged(int page)
     {
-        int index = page;
-        int maxItems = 3;
-        index = page * maxItems - maxItems;
-        // PaginatedSessions = Sessions.GetRange(index, maxItems);
+        int maxIndex = page * 3 - 1;
+        int index = page * 3 - 3;
+        PaginatedSessions = Sessions.FindAll(x => x.Id >= index && x.Id <= maxIndex);
     }
 
     private void OnSelectedChipChanged(MudChip chip)
@@ -77,8 +77,6 @@ public partial class SessionPage : ComponentBase
             });
         else
             Sessions.Sort((a, b) => { return a.Id.CompareTo(b.Id); });
-
-        // PaginatedSessions = Sessions.GetRange(0, 3);
     }
 
     private void OnSelectValuesChanged(ChangeEventArgs args)
@@ -86,16 +84,11 @@ public partial class SessionPage : ComponentBase
         List<Session> FilteredSessions = new();
         if (args?.Value?.ToString() == "OnGoing")
         {
-            Console.WriteLine("Ongoing");
             FilteredSessions = Sessions.FindAll(s => s.CurrentStatus == Status.Ongoing);
-            // PaginatedSessions = FilteredSessions.GetRange(0, 2);
         }
         else if (args?.Value?.ToString() == "UpComing")
         {
-            Console.WriteLine("upcoming");
-
             FilteredSessions = Sessions.FindAll(s => s.CurrentStatus == Status.Upcoming);
-            // PaginatedSessions = FilteredSessions.GetRange(0, 3);
         }
     }
 }

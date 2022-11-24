@@ -17,8 +17,18 @@ public class LottoService
     public async Task<List<Session>> GetSessionListAsync()
     {
         List<Session> Sessions = await _httpClient.GetFromJsonAsync<List<Session>>("lotto-data/sessions.json") ?? new();
-
         return Sessions;
+    }
+
+
+    public async Task<List<Session>> GetSessionsByPage(int page, int count)
+    {
+        int index = page * 3 - 1;
+        int max = page * 3 - 3;
+        List<Session> _sessionList = await _httpClient.GetFromJsonAsync<List<Session>>("lotto-data/sessions.json") ?? new();
+        List<Session> Sessions = _sessionList.FindAll(x => x.Id >= max && x.Id <= index);
+
+        return Sessions ?? new();
     }
 
     public async Task<Session> GetSessionById(int SessionId)
