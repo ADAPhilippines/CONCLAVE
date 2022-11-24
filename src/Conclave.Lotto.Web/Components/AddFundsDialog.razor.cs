@@ -22,31 +22,59 @@ public partial class AddFundsDialog
 
     private bool IsDepositBtnDisabled { get; set; }
 
+    private void OnCurrencyValueChanged(string newCurrency)
+    {
+        DepositAmount = 0;
+        Currency = newCurrency;
+    }
+
+    private void OnInputAmountChanged(double amount)
+    {
+        if (IsValidAmount(amount))
+        {
+            DepositAmount = amount;
+            IsDepositBtnDisabled = false;
+        }
+    }
+
     private double ToUSD(double amount)
     {
         if (Currency == "mADA")
             return CurrencyConverterService.ConvertAdaToUsd(amount);
         
         return CurrencyConverterService.ConvertCnclvToUsd(amount);
-    } 
+    }   
 
-    private double GetBalanceOfSelectedCurrency() => 
+    private IEnumerable<string> ValidateInput(double amount)
+    {
+        if (IsValidAmount(amount))
+        {
+            IsDepositBtnDisabled = false;
+            yield break;
+        }
+
+        if (amount < 0)
+        {
+            IsDepositBtnDisabled = true;
+            DepositAmount = 0;
+            yield return "Invalid input";
+        }
+
+        if (amount > GetBalanceOfSelectedCurrency())
+        {
+            IsDepositBtnDisabled = true;
+            yield return "Insufficient balance";
+        }
+    }
+
+     private double GetBalanceOfSelectedCurrency() => 
         Currency == "mADA" ? MilkADABalance : ConclaveBalance;
 
     private void OnBtnMaxClicked() => 
         DepositAmount = GetBalanceOfSelectedCurrency();
 
-    private string? CheckBalance(double amount)
-    {
-        if (amount > GetBalanceOfSelectedCurrency())
-        {
-            IsDepositBtnDisabled = true;
-            return "Insufficient balance";
-        }
-       
-       IsDepositBtnDisabled = false;
-       return null;
-    }
+    private bool IsValidAmount(double amount) => 
+        amount >= 0 && amount < GetBalanceOfSelectedCurrency();
 
     void Cancel() => MudDialog.Cancel();
 }

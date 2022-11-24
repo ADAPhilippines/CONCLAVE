@@ -12,7 +12,9 @@
             T="string"
             Variant="Variant.Outlined"
             AnchorOrigin="Origin.BottomCenter"
-            @bind-Value="Currency">
+            Value="Currency"
+            ValueChanged="OnCurrencyValueChanged"
+        >
                 <MudSelectItem Value="@("mADA")"/>
                 <MudSelectItem Value="@("CNCLV")"/>
         </MudSelect>
@@ -33,7 +35,9 @@
             </div>
 
             <MudTextField
-                @bind-Value="DepositAmount"
+                T="double"
+                Value="DepositAmount"
+                ValueChanged="OnInputAmountChanged"
                 Variant="Variant.Outlined"
                 Placeholder="0.00"
                 Adornment="Adornment.End"
@@ -41,7 +45,7 @@
                 AdornmentColor="Color.Primary"
                 InputType="InputType.Number"
                 Immediate="true"
-                Validation="(new Func<double, string?>(CheckBalance))"
+                Validation="(new Func<double, IEnumerable<string>>(ValidateInput))"
             />
 
             <MudSlider
@@ -51,6 +55,7 @@
                 Color="Color.Primary"
                 Class="mt-7"
                 T="double"
+                Immediate="true"
             />
         </div>
     </DialogContent>
