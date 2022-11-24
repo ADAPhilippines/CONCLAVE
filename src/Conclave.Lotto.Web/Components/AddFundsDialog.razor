@@ -21,11 +21,13 @@
             <div class="flex justify-between items-center">
                 <div>Available: 
                     <span class="font-bold">
-                        @String.Format("{0:0,0.##}", GetBalanceOfSelectedCurrency()) $@Currency
+                        @String.Format("{0:0,0.##}", GetBalanceOfSelectedCurrency()) @Currency
                     </span>
                 </div>
                 <div class="flex items-center justify-center gap-1">
-                    <p>~@(DepositAmount == 0 ? "0.00" : String.Format("{0:0,0.##}", ToUSD(DepositAmount))) USD</p>
+                    <p class="font-bold">
+                        ~@(DepositAmount == 0 ? "0.00" : String.Format("{0:0,0.##}", ToUSD(DepositAmount))) USD
+                    </p>
                     <MudChip Label="true" OnClick="OnBtnMaxClicked">Max</MudChip>
                 </div>
             </div>
@@ -39,12 +41,13 @@
                 AdornmentColor="Color.Primary"
                 InputType="InputType.Number"
                 Immediate="true"
+                Validation="(new Func<double, string?>(CheckBalance))"
             />
 
             <MudSlider
                 @bind-Value="DepositAmount"
                 Min="0"
-                Max="@GetBalanceOfSelectedCurrency()"
+                Max="GetBalanceOfSelectedCurrency()"
                 Color="Color.Primary"
                 Class="mt-7"
                 T="double"
@@ -66,6 +69,7 @@
                 Class="basis-1/2"
                 Variant="Variant.Filled"
                 Color="Color.Primary"
+                Disabled="IsDepositBtnDisabled"
             >
                 Deposit
             </MudButton>

@@ -20,6 +20,8 @@ public partial class AddFundsDialog
 
     private double DepositAmount { get; set; } = 0;
 
+    private bool IsDepositBtnDisabled { get; set; }
+
     private double ToUSD(double amount)
     {
         if (Currency == "mADA")
@@ -33,6 +35,18 @@ public partial class AddFundsDialog
 
     private void OnBtnMaxClicked() => 
         DepositAmount = GetBalanceOfSelectedCurrency();
+
+    private string? CheckBalance(double amount)
+    {
+        if (amount > GetBalanceOfSelectedCurrency())
+        {
+            IsDepositBtnDisabled = true;
+            return "Insufficient balance";
+        }
+       
+       IsDepositBtnDisabled = false;
+       return null;
+    }
 
     void Cancel() => MudDialog.Cancel();
 }
