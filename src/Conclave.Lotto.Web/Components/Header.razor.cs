@@ -35,18 +35,6 @@ public partial class Header
          DialogService?.Show<ConnectWalletsDialog>("Connect Wallets", closeOnEscapeKey);
     }
 
-    private void OpenWithdrawFundsDialog()
-    {
-		var options = new DialogOptions { CloseOnEscapeKey = true };
-        DialogService?.Show<WithdrawFundsDialog>("", options);
-    }
-
-    private void OpenAddFundsDialog()
-    {
-		var options = new DialogOptions { CloseOnEscapeKey = true };
-        DialogService?.Show<AddFundsDialog>("", options);
-    }
-
     private void OpenFundManagerDialog(FundManagerDetails fundManagerDetails )
     {
         DialogParameters dialogParams = new DialogParameters { ["FundManagerDetails"] = fundManagerDetails };
