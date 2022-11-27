@@ -53,7 +53,7 @@ public class EvmService
             contractAddress,
             from,
             _gas, _gasPrice,
-            new HexBigInteger(Nethereum.Util.UnitConversion.Convert.ToWei(0)))
+            new HexBigInteger(Nethereum.Util.UnitConversion.Convert.ToWei(value)))
         );
     }
 
