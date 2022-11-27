@@ -44,9 +44,14 @@ public class EvmService
         ArgumentNullException.ThrowIfNull(_web3);
         Contract _contract = _web3.Eth.GetContract(abi, contractAddress);
         Function _writeFunction = _contract.GetFunction(name);
-        HexBigInteger _gas = await _writeFunction.EstimateGasAsync(inputs);
-        string _data = _writeFunction.GetData(inputs);
         HexBigInteger _gasPrice = await _web3.Eth.GasPrice.SendRequestAsync();
+        HexBigInteger _gas = await _writeFunction.EstimateGasAsync(
+            from,
+            _gasPrice,
+            new HexBigInteger(Nethereum.Util.UnitConversion.Convert.ToWei(value)),
+            inputs
+        );
+        string _data = _writeFunction.GetData(inputs);
 
         return await _web3.Eth.TransactionManager.SendTransactionAndWaitForReceiptAsync(new TransactionInput(
             _data,
