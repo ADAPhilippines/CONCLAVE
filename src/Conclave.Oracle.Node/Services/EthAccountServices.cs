@@ -83,7 +83,7 @@ public class EthAccountServices : WalletServiceBase
             gasPrice,
             new HexBigInteger(UnitConversion.Convert.ToWei(0)));
 
-        HexBigInteger futureNonce = await WaitForNonce();
+        HexBigInteger futureNonce = await WaitForNonceAsync();
         transactionInput.Nonce = futureNonce;
 
         await Web3.Eth.TransactionManager.SendTransactionAndWaitForReceiptAsync(transactionInput);
@@ -110,7 +110,7 @@ public class EthAccountServices : WalletServiceBase
                    gasPrice,
                    new HexBigInteger(UnitConversion.Convert.ToWei(0)));
 
-        HexBigInteger futureNonce = await WaitForNonce();
+        HexBigInteger futureNonce = await WaitForNonceAsync();
         transactionInput.Nonce = futureNonce;
 
         await Web3.Eth.TransactionManager.SendTransactionAndWaitForReceiptAsync(transactionInput);
@@ -178,25 +178,25 @@ public class EthAccountServices : WalletServiceBase
         });
     }
 
-    private async Task<HexBigInteger> GetTransactionCount()
+    private async Task<HexBigInteger> GetTransactionCountAsync()
     {
         return await Web3.Eth.Transactions.GetTransactionCount.SendRequestAsync(Address);
     }
 
-    private async Task<HexBigInteger> GetFutureNonce()
+    private async Task<HexBigInteger> GetFutureNonceAsync()
     {
         return await Account.NonceService.GetNextNonceAsync();
     }
 
-    private async Task<HexBigInteger> WaitForNonce()
+    private async Task<HexBigInteger> WaitForNonceAsync()
     {
-        HexBigInteger currentTransaction = await GetTransactionCount();
-        HexBigInteger futureNonce = await GetFutureNonce();
+        HexBigInteger currentTransaction = await GetTransactionCountAsync();
+        HexBigInteger futureNonce = await GetFutureNonceAsync();
 
         while (BigInteger.Parse(currentTransaction.ToString()) < BigInteger.Parse(futureNonce.ToString()))
         {
             await Task.Delay(NONCE_AWAITER_DURATION);
-            currentTransaction = await GetTransactionCount();
+            currentTransaction = await GetTransactionCountAsync();
         }
 
         return futureNonce;

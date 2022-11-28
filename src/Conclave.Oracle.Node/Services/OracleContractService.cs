@@ -52,7 +52,7 @@ public class OracleContractService : ContractServiceBase
 
     public async Task<GetJobDetailsOutput> GetJobDetailsAsync(BigInteger jobId)
     {
-        return await _ethAccountServices.CallContractReadFunctionAsync<GetJobDetailsFunction, GetJobDetailsOutput>(new GetJobDetailsFunction(){ JobId = jobId }, ContractAddress);
+        return await _ethAccountServices.CallContractReadFunctionAsync<GetJobDetailsFunction, GetJobDetailsOutput>(new GetJobDetailsFunction() { JobId = jobId }, ContractAddress);
     }
 
     public async Task<bool> IsJobReadyAsync(BigInteger jobId)
@@ -80,7 +80,7 @@ public class OracleContractService : ContractServiceBase
         return await _ethAccountServices.CallContractReadFunctionAsync<GetPendingRewardJobIdsOutput>(ContractAddress, ABI, "getPendingRewardJobIds", address);
     }
 
-    private async Task<List<GetJobDetailsOutput>> FilterAndSortJobs(List<EventLog<JobRequestCreatedEvent>> eventlogs)
+    private async Task<List<GetJobDetailsOutput>> FilterAndSortJobsAsync(List<EventLog<JobRequestCreatedEvent>> eventlogs)
     {
         List<GetJobDetailsOutput> jobDetailsList = new();
 
@@ -110,11 +110,10 @@ public class OracleContractService : ContractServiceBase
     {
         await _ethAccountServices.ListenContractEventAsync<JobRequestCreatedEvent>(ContractAddress, ABI, "JobRequestCreated", async (logs) =>
         {
-            List<GetJobDetailsOutput> jobDetailsList = await FilterAndSortJobs(logs);
+            List<GetJobDetailsOutput> jobDetailsList = await FilterAndSortJobsAsync(logs);
 
-            foreach (GetJobDetailsOutput jobDetails in jobDetailsList) 
+            foreach (GetJobDetailsOutput jobDetails in jobDetailsList)
                 _ = Task.Run(async () => await processRequest(jobDetails, "RECEIVED"));
-            
 
             return true;
         });
