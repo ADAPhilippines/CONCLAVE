@@ -108,7 +108,7 @@ public partial class OracleWorker : BackgroundService
 
     public void PendingRequestsHandler(List<BigInteger> jobIdsList)
     {
-        List<GetJobDetailsOutput> jobDetailsList = GetJobDetailsPerIdAsync(jobIdsList);
+        List<GetJobDetailsOutput> jobDetailsList = GetJobDetailsPerId(jobIdsList);
 
         jobDetailsList = _oracleContractService.FilterAndSortJobs(jobDetailsList);
 

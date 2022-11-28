@@ -78,7 +78,7 @@ public partial class OracleWorker : BackgroundService
         return await _cardanoService.GetNextBlocksFromCurrentHashAsync(nearestBlock.BlockHash, (int)(numberOfdecimals - 1), requestId, nearestBlock.BlockNumber);
     }
 
-    public List<GetJobDetailsOutput> GetJobDetailsPerIdAsync(List<BigInteger> jobIdsList)
+    public List<GetJobDetailsOutput> GetJobDetailsPerId(List<BigInteger> jobIdsList)
     {
         List<GetJobDetailsOutput> jobDetailsList = new();
 
