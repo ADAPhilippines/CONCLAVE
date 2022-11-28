@@ -2,9 +2,71 @@
     <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="p-0 m-0 outline outline-1">
         <div class="flex justify-between items-center py-3 px-4">
             <div class="font-bold text-xl">CNCLV LOTTO</div>
-            <div>
-                <MudButton OnClick="OnBtnConnectWalletClicked" Variant="Variant.Filled" Color="Color.Primary">
-                    Connect Wallets
+            <div class="flex gap-2">
+                <div class="relative">
+                    <MudButton Class="peer/balance-button" Variant="Variant.Filled" Color="Color.Primary">
+                        <div class="mr-2">Balance:</div>
+                        <div class="normal-case flex flex-col text-[12px]">
+                            <div>@WithdrawFundsManagerDetails.MadaBalance mADA</div>
+                            <MudDivider />
+                            <div>@WithdrawFundsManagerDetails.CnclvBalance CNCLV</div>
+                        </div>
+                    </MudButton>
+
+                    <MudCard Class="w-[250px] absolute bottom-[-1] left-0 hidden peer-hover/balance-button:block hover:block z-[100] py-4 px-3">
+                        <MudCardContent>
+                            <div class="flex gap-1">
+                                <div>Connected with Metamask</div>
+                                <MudIcon
+                                    Icon="@Icons.Filled.Check"
+                                    Color="Color.Success"
+                                    Size="Size.Small"
+                                />
+                            </div>
+                        
+                            <div class="flex justify-between items-center">
+                                <div>0x073...431</div>
+                                <div class="flex gap-1">
+                                    <MudIconButton
+                                        Icon="@Icons.Filled.OpenInNew"
+                                        Size="Size.Small" Title=""
+                                    />
+                                    <MudIconButton
+                                        Icon="@Icons.Filled.ContentCopy"
+                                        Size="Size.Small"
+                                        Title="Copy your wallet address"
+                                    />
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col gap-2 mt-5">
+                                <MudButton
+                                    FullWidth="true"
+                                    Color="Color.Primary"
+                                    Variant="Variant.Filled"
+                                    OnClick="() => OpenFundManagerDialog(AddFundsManagerDetails)"
+                                >
+                                        Add funds
+                                </MudButton>
+                                <MudButton
+                                    FullWidth="true"
+                                    Color="Color.Primary"
+                                    Variant="Variant.Filled"
+                                    OnClick="() => OpenFundManagerDialog(WithdrawFundsManagerDetails)"
+                                >
+                                        Withdraw funds
+                                </MudButton>
+                            </div>
+                        </MudCardContent>
+                    </MudCard>
+                </div>
+
+                <MudButton 
+                    OnClick="OnBtnConnectWalletClicked"
+                    Variant="Variant.Filled"
+                    Color="Color.Primary"
+                >
+                    My Wallets
                 </MudButton>
             </div>
         </div>
