@@ -15,15 +15,15 @@
 
   <PropertyGroup>
     <PackageId>Conclave.EVM</PackageId>
-    <Version>0.0.1</Version>
+    <Version>0.0.3</Version>
     <Authors>clark@saib.dev</Authors>
     <Company>SAIB Inc.</Company>
   </PropertyGroup>
 
   <PropertyGroup>
-      <FileVersion>0.0.1</FileVersion>
-      <AssemblyVersion>0.0.1</AssemblyVersion>
-      <InformationalVersion>0.0.1</InformationalVersion>
-      <PackageVersion>0.0.1</PackageVersion>
+      <FileVersion>0.0.3</FileVersion>
+      <AssemblyVersion>0.0.3</AssemblyVersion>
+      <InformationalVersion>0.0.3</InformationalVersion>
+      <PackageVersion>0.0.3</PackageVersion>
     </PropertyGroup>
 </Project>

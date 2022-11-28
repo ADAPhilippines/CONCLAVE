@@ -11,7 +11,7 @@
         <div class="flex items-center justify-between">
             <div class="flex-1">
                 <p>Sort by:</p>
-                <MudChipSet Filter="true" Mandatory="@mandatory" SelectedChipChanged="OnSelectedChipChanged">
+                <MudChipSet Filter="true" Mandatory="@Mandatory" SelectedChipChanged="OnSelectedChipChanged">
                     <MudChip Text="Relevance" Label="true" SelectedColor="Color.Primary" Variant="Variant.Filled">
                         Relevance</MudChip>
                     <MudChip Text="Latest" Label="true" SelectedColor="Color.Primary" Variant="Variant.Filled">Latest
@@ -42,7 +42,7 @@
             }
         </SessionList>
         <div class="flex px-5 mb-2 justify-center">
-            <MudPagination Color="Color.Primary" Count="3" SelectedChanged="OnPageChanged" />
+            <MudPagination Color="Color.Primary" Count="@PageCount" SelectedChanged="OnPageChanged" />
         </div>
     </div>
     <div>
