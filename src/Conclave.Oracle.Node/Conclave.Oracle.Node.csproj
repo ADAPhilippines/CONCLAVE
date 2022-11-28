@@ -8,10 +8,6 @@
 
   <ItemGroup>
     <PackageReference Include="Blockfrost.Api" Version="1.0.1" />
-    <PackageReference Include="PuppeteerSharp" Version="8.0.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Conclave.Nethereum.Web3" Version="4.11.0" />
+    <PackageReference Include="Conclave.EVM" Version="0.0.3" />
   </ItemGroup>
 </Project>
