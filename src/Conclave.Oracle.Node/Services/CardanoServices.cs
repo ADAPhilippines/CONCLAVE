@@ -1,5 +1,6 @@
 using System.Numerics;
 using Blockfrost.Api;
+using Conclave.Oracle.Node.Models;
 
 namespace Conclave.Oracle.Node.Services;
 
@@ -7,7 +8,7 @@ public class CardanoServices
 {
     #region constant variables
     private const int RETRIAL_DURATION = 3000;
-    private const int BLOCK_DURATION = 14000;
+    private const int BLOCK_DURATION = 17000;
     private const int STRING_LOG_MAX_LENGTH = 25;
     #endregion
     #region private variables
@@ -21,11 +22,8 @@ public class CardanoServices
         Environment.ExitCode = 0;
     }
 
-    public async Task<BlockContentResponse> GetNearestBlockHashFromTimeSAsync(int unixTime, BigInteger requestId)
+    public async Task<BlockDetails> GetNearestBlockHashFromTimeSAsync(int unixTime, BigInteger requestId)
     {
-        #region logs
-        #endregion
-
         BlockContentResponse currentBlock = await GetLatestBlockAsync();
 
         if (unixTime < currentBlock.Time)
@@ -33,16 +31,16 @@ public class CardanoServices
         else if (unixTime > currentBlock.Time)
             currentBlock = await GetNearestBlockAfterLatestAsync(currentBlock, unixTime, requestId);
 
-        using (_logger.BeginScope("Processing job Id# {0}...", requestId.ToString().Substring(0, STRING_LOG_MAX_LENGTH)))
+        using (_logger.BeginScope("Processing job Id# {0}", requestId.ToString("X")))
             _logger.LogInformation("Nearest block acquired : {0}", currentBlock.Height);
 
-        return currentBlock;
+        return new BlockDetails(currentBlock.Hash, currentBlock.Height ?? 0);
     }
 
     public async Task<List<string>> GetNextBlocksFromCurrentHashAsync(string blockHash, int nextBlocks, BigInteger requestId, int? blockNumber)
     {
         if (nextBlocks is not 0)
-            using (_logger.BeginScope("Processing job Id# {0}...", requestId.ToString().Substring(0, STRING_LOG_MAX_LENGTH)))
+            using (_logger.BeginScope("Processing job Id# {0}", requestId.ToString("X")))
                 _logger.LogInformation("Getting succeeding blocks after block {0}.", blockNumber);
 
         List<string> blockHashesRes = new() { blockHash };
@@ -58,11 +56,12 @@ public class CardanoServices
 
         blockHashesRes.AddRange(blockresponse!.Select(r => r.Hash));
 
+        //TODO: create logging utils
         string blockHashesLogs = string.Empty;
         blockHashesLogs += string.Format("[{0}] {1} - {2}\n", 0, blockNumber, blockHash);
         blockresponse?.ForEach((b) =>
         {
-            //convert to function
+            //TODO: convert to function
             int i = blockresponse.IndexOf(b);
             if (b == blockresponse.Last())
                 blockHashesLogs += string.Format("[{0}] {1} - {2}", i + 1, b.Height, b.Hash);
@@ -70,7 +69,7 @@ public class CardanoServices
                 blockHashesLogs += string.Format("[{0}] {1} - {2}\n", i + 1, b.Height, b.Hash);
         });
 
-        using (_logger.BeginScope("Processing job Id# {0}...", requestId.ToString().Substring(0, STRING_LOG_MAX_LENGTH)))
+        using (_logger.BeginScope("Processing job Id# {0}", requestId.ToString("X")))
         using (_logger.BeginScope("Block hashes", requestId))
             _logger.LogInformation(blockHashesLogs);
 
@@ -79,8 +78,9 @@ public class CardanoServices
 
     private async Task<List<BlockContentResponse>?> AwaitRemainingBlocksAsync(int nextBlocks, int currentCount, string blockHash, BigInteger requestId)
     {
-        using (_logger.BeginScope("Processing job Id# {0}...", requestId.ToString().Substring(0, STRING_LOG_MAX_LENGTH)))
+        using (_logger.BeginScope("Processing job Id# {0}", requestId.ToString("X")))
             _logger.LogInformation("Awaiting {0} remaining blocks", nextBlocks - currentCount);
+
         await Task.Delay(BLOCK_DURATION * (nextBlocks - currentCount));
 
         return await GetNextBlocksFromHashAsync(blockHash, nextBlocks);
@@ -89,7 +89,7 @@ public class CardanoServices
     private async Task<BlockContentResponse> WaitForNextBlockAsync(BlockContentResponse currentBlock, BigInteger requestId)
     {
         if (currentBlock.NextBlock is null)
-            using (_logger.BeginScope("Processing job Id# {0}...", requestId.ToString().Substring(0, STRING_LOG_MAX_LENGTH)))
+            using (_logger.BeginScope("Processing job Id# {0}", requestId.ToString("X")))
                 _logger.LogInformation("Awaiting next block after {0}.", currentBlock.Height);
 
         while (currentBlock.NextBlock is null)
@@ -101,12 +101,13 @@ public class CardanoServices
     private async Task<BlockContentResponse> RefetchBlockAsync(string blockHash)
     {
         await Task.Delay(BLOCK_DURATION);
+
         return await GetBlockFromHashAsync(blockHash);
     }
 
     private async Task<BlockContentResponse> GetNearestBlockBeforeLatestAsync(BlockContentResponse currentBlock, int unixTime, BigInteger requestId)
     {
-        using (_logger.BeginScope("Processing job Id# {0}...", requestId.ToString().Substring(0, STRING_LOG_MAX_LENGTH)))
+        using (_logger.BeginScope("Processing job Id# {0}", requestId.ToString("X")))
             _logger.LogInformation("Getting nearest block from timestamp {0}.", unixTime);
 
         while (unixTime < currentBlock.Time)
@@ -120,7 +121,7 @@ public class CardanoServices
 
     private async Task<BlockContentResponse> GetNearestBlockAfterLatestAsync(BlockContentResponse currentBlock, int unixTime, BigInteger requestId)
     {
-        using (_logger.BeginScope("Processing job Id# {0}...", requestId.ToString().Substring(0, STRING_LOG_MAX_LENGTH)))
+        using (_logger.BeginScope("Processing job Id# {0}", requestId.ToString("X")))
             _logger.LogInformation("Awaiting nearest block from timestamp {0}.", unixTime);
 
         await Task.Delay(unixTime - currentBlock.Time + BLOCK_DURATION);
@@ -134,9 +135,10 @@ public class CardanoServices
         return currentBlock;
     }
 
-    #region Native BlockFrost Functions
+    #region Native CardanoNetwork Functions
     private async Task<List<BlockContentResponse>?> GetNextBlocksFromHashAsync(string blockHash, int nextBlocks)
     {
+        //TODO: convert to simpler function
         while (true)
         {
             try
@@ -145,11 +147,13 @@ public class CardanoServices
             }
             catch (ApiException e) when (e.StatusCode is 403)
             {
+                //TODO: convert to error handler utils
                 _logger.LogError(e, "Error Getting Next Blocks: {0}. Closing the application.", e.Message);
                 Environment.Exit(Environment.ExitCode);
             }
             catch (ApiException e)
             {
+                //TODO: convert to error handler utils
                 _logger.LogError(e, "Error Getting Next Blocks: {0}. Retrying...", e.Message);
                 await Task.Delay(RETRIAL_DURATION);
             }
@@ -158,6 +162,7 @@ public class CardanoServices
 
     private async Task<BlockContentResponse> GetLatestBlockAsync()
     {
+        //TODO: convert to simpler function
         while (true)
         {
             try
@@ -166,11 +171,13 @@ public class CardanoServices
             }
             catch (ApiException e) when (e.StatusCode is 403)
             {
+                //TODO: convert to error handler utils
                 _logger.LogError(e, "Error Getting Latest Block: {0}. Closing the application.", e.Message);
                 Environment.Exit(Environment.ExitCode);
             }
             catch (ApiException e)
             {
+                //TODO: convert to error handler utils
                 _logger.LogError(e, "Error Getting Latest Block: {0}. Retrying...", e.Message);
                 await Task.Delay(RETRIAL_DURATION);
             }
@@ -179,6 +186,7 @@ public class CardanoServices
 
     private async Task<BlockContentResponse> GetBlockFromHashAsync(string hash)
     {
+        //TODO: convert to simpler function
         while (true)
         {
             try
@@ -187,11 +195,13 @@ public class CardanoServices
             }
             catch (ApiException e) when (e.StatusCode is 403)
             {
+                //TODO: convert to error handler utils
                 _logger.LogError(e, "Error Getting Latest Block: {0}. Closing the application.", e.Message);
                 Environment.Exit(Environment.ExitCode);
             }
             catch (ApiException e)
             {
+                //TODO: convert to error handler utils
                 _logger.LogError(e, "Error Getting Block: {0}. Retrying...", e.Message);
                 await Task.Delay(RETRIAL_DURATION);
             }

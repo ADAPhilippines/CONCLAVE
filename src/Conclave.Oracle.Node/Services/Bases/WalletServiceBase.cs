@@ -3,7 +3,7 @@ using Conclave.Oracle.Node.Services.Interfaces;
 
 namespace Conclave.Oracle.Node.Services.Bases;
 
-public class WalletServiceBase : IWalletService
+public abstract class WalletServiceBase : IWalletService
 {
     public string Address { get; init; } = string.Empty;
     public string PrivateKey { get; init; }

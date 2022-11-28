@@ -2,7 +2,7 @@ using Conclave.Oracle.Node.Services.Interfaces;
 
 namespace Conclave.Oracle.Node.Services.Bases;
 
-public class ContractServiceBase : IContract, IWalletService
+public abstract class ContractServiceBase : IContract, IWalletService
 {
     public string PrivateKey { get; init; } = string.Empty;
     public string ContractAddress { get; init; } = string.Empty;

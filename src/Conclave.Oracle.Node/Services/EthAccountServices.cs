@@ -9,6 +9,8 @@ using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Util;
 using System.Numerics;
 using Nethereum.RPC.NonceServices;
+using Nethereum.Contracts.ContractHandlers;
+using Nethereum.ABI.FunctionEncoding.Attributes;
 
 namespace Conclave.Oracle.Node.Services;
 
@@ -50,15 +52,18 @@ public class EthAccountServices : WalletServiceBase
         return await readFunction.CallAsync<T>();
     }
 
-    public async Task<dynamic> CallContractReadFunctionNoParamsAsync(string contractAddress, string abi, string functionName)
+    public async Task<TResult> CallContractReadFunctionAsync<T,TResult>(
+        T contractFunction,
+        string contractAddress) 
+        where T : FunctionMessage, new()
+        where TResult : IFunctionOutputDTO, new()
     {
-        Contract contract = Web3.Eth.GetContract(abi, contractAddress);
-        Function readFunction = contract.GetFunction(functionName);
+        ContractHandler contractHandler = Web3.Eth.GetContractHandler(contractAddress);
 
-        return await readFunction.CallAsync<dynamic>();
+        return await contractHandler.QueryDeserializingToObjectAsync<T, TResult>(contractFunction, null);
     }
 
-    public async Task CallContractWriteFunctionNoParamsAsync(
+    public async Task CallContractWriteFunctionAsync(
         string contractAddress,
         string abi,
         decimal value,
@@ -111,6 +116,37 @@ public class EthAccountServices : WalletServiceBase
         await Web3.Eth.TransactionManager.SendTransactionAndWaitForReceiptAsync(transactionInput);
     }
 
+    public async Task ListenContractEventAsync<T>(string contractAddress, string abi, string functionName, Func<List<EventLog<T>>, Task<bool>> callback) where T : new()
+    {
+        Contract contract = Web3.Eth.GetContract(abi, contractAddress);
+        Event contractEvent = contract.GetEvent(functionName);
+        HexBigInteger filterId = await contractEvent.CreateFilterAsync(BlockParameter.CreateLatest());
+        List<EventLog<T>>? lastLogs = await contractEvent.GetAllChangesAsync<T>(filterId);
+
+        _ = Task.Run(async () =>
+        {
+            bool shouldRun = true;
+            while (shouldRun)
+            {
+                List<EventLog<T>>? newLogs = await contractEvent.GetAllChangesAsync<T>(filterId);
+                List<EventLog<T>>? filteredLogs = newLogs.Where(newLog =>
+                    !lastLogs.Any(
+                        oldLog => oldLog.Log.TransactionHash == newLog.Log.TransactionHash &&
+                        oldLog.Log.TransactionIndex == newLog.Log.TransactionIndex)
+                ).ToList();
+
+                if (filteredLogs.Count > 0)
+                    _ = Task.Run(async () =>
+                    {
+                        shouldRun = await callback(filteredLogs);
+                        lastLogs = filteredLogs;
+                    });
+
+                await Task.Delay(EVENT_LOG_DURATION);
+            }
+        });
+    }
+
     public async Task ListenContractEventAsync<T>(string contractAddress, string abi, string functionName, Func<List<EventLog<T>>, bool> callback) where T : new()
     {
         Contract contract = Web3.Eth.GetContract(abi, contractAddress);
@@ -140,11 +176,6 @@ public class EthAccountServices : WalletServiceBase
                 await Task.Delay(EVENT_LOG_DURATION);
             }
         });
-    }
-
-    public async Task GetLatestBlock()
-    {
-        var block = await Web3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
     }
 
     private async Task<HexBigInteger> GetTransactionCount()

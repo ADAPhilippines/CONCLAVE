@@ -3,9 +3,7 @@ using Microsoft.Extensions.Options;
 using Conclave.Oracle.Node.Services.Bases;
 using System.Numerics;
 using Nethereum.Contracts;
-using Conclave.Oracle.Node.Contracts.Definition.EventOutputs;
-using Conclave.Oracle.Node.Contracts.Definition.FunctionOutputs;
-using Nethereum.Hex.HexTypes;
+using Conclave.Oracle.Node.Contracts.Definition;
 
 namespace Conclave.Oracle.Node.Services;
 
@@ -37,9 +35,9 @@ public class OracleContractService : ContractServiceBase
         return await _ethAccountServices.CallContractReadFunctionAsync<bool>(ContractAddress, ABI, "isNodeRegistered", _ethAccountServices.Address);
     }
 
-    public async Task<GetPendingJobIdsOutputDTO> GetPendingJobIdsAsync()
+    public async Task<GetPendingJobIdsOutput> GetPendingJobIdsAsync()
     {
-        return await _ethAccountServices.CallContractReadFunctionNoParamsAsync<GetPendingJobIdsOutputDTO>(ContractAddress, ABI, "getPendingJobIds");
+        return await _ethAccountServices.CallContractReadFunctionNoParamsAsync<GetPendingJobIdsOutput>(ContractAddress, ABI, "getPendingJobIds");
     }
 
     public async Task SubmitResponseAsync(BigInteger requestId, List<BigInteger> decimals)
@@ -52,9 +50,9 @@ public class OracleContractService : ContractServiceBase
         await _ethAccountServices.CallContractWriteFunctionAsync(ContractAddress, ABI, 0, "acceptJob", jobId);
     }
 
-    public async Task<GetJobDetailsOutputDTO> GetJobDetailsAsync(BigInteger jobId)
+    public async Task<GetJobDetailsOutput> GetJobDetailsAsync(BigInteger jobId)
     {
-        return await _ethAccountServices.CallContractReadFunctionAsync<GetJobDetailsOutputDTO>(ContractAddress, ABI, "getJobDetails", jobId);
+        return await _ethAccountServices.CallContractReadFunctionAsync<GetJobDetailsFunction, GetJobDetailsOutput>(new GetJobDetailsFunction(){ JobId = jobId }, ContractAddress);
     }
 
     public async Task<bool> IsJobReadyAsync(BigInteger jobId)
@@ -62,9 +60,9 @@ public class OracleContractService : ContractServiceBase
         return await _ethAccountServices.CallContractReadFunctionAsync<bool>(ContractAddress, ABI, "isJobReady", jobId);
     }
 
-    public async Task<GetTotalRewardsOutputDTO> GetTotalRewardsAsync()
+    public async Task<GetTotalRewardsOutput> GetTotalRewardsAsync()
     {
-        return await _ethAccountServices.CallContractReadFunctionNoParamsAsync<GetTotalRewardsOutputDTO>(ContractAddress, ABI, "getTotalRewards");
+        return await _ethAccountServices.CallContractReadFunctionNoParamsAsync<GetTotalRewardsOutput>(ContractAddress, ABI, "getTotalRewards");
     }
 
     public async Task<bool> IsResponseSubmittedAsync(BigInteger jobId)
@@ -74,60 +72,59 @@ public class OracleContractService : ContractServiceBase
 
     public async Task ClaimPendingRewardsAsync()
     {
-        await _ethAccountServices.CallContractWriteFunctionNoParamsAsync(ContractAddress, ABI, 0, "claimPendingRewards");
+        await _ethAccountServices.CallContractWriteFunctionAsync(ContractAddress, ABI, 0, "claimPendingRewards");
     }
 
-    public async Task<GetPendingRewardJobIdsOutputDTO> GetPendingRewardJobIds(string address)
+    public async Task<GetPendingRewardJobIdsOutput> GetPendingRewardJobIdsAsync(string address)
     {
-        return await _ethAccountServices.CallContractReadFunctionAsync<GetPendingRewardJobIdsOutputDTO>(ContractAddress, ABI, "getPendingRewardJobIds", address);
+        return await _ethAccountServices.CallContractReadFunctionAsync<GetPendingRewardJobIdsOutput>(ContractAddress, ABI, "getPendingRewardJobIds", address);
     }
 
-    public async Task ListenToJobRequestCreatedEventWithCallbackAsync(Func<GetJobDetailsOutputDTO, string, Task> processRequest)
+    private async Task<List<GetJobDetailsOutput>> FilterAndSortJobs(List<EventLog<JobRequestCreatedEvent>> eventlogs)
     {
-        await _ethAccountServices.ListenContractEventAsync<JobRequestCreatedEventDTO>(ContractAddress, ABI, "JobRequestCreated", (logs) =>
+        List<GetJobDetailsOutput> jobDetailsList = new();
+
+        foreach (EventLog<JobRequestCreatedEvent> log in eventlogs)
         {
-            // List<GetJobDetailsOutputDTO> jobDetailsList = new();
+            GetJobDetailsOutput jobDetails = await GetJobDetailsAsync(log.Event.JobId);
+            jobDetailsList.Add(jobDetails);
+        }
 
-            // logs.ForEach(async (log) => {
-            //     GetJobDetailsOutputDTO jobDetails = await GetJobDetailsAsync(log.Event.JobId);
+        jobDetailsList = jobDetailsList.FindAll(jobDetails => (GetMinimumRewardsPerJob(jobDetails) >= BigInteger.Parse(_options.Value.MinimumJobReward))).ToList();
 
-            //     jobDetailsList.Add(jobDetails);
-            // });
+        jobDetailsList = jobDetailsList.OrderByDescending(jobDetails => GetMinimumRewardsPerJob(jobDetails)).ToList();
 
-            // jobDetailsList = jobDetailsList.FindAll(j => {
-            //     BigInteger reward = ((j.BaseBaseTokenFee + j.BaseTokenFeePerNum*j.NumCount)/j.MaxValidator) + ((j.BaseTokenFee + j.TokenFeePerNum*j.NumCount)/j.MaxValidator);
-            //     return ( reward >= BigInteger.Parse(_options.Value.MinimumJobReward));
-            // });
+        return jobDetailsList;
+    }
 
-            // jobDetailsList = jobDetailsList.OrderByDescending(j => {
-            //     BigInteger reward = ((j.BaseBaseTokenFee + j.BaseTokenFeePerNum*j.NumCount)/j.MaxValidator) + ((j.BaseTokenFee + j.TokenFeePerNum*j.NumCount)/j.MaxValidator);
-            //     return (BigInteger.Parse(_options.Value.MinimumJobReward));
-            // }).ToList();
+    public List<GetJobDetailsOutput> FilterAndSortJobs(List<GetJobDetailsOutput> jobDetailsList)
+    {
+        jobDetailsList = jobDetailsList.FindAll(jobDetails => (GetMinimumRewardsPerJob(jobDetails) >= BigInteger.Parse(_options.Value.MinimumJobReward))).ToList();
 
-            // jobDetailsList.ForEach(j => {
-            //     BigInteger reward = ((j.BaseBaseTokenFee + j.BaseTokenFeePerNum*j.NumCount)/j.MaxValidator) + ((j.BaseTokenFee + j.TokenFeePerNum*j.NumCount)/j.MaxValidator);
-            //     Console.WriteLine(reward);
-            // });
+        jobDetailsList = jobDetailsList.OrderByDescending(jobDetails => GetMinimumRewardsPerJob(jobDetails)).ToList();
 
-            foreach (EventLog<JobRequestCreatedEventDTO> log in logs)
-            {
-                //if request reward is greater than jobreward threshold
-                _ = Task.Run(async () =>
-                {
-                    GetJobDetailsOutputDTO jobDetails = await GetJobDetailsAsync(log.Event.JobId);
+        return jobDetailsList;
+    }
 
-                    await processRequest(jobDetails, "RECEIVED");
-                });
-            }
+    public async Task ListenToJobRequestCreatedEventWithCallbackAsync(Func<GetJobDetailsOutput, string, Task> processRequest)
+    {
+        await _ethAccountServices.ListenContractEventAsync<JobRequestCreatedEvent>(ContractAddress, ABI, "JobRequestCreated", async (logs) =>
+        {
+            List<GetJobDetailsOutput> jobDetailsList = await FilterAndSortJobs(logs);
+
+            foreach (GetJobDetailsOutput jobDetails in jobDetailsList) 
+                _ = Task.Run(async () => await processRequest(jobDetails, "RECEIVED"));
+            
+
             return true;
         });
     }
 
     public async Task ListenToNodeRegisteredEventWithCallbackAsync(Func<Task> startTasks)
     {
-        await _ethAccountServices.ListenContractEventAsync<NodeRegisteredEventDTO>(ContractAddress, ABI, "NodeRegistered", (logs) =>
+        await _ethAccountServices.ListenContractEventAsync<NodeRegisteredEvent>(ContractAddress, ABI, "NodeRegistered", (logs) =>
         {
-            foreach (EventLog<NodeRegisteredEventDTO> log in logs)
+            foreach (EventLog<NodeRegisteredEvent> log in logs)
             {
                 _ = Task.Run(async () =>
                 {
@@ -135,6 +132,7 @@ public class OracleContractService : ContractServiceBase
                         await startTasks();
                 });
             }
+
             return true;
         });
     }
@@ -147,12 +145,12 @@ public class OracleContractService : ContractServiceBase
             {
                 _ = Task.Run(async () =>
                 {
-                    GetPendingRewardJobIdsOutputDTO jobIdsWithPendingRewards = await GetPendingRewardJobIds(_ethAccountServices.Address);
+                    GetPendingRewardJobIdsOutput jobIdsWithPendingRewards = await GetPendingRewardJobIdsAsync(_ethAccountServices.Address);
 
                     if (jobIdsWithPendingRewards.JobIds.Contains(log.Event.JobId))
                     {
                         _logger.LogInformation("Request fulfilled {0}", log.Event.JobId);
-                        GetTotalRewardsOutputDTO totalRewards = await GetTotalRewardsAsync();
+                        GetTotalRewardsOutput totalRewards = await GetTotalRewardsAsync();
                         if (
                             totalRewards.ADAReward >= BigInteger.Parse(_options.Value.ADARewardThreshold) &&
                             totalRewards.CNCLVReward >= BigInteger.Parse(_options.Value.CNCLVRewardThreshold))
@@ -163,27 +161,37 @@ public class OracleContractService : ContractServiceBase
                     }
                 });
             }
+
             return true;
         });
     }
 
     public async Task ListenToJobRequestRefundedEventAsync()
     {
-        await _ethAccountServices.ListenContractEventAsync<JobRequestRefundedEventDTO>(ContractAddress, ABI, "JobRequestFulfilled", (logs) =>
+        await _ethAccountServices.ListenContractEventAsync<JobRequestRefundedEvent>(ContractAddress, ABI, "JobRequestFulfilled", (logs) =>
         {
-            foreach (EventLog<JobRequestRefundedEventDTO> log in logs)
+            foreach (EventLog<JobRequestRefundedEvent> log in logs)
             {
                 _ = Task.Run(async () =>
                 {
-                    GetPendingRewardJobIdsOutputDTO jobIdsWithPendingRewards = await GetPendingRewardJobIds(_ethAccountServices.Address);
+                    GetPendingRewardJobIdsOutput jobIdsWithPendingRewards = await GetPendingRewardJobIdsAsync(_ethAccountServices.Address);
 
                     if (jobIdsWithPendingRewards.JobIds.Contains(log.Event.JobId))
-                    {
                         _logger.LogInformation("Request refunded {0}", log.Event.JobId);
-                    }
+
                 });
             }
+
             return true;
         });
+    }
+
+    private BigInteger GetMinimumRewardsPerJob(GetJobDetailsOutput jobDetails)
+    {
+        BigInteger adaReward = jobDetails.ReturnValue1.BaseBaseTokenFee + jobDetails.ReturnValue1.BaseTokenFeePerNum * jobDetails.ReturnValue1.NumCount;
+        BigInteger cnclvReward = jobDetails.ReturnValue1.BaseTokenFee + jobDetails.ReturnValue1.TokenFeePerNum * jobDetails.ReturnValue1.NumCount;
+        BigInteger reward = (adaReward / jobDetails.ReturnValue1.MaxValidator) + (cnclvReward / jobDetails.ReturnValue1.MaxValidator);
+
+        return reward;
     }
 }

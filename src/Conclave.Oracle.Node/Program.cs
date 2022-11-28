@@ -7,7 +7,7 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 IConfiguration config = builder.Environment.IsDevelopment() ? builder.Configuration.GetSection("Development:NodeSettings") : builder.Configuration.GetSection("Production:NodeSettings");
 builder.Configuration.GetValue<string>("PrivateKey");
-string? network = config.GetValue<string>("BlockFrostNetwork");
+string? network = config.GetValue<string>("CardanoNetwork");
 string? apiKey = builder.Configuration.GetValue<string>("BlockFrostAPIKey");
 builder.Services.AddLogging(opt =>
      {

@@ -1,9 +1,7 @@
 using Conclave.Oracle.Node.Utils;
 using System.Numerics;
-using Conclave.Oracle.Node.Helpers;
-using Conclave.Oracle.Node.Contracts.Definition.FunctionOutputs;
-using Conclave.Oracle.Node.Contracts.Definition.EventOutputs;
-using Blockfrost.Api;
+using Conclave.Oracle.Node.Models;
+using Conclave.Oracle.Node.Contracts.Definition;
 
 namespace Conclave.Oracle;
 
@@ -16,21 +14,22 @@ public partial class OracleWorker : BackgroundService
         return await _oracleContractService.IsNodeRegisteredAsync();
     }
 
-    public async Task<bool> CheckIsJobReadyAfterAcceptanceExpirationAsync(GetJobDetailsOutputDTO jobDetails)
+    public async Task<bool> CheckIsJobReadyAfterAcceptanceExpirationAsync(GetJobDetailsOutput jobDetails)
     {
-        using (_logger.BeginScope("ACCEPTED: Job Id# {0}...", jobDetails.JobId.ToString().Substring(0, STRING_LOG_MAX_LENGTH)))
+        using (_logger.BeginScope("ACCEPTED: Job Id# {0}", jobDetails.ReturnValue1.JobId.ToString("X")))
             _logger.LogInformation("Awaiting job to be ready.");
 
         DateTime foo = DateTime.Now;
         int currentUnixTimeS = (int)((DateTimeOffset)foo).ToUnixTimeSeconds();
 
-        await Task.Delay(((int)jobDetails.JobAcceptanceExpiration - currentUnixTimeS) * 1000);
+        await Task.Delay(((int)jobDetails.ReturnValue1.JobAcceptanceExpiration - currentUnixTimeS) * 1000);
 
-        return await _oracleContractService.IsJobReadyAsync(jobDetails.JobId);
+        return await _oracleContractService.IsJobReadyAsync(jobDetails.ReturnValue1.JobId);
     }
 
-    public async Task SubmitDecimalsAsync(GetJobDetailsOutputDTO jobDetail, List<BigInteger> decimalsList, long unixTimeMs)
+    public async Task SubmitDecimalsAsync(GetJobDetailsOutput jobDetail, List<BigInteger> decimalsList, long unixTimeMs)
     {
+        //TODO: create logger utils
         string decimalLogs = string.Empty;
         decimalsList.ForEach((b) =>
         {
@@ -42,15 +41,16 @@ public partial class OracleWorker : BackgroundService
                 decimalLogs += string.Format("[{0}] {1}\n", i, b);
         });
 
-        using (_logger.BeginScope("ACCEPTED: Job Id# {0}...", jobDetail.JobId.ToString().Substring(0, STRING_LOG_MAX_LENGTH)))
-        using (_logger.BeginScope("Decimals", jobDetail.JobId))
+        using (_logger.BeginScope("ACCEPTED: Job Id# {0}", jobDetail.ReturnValue1.JobId.ToString("X")))
+        using (_logger.BeginScope("Decimals", jobDetail.ReturnValue1.JobId))
             _logger.LogInformation(decimalLogs);
 
-        await _oracleContractService.SubmitResponseAsync(jobDetail.JobId, decimalsList);
+        await _oracleContractService.SubmitResponseAsync(jobDetail.ReturnValue1.JobId, decimalsList);
+
         long currentUnixTimeMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         decimal processTime = ((decimal)currentUnixTimeMs - (decimal)unixTimeMs) / 1000;
         
-        using (_logger.BeginScope("Submitting job Id# {0}...", jobDetail.JobId.ToString().Substring(0, STRING_LOG_MAX_LENGTH)))
+        using (_logger.BeginScope("Submitting job Id# {0}", jobDetail.ReturnValue1.JobId.ToString("X")))
             _logger.LogInformation("Submitted - {0}s", processTime);
     }
 
@@ -73,18 +73,18 @@ public partial class OracleWorker : BackgroundService
 
     public async Task<List<string>> GetBlockHashesFromUnixTimeSAsync(BigInteger requestId, BigInteger unixTimeS, BigInteger numberOfdecimals)
     {
-        BlockContentResponse nearestBlock = await _cardanoService.GetNearestBlockHashFromTimeSAsync((int)unixTimeS, requestId);
+        BlockDetails nearestBlock = await _cardanoService.GetNearestBlockHashFromTimeSAsync((int)unixTimeS, requestId);
 
-        return await _cardanoService.GetNextBlocksFromCurrentHashAsync(nearestBlock.Hash, (int)(numberOfdecimals - 1), requestId, nearestBlock.Height);
+        return await _cardanoService.GetNextBlocksFromCurrentHashAsync(nearestBlock.BlockHash, (int)(numberOfdecimals - 1), requestId, nearestBlock.BlockNumber);
     }
 
-    public List<GetJobDetailsOutputDTO> GetJobDetailsPerIdAsync(List<BigInteger> jobIdsList)
+    public List<GetJobDetailsOutput> GetJobDetailsPerIdAsync(List<BigInteger> jobIdsList)
     {
-        List<GetJobDetailsOutputDTO> jobDetailsList = new();
+        List<GetJobDetailsOutput> jobDetailsList = new();
 
         jobIdsList.ForEach(async jobId =>
         {
-            GetJobDetailsOutputDTO jobDetails = await _oracleContractService.GetJobDetailsAsync(jobId);
+            GetJobDetailsOutput jobDetails = await _oracleContractService.GetJobDetailsAsync(jobId);
             jobDetailsList.Add(jobDetails);
         });
 
@@ -98,14 +98,16 @@ public partial class OracleWorker : BackgroundService
         await _oracleContractService.ListenToNodeRegisteredEventWithCallbackAsync(StartTasksAsync);
     }
 
-    public async Task GenerateAndSubmitDecimalsAsync(GetJobDetailsOutputDTO jobDetails, long unixTimeMs)
+    public async Task GenerateAndSubmitDecimalsAsync(GetJobDetailsOutput jobDetails)
     {
-        using (_logger.BeginScope("ACCEPTED: Job Id# {0}...", jobDetails.JobId.ToString().Substring(0, STRING_LOG_MAX_LENGTH)))
+        using (_logger.BeginScope("ACCEPTED: Job Id# {0}", jobDetails.ReturnValue1.JobId.ToString("X")))
             _logger.LogInformation("Job is ready. Generating Numbers.");
 
-        List<BigInteger> decimalsList = await GenerateDecimalsAsync(jobDetails.JobId, jobDetails.Timestamp, jobDetails.NumCount);
+        long startUnixTimeMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
-        await SubmitDecimalsAsync(jobDetails, decimalsList, unixTimeMs);
+        List<BigInteger> decimalsList = await GenerateDecimalsAsync(jobDetails.ReturnValue1.JobId, jobDetails.ReturnValue1.Timestamp, jobDetails.ReturnValue1.NumCount);
+
+        await SubmitDecimalsAsync(jobDetails, decimalsList, startUnixTimeMs);
     }
 
     public void ExitApplicationWithErrorMessage(string message)

@@ -2,9 +2,8 @@ using Conclave.Oracle.Node.Services;
 using Conclave.Oracle.Node.Models;
 using System.Numerics;
 using Microsoft.Extensions.Options;
-using Conclave.Oracle.Node.Contracts.Definition.FunctionOutputs;
-using Conclave.Oracle.Node.Contracts.Definition.EventOutputs;
 using Nethereum.JsonRpc.Client;
+using Conclave.Oracle.Node.Contracts.Definition;
 
 namespace Conclave.Oracle;
 
@@ -74,13 +73,15 @@ public partial class OracleWorker : BackgroundService
         _ = Task.Run(async () => await ListenToJobRequestCreatedEventAsync());
 
         _ = Task.Run(async () => await ListenToJobRequestFulfilledEventAsync());
+
+        _ = Task.Run(async () => await ListenToJobRequestRefundedEventAsync());
     }
 
     public async Task ProcessPendingJobRequestsAsync()
     {
         _logger.LogInformation("Starting pending requests handler.");
 
-        GetPendingJobIdsOutputDTO pendingRequests = await _oracleContractService.GetPendingJobIdsAsync();
+        GetPendingJobIdsOutput pendingRequests = await _oracleContractService.GetPendingJobIdsAsync();
 
         if (pendingRequests.JobIds.Count is not 0)
             PendingRequestsHandler(pendingRequests.JobIds);
@@ -97,48 +98,44 @@ public partial class OracleWorker : BackgroundService
 
     public async Task ListenToJobRequestFulfilledEventAsync()
     {
-        _logger.LogInformation("Listening to request fulfilled event");
-
         await _oracleContractService.ListenToJobRequestFulfilledEventAsync();
+    }
+
+    public async Task ListenToJobRequestRefundedEventAsync()
+    {
+        await _oracleContractService.ListenToJobRequestRefundedEventAsync();
     }
 
     public void PendingRequestsHandler(List<BigInteger> jobIdsList)
     {
-        List<GetJobDetailsOutputDTO> jobDetailsList = GetJobDetailsPerIdAsync(jobIdsList);
+        List<GetJobDetailsOutput> jobDetailsList = GetJobDetailsPerIdAsync(jobIdsList);
 
-        //filter pendingRequests
-        //sort pendingRequests
+        jobDetailsList = _oracleContractService.FilterAndSortJobs(jobDetailsList);
+
         jobDetailsList.ForEach(async (jobDetail) => await ProcessJobRequestAsync(jobDetail, "PENDING"));
     }
 
-    public async Task ProcessJobRequestAsync(GetJobDetailsOutputDTO jobDetails, string requestType)
+    public async Task ProcessJobRequestAsync(GetJobDetailsOutput jobDetails, string requestType)
     {
-        using (_logger.BeginScope("{0}: Job Id# {1}...", requestType, jobDetails.JobId.ToString().Substring(0, STRING_LOG_MAX_LENGTH)))
-            _logger.LogInformation("Timestamp: {0}\nNumbers: {1}", jobDetails.Timestamp.ToString(), jobDetails.NumCount.ToString());
+        using (_logger.BeginScope("{0}: Job Id# {1}", requestType, jobDetails.ReturnValue1.JobId.ToString("X")))
+            _logger.LogInformation("Timestamp: {0}\nNumbers: {1}", jobDetails.ReturnValue1.Timestamp.ToString(), jobDetails.ReturnValue1.NumCount.ToString());
 
         try
         {
-            await _oracleContractService.AcceptJobAsync(jobDetails.JobId);
-
-            long currentUnixTimeMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            await _oracleContractService.AcceptJobAsync(jobDetails.ReturnValue1.JobId);
 
             bool isJobReady = await CheckIsJobReadyAfterAcceptanceExpirationAsync(jobDetails);
 
             if (isJobReady)
-                await GenerateAndSubmitDecimalsAsync(jobDetails, currentUnixTimeMs);
+                await GenerateAndSubmitDecimalsAsync(jobDetails);
             else
-                using (_logger.BeginScope("REVERTED: Job Id# {0}...", jobDetails.JobId.ToString().Substring(0, STRING_LOG_MAX_LENGTH)))
+                using (_logger.BeginScope("REVERTED: Job Id# {0}", jobDetails.ReturnValue1.JobId.ToString("X")))
                     _logger.LogCritical("Job reverted.");
         }
         catch (RpcResponseException e)
         {
-            DateTime timeAccepted = DateTime.Now;
-            long currentUnixTimeS = (int)(DateTimeOffset.Now.ToUnixTimeSeconds());
-
-            using (_logger.BeginScope("REVERTED: Job Id# {0}...", jobDetails.JobId.ToString().Substring(0, STRING_LOG_MAX_LENGTH)))
+            using (_logger.BeginScope("REVERTED: Job Id# {0}", jobDetails.ReturnValue1.JobId.ToString("X")))
                 _logger.LogError(e, "Error Processing task. {0}", e.Message);
-            using (_logger.BeginScope("REVERTED: Job Id# {0}...", jobDetails.JobId.ToString().Substring(0, STRING_LOG_MAX_LENGTH)))
-                _logger.LogError(e, "Error Processing task. {0}", currentUnixTimeS);
         }
     }
 }
