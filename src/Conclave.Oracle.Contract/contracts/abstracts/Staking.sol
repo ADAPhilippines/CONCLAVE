@@ -8,25 +8,29 @@ abstract contract Staking is IStakeable {
     error InsufficientBalance(uint256 requested, uint256 balance);
     error InvalidStakeAmount();
 
-    event StakeAdded(address indexed staker, uint256 ada, uint256 token);
-    event StakeDeducted(address indexed staker, uint256 ada, uint256 token);
+    event StakeAdded(address indexed staker, uint256 baseToken, uint256 token);
+    event StakeDeducted(
+        address indexed staker,
+        uint256 baseToken,
+        uint256 token
+    );
     event StakingRewardsDistributed(
         address indexed distributor,
-        uint256 ada,
+        uint256 baseToken,
         uint256 token,
         uint256 timestamp
     );
 
-    modifier onlyValidStake(uint256 ada, uint256 token) {
-        if (ada == 0 && token == 0) {
+    modifier onlyValidStake(uint256 baseToken, uint256 token) {
+        if (baseToken == 0 && token == 0) {
             revert InvalidStakeAmount();
         }
         _;
     }
 
-    modifier onlyWithinBalance(uint256 ada, uint256 token) {
-        if (ada > address(this).balance) {
-            revert InsufficientBalance(ada, address(this).balance);
+    modifier onlyWithinBalance(uint256 baseToken, uint256 token) {
+        if (baseToken > address(this).balance) {
+            revert InsufficientBalance(baseToken, address(this).balance);
         }
         if (token > _token.balanceOf(address(this))) {
             revert InsufficientBalance(token, _token.balanceOf(address(this)));
@@ -58,36 +62,36 @@ abstract contract Staking is IStakeable {
 
     function _distributeStakingRewards() internal virtual;
 
-    function _stake(uint256 ada, uint256 token)
+    function _stake(uint256 baseToken, uint256 token)
         internal
-        onlyValidStake(ada, token)
+        onlyValidStake(baseToken, token)
     {
         _token.transferFrom(msg.sender, address(this), token);
-        _addStake(msg.sender, ada, token);
+        _addStake(msg.sender, baseToken, token);
 
-        emit StakeAdded(msg.sender, ada, token);
+        emit StakeAdded(msg.sender, baseToken, token);
     }
 
-    function _unstake(uint256 ada, uint256 token)
+    function _unstake(uint256 baseToken, uint256 token)
         internal
-        onlyValidStake(ada, token)
+        onlyValidStake(baseToken, token)
     {
-        _subStake(msg.sender, ada, token);
+        _subStake(msg.sender, baseToken, token);
 
         _transferToken(msg.sender, token);
-        _transferAda(msg.sender, ada);
+        _transferBaseToken(msg.sender, baseToken);
 
-        emit StakeDeducted(msg.sender, ada, token);
+        emit StakeDeducted(msg.sender, baseToken, token);
     }
 
     function _addStake(
         address staker,
-        uint256 ada,
+        uint256 baseToken,
         uint256 token
     ) internal {
-        s_stakes[staker].ada += ada;
+        s_stakes[staker].baseToken += baseToken;
         s_stakes[staker].token += token;
-        s_totalStakes.ada += ada;
+        s_totalStakes.baseToken += baseToken;
         s_totalStakes.token += token;
 
         if (!s_isStakers[staker]) {
@@ -98,16 +102,16 @@ abstract contract Staking is IStakeable {
 
     function _subStake(
         address staker,
-        uint256 ada,
+        uint256 baseToken,
         uint256 token
     ) internal {
-        s_stakes[staker].ada -= ada;
+        s_stakes[staker].baseToken -= baseToken;
         s_stakes[staker].token -= token;
-        s_totalStakes.ada -= ada;
+        s_totalStakes.baseToken -= baseToken;
         s_totalStakes.token -= token;
     }
 
-    function _transferAda(address to, uint256 amount) internal {
+    function _transferBaseToken(address to, uint256 amount) internal {
         require(amount > 0, "Amount must be greater than 0");
 
         payable(to).transfer(amount);

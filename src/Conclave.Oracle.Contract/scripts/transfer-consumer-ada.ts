@@ -10,7 +10,7 @@ async function main() {
 
         console.log(
             chalk.yellow(
-                `Transferring ${ethers.utils.formatEther(ethAmount)} tMilkAda to Consumer Contract: ${chalk.blue(
+                `Transferring ${ethers.utils.formatEther(ethAmount)} BaseToken to Consumer Contract: ${chalk.blue(
                     config.consumerAddress
                 )}`
             )
@@ -20,10 +20,9 @@ async function main() {
             to: config.consumerAddress,
             value: ethAmount,
         });
-        console.log(chalk.green(`Eth successfully transferred!`));
+        console.log(chalk.green(`BaseToken successfully transferred!`));
         console.log('\n\n');
     } catch (err) {
-        console.log(chalk.red('Consumer contract not found on this network.'));
         console.log(err);
         process.exit(1);
     }

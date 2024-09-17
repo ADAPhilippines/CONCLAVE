@@ -22,7 +22,6 @@ async function main() {
 
         await Promise.all(nodeDelegations);
     } catch (err) {
-        console.log(chalk.red('Oracle contract not found on this network.'));
         console.log(err);
         process.exit(1);
     }

@@ -4,21 +4,25 @@ pragma solidity ^0.8.17;
 interface IConclaveOracleOperator {
     struct JobRequest {
         uint256 jobId;
-        uint256 baseAdaFee;
+        uint256 baseBaseTokenFee;
         uint256 baseTokenFee;
-        uint256 adaFeePerNum;
+        uint256 baseTokenFeePerNum;
         uint256 tokenFeePerNum;
         uint256 timestamp;
+        uint256 seed;
         uint256 jobAcceptanceExpiration;
         uint256 jobFulfillmentExpiration;
+        uint256 jobExpiration;
         uint256 finalResultDataId;
         uint24 responseCount;
         uint24 numCount;
         uint24 minValidator;
         uint24 maxValidator;
         address requester;
+        address aggregator;
         address[] validators;
         uint256[] dataIds;
+        uint256[] results;
         RequestStatus status;
     }
 
